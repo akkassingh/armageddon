@@ -493,7 +493,7 @@ module.exports.confirmUser = async (req, res, next) => {
 
 module.exports.changeAvatar = async (req, res, next) => {
   const user = res.locals.user;
-
+  
   if (!req.file) {
     return res
       .status(400)
@@ -526,6 +526,7 @@ module.exports.changeAvatar = async (req, res, next) => {
 
     return res.send({ avatar: response.secure_url });
   } catch (err) {
+    logger.error(`error while changing Avatar::::::: ${JSON.stringify(err)}`);
     next(err);
   }
 };

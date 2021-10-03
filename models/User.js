@@ -19,11 +19,11 @@ const UserSchema = new Schema({
   },
   fullName: {
     type: String,
-    required: true,
+    required: false,
   },
   username: {
     type: String,
-    required: true,
+    required: false,
     lowercase: true,
     unique: true,
     minlength: 3,

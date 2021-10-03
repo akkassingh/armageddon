@@ -8,6 +8,8 @@ const compression = require('compression');
 const path = require('path');
 const socketio = require('socket.io');
 const jwt = require('jwt-simple');
+const logger = require('./logger/logger');
+const morgan = require('morgan');
 
 const apiRouter = require('./routes');
 
@@ -23,15 +25,28 @@ app.use(helmet());
 app.use(helmet.hidePoweredBy());
 app.use(cors());
 app.use(bodyParser.json());
+app.use(morgan('tiny', { stream: logger.stream }));
 app.set('trust proxy', 1);
 app.use('/api', apiRouter);
 
+
+const environment = process.env.ENVIRONMENT;
+let envPath = '.environments/.env-development';
+
+if (environment === 'testing') {
+  envPath = './environments/.env-testing';
+  logger.info(`Initializing testing environment...`);
+} else if (environment === 'production') {
+  envPath = './environments/.env-production';
+  logger.info(`Initializing production environment...`);
+}
+
 if (process.env.NODE_ENV === 'production') {
   app.use(compression());
-  app.use(express.static(path.join(__dirname, 'client/build')));
+  // app.use(express.static(path.join(__dirname, 'client/build')));
 
   app.get('*', function (req, res) {
-    res.sendFile(path.join(__dirname, 'client/build', 'index.html'));
+    res.send(path.join(__dirname, 'client/build', 'index.html'));
   });
 }
 
@@ -69,7 +84,9 @@ app.use((err, req, res, next) => {
 });
 
 const expressServer = app.listen(PORT, () => {
-  console.log(`Backend listening on port ${PORT}`);
+  logger.info(`Backend listening on port::::::: ${PORT}`);
+  logger.error('Error log example');
+  logger.warn('Warn log example');
 });
 
 const io = socketio(expressServer);

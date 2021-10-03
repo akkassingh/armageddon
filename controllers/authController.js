@@ -124,11 +124,11 @@ module.exports.register = async (req, res, next) => {
   let user = null;
   let confirmationToken = null;
 
-  const usernameError = validateUsername(username);
-  if (usernameError) return res.status(400).send({ error: usernameError });
+  // const usernameError = validateUsername(username);
+  // if (usernameError) return res.status(400).send({ error: usernameError });
 
-  const fullNameError = validateFullName(fullName);
-  if (fullNameError) return res.status(400).send({ error: fullNameError });
+  // const fullNameError = validateFullName(fullName);
+  // if (fullNameError) return res.status(400).send({ error: fullNameError });
 
   const emailError = validateEmail(email);
   if (emailError) return res.status(400).send({ error: emailError });
