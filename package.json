@@ -11,7 +11,7 @@
     "start": "node index.js",
     "dev": "nodemon index.js",
     "heroku-postbuild": "npm run server",
-    "server": "nodemon index.js",
+    "server": "nodemon index.js"
   },
   "repository": {
     "type": "git",
