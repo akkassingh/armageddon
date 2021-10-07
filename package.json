@@ -14,7 +14,7 @@
     "dev": "nodemon index.js",
     "eslint": "eslint ./",
     "eslint-fix": "eslint ./ --fix",
-    "build": "ENVIRONMENT=$ENVIRONMENT webpack",
+    "build": "ENVIRONMENT=production webpack",
     "build:prod": "ENVIRONMENT=production webpack",
     "build:test": "ENVIRONMENT=testing webpack",
     "prod": "node dist/api.bundle.js"
