@@ -30,17 +30,6 @@ app.set('trust proxy', 1);
 app.use('/api', apiRouter);
 
 
-const environment = process.env.ENVIRONMENT;
-let envPath = '.environments/.env-development';
-
-if (environment === 'testing') {
-  envPath = './environments/.env-testing';
-  logger.info(`Initializing testing environment...`);
-} else if (environment === 'production') {
-  envPath = './environments/.env-production';
-  logger.info(`Initializing production environment...`);
-}
-
 if (process.env.NODE_ENV === 'production') {
   app.use(compression());
   // app.use(express.static(path.join(__dirname, 'client/build')));
@@ -57,14 +46,15 @@ if (process.env.NODE_ENV === 'production') {
       useUnifiedTopology: true,
       useCreateIndex: true,
     });
-    console.log('Connected to database');
+    logger.info('Connected to database');
   } catch (err) {
+    logger.error('Connection to database failed ', err);
     throw new Error(err);
   }
 })();
 
 app.use((err, req, res, next) => {
-  console.log(err.message);
+  logger.info(err.message);
   if (!err.statusCode) {
     err.statusCode = 500;
   }
@@ -89,7 +79,7 @@ const expressServer = app.listen(PORT, () => {
 
 const io = socketio(expressServer);
 app.set('socketio', io);
-console.log('Socket.io listening for connections');
+logger.info('Socket.io listening for connections');
 
 // Authenticate before establishing a socket connection
 io.use((socket, next) => {
@@ -110,5 +100,5 @@ io.use((socket, next) => {
   }
 }).on('connection', (socket) => {
   socket.join(socket.user.id);
-  console.log('socket connected:', socket.id);
+  logger.info('socket connected:', socket.id);
 });
