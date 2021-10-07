@@ -120,15 +120,9 @@ module.exports.loginAuthentication = async (req, res, next) => {
 };
 
 module.exports.register = async (req, res, next) => {
-  const { username, fullName, email, password } = req.body;
+  const { email, password } = req.body;
   let user = null;
   let confirmationToken = null;
-
-  // const usernameError = validateUsername(username);
-  // if (usernameError) return res.status(400).send({ error: usernameError });
-
-  // const fullNameError = validateFullName(fullName);
-  // if (fullNameError) return res.status(400).send({ error: fullNameError });
 
   const emailError = validateEmail(email);
   if (emailError) return res.status(400).send({ error: emailError });
@@ -137,7 +131,7 @@ module.exports.register = async (req, res, next) => {
   if (passwordError) return res.status(400).send({ error: passwordError });
 
   try {
-    user = new User({ username, fullName, email, password });
+    user = new User({ email, password });
     confirmationToken = new ConfirmationToken({
       user: user._id,
       token: crypto.randomBytes(20).toString('hex'),
@@ -147,7 +141,7 @@ module.exports.register = async (req, res, next) => {
     res.status(201).send({
       user: {
         email: user.email,
-        username: user.username,
+        isProfileCreated: user.isProfileCreated
       },
       token: jwt.encode({ id: user._id }, process.env.JWT_SECRET),
     });

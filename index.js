@@ -85,8 +85,6 @@ app.use((err, req, res, next) => {
 
 const expressServer = app.listen(PORT, () => {
   logger.info(`Backend listening on port::::::: ${PORT}`);
-  logger.error('Error log example');
-  logger.warn('Warn log example');
 });
 
 const io = socketio(expressServer);

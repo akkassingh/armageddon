@@ -50,6 +50,7 @@ const UserSchema = new Schema({
     },
   ],
   githubId: Number,
+  faceBookId: Number,
   private: {
     type: Boolean,
     default: false,
@@ -57,7 +58,7 @@ const UserSchema = new Schema({
   confirmed: {
     type: Boolean,
     default: false,
-  },
+  }
 });
 
 UserSchema.pre('save', function (next) {
