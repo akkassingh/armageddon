@@ -11,8 +11,6 @@ const {
 } = require('../utils/controllerUtils');
 const {
   validateEmail,
-  validateFullName,
-  validateUsername,
   validatePassword,
 } = require('../utils/validation');
 
