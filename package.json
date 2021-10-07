@@ -9,15 +9,9 @@
   },
   "scripts": {
     "start": "node index.js",
-    "testing": "ENVIRONMENT= testing node index.js",
-    "production": "ENVIRONMENT= production node index.js",
-    "dev": "nodemon index.js",
-    "eslint": "eslint ./",
-    "eslint-fix": "eslint ./ --fix",
-    "build": "ENVIRONMENT=production webpack",
-    "build:prod": "ENVIRONMENT=production webpack",
-    "build:test": "ENVIRONMENT=testing webpack",
-    "prod": "node dist/api.bundle.js"
+    "server": "nodemon index.js",
+    "dev": "concurrently \"npm run server\" \"npm run client\"",
+    "heroku-postbuild": "npm run server"
   },
   "repository": {
     "type": "git",
