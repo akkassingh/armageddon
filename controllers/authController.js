@@ -4,6 +4,7 @@ const User = require('../models/User');
 const ConfirmationToken = require('../models/ConfirmationToken');
 const bcrypt = require('bcrypt');
 const axios = require('axios');
+const logger = require('../logger/logger');
 
 const {
   sendConfirmationEmail,
@@ -118,6 +119,7 @@ module.exports.loginAuthentication = async (req, res, next) => {
 };
 
 module.exports.register = async (req, res, next) => {
+  logger.info("*** Register method called ***");
   const { email, password } = req.body;
   let user = null;
   let confirmationToken = null;
@@ -144,6 +146,7 @@ module.exports.register = async (req, res, next) => {
       token: jwt.encode({ id: user._id }, process.env.JWT_SECRET),
     });
   } catch (err) {
+    logger.info("error while register new user: ", err);
     next(err);
   }
   sendConfirmationEmail(user.username, user.email, confirmationToken.token);
