@@ -44,7 +44,8 @@
     "socket.io": "^2.4.1",
     "validator": "^12.2.0",
     "winston": "^3.3.3",
-    "winston-daily-rotate-file": "^4.5.5"
+    "winston-daily-rotate-file": "^4.5.5",
+    "morgan": "^1.9.1"
   },
   "devDependencies": {
     "concurrently": "^5.1.0",
