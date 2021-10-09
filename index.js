@@ -29,6 +29,9 @@ app.use(morgan('tiny', { stream: logger.stream }));
 app.set('trust proxy', 1);
 app.use('/api', apiRouter);
 
+app.get('/', function (req, res) {
+  res.send('Serivce is runnung. Go to /api route to access RESTful services.');
+});
 
 if (process.env.NODE_ENV === 'production') {
   app.use(compression());

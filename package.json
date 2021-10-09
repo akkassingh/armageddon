@@ -10,8 +10,7 @@
   "scripts": {
     "server": "nodemon index.js",
     "dev": "npm run server",
-    "start": "node index.js",
-    "heroku-postbuild": "npm run server"
+    "start": "node index.js"
   },
   "repository": {
     "type": "git",
