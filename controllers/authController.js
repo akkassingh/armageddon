@@ -243,42 +243,45 @@ module.exports.facebookRedirect = async (req, res, next) => {
   return res.status(200).send('success');
 };
 
+module.exports.googleRedirect = async (req, res, next) => {
+  return res.status(200).send('success');
+};
+
 module.exports.facebookLoginAuthentication = async (req, res, next) => {
   const { code, state } = req.body;
-  if (!code) {
+  if (!code || !state) {
     return res
       .status(400)
       .send({ error: 'Please provide valid credentials' });
   }
   try{
-    // const { data } = await axios({
-    //   url: 'https://graph.facebook.com/v4.0/oauth/access_token',
-    //   method: 'get',
-    //   params: {
-    //     client_id: process.env.FACEBOOK_CLIENT_ID,
-    //     client_secret: process.env.FACEBOOK_CLIENT_SECRET,
-    //     redirect_uri: `${process.env.HOME_URL}/api/auth/authenticate/facebook/`,
-    //     grant_type: 'authorization_code',
-    //     code,
-    //     state
-    //   },
-    // });
-    // const accessToken = data.access_token;
-    const accessToken = 'EAADvadTkH1ABAEIr3nkH4pYlFPfQdQ2VwVPJ62vLOqPBLDwlYFLFNsedf3VSZBohqq8ahNdvllWeK2SaFrXwNZCTODdoZCjZB8CEXtZCH4ADxZCkPUemnY3NBjjZArhalEZCzZBOCwpH09SHsFao3KNZCA1zIBiavEWZCEK3ZClTeLDgABb9lHZBHbrePFGZC2DbYq5BPBGS9kDouCOpZBKhtZA2ya53gejnoUhEr2BQxNPmaHJcnwZDZD';
+    const { data } = await axios({
+      url: 'https://graph.facebook.com/v4.0/oauth/access_token',
+      method: 'get',
+      params: {
+        client_id: process.env.FACEBOOK_CLIENT_ID,
+        client_secret: process.env.FACEBOOK_CLIENT_SECRET,
+        redirect_uri: `${process.env.HOME_URL}/api/auth/authenticate/facebook/`,
+        grant_type: 'authorization_code',
+        code,
+        state
+      },
+    });
+    const accessToken = data.access_token;
 
-    console.log("accessToken is ",JSON.stringify(accessToken));
-    console.log("*******************************************");
+    logger.info("accessToken is ",JSON.stringify(accessToken));
+    logger.info("*******************************************");
 
     // Retrieve the user's info
     //{ locale: 'en_US', fields: 'name, email' }
     const fbUser = await axios.get('https://graph.facebook.com/v2.5/me?fields=id,name,email,first_name,last_name', {
       headers: { Authorization: `Bearer ${accessToken}` },
     });
-    console.log("fbUser is ", JSON.stringify(fbUser.data))
+    logger.info("fbUser is ", JSON.stringify(fbUser.data))
     const primaryEmail = fbUser.data.email;
     const facebookId = fbUser.data.id;
     const userDocument = await User.findOne({ facebookId });
-    console.log('userDocument is ', JSON.stringify(userDocument));
+    logger.info('userDocument is ', JSON.stringify(userDocument));
     if (userDocument) {
       return res.send({
         user: {
@@ -296,10 +299,10 @@ module.exports.facebookLoginAuthentication = async (req, res, next) => {
       $or: [{ email: primaryEmail }, { username: fbUser.data.first_name+fbUser.data.last_name.toLowerCase() }],
     });
 
-    console.log("existingUser is ", JSON.stringify(existingUser));
+    logger.info("existingUser is ", JSON.stringify(existingUser));
 
     if (existingUser) {
-      console.log("User Exists!!!!");
+      logger.info("User Exists!!!!");
       if (existingUser.email === primaryEmail) {
         return res.status(400).send({
           error:
@@ -311,7 +314,7 @@ module.exports.facebookLoginAuthentication = async (req, res, next) => {
         fbUser.data.login = username;
       }
     }
-    console.log("fbUser is ", JSON.stringify(fbUser.data));
+    logger.info("fbUser is ", JSON.stringify(fbUser.data));
     const user = new User({
       email: primaryEmail,
       fullName: fbUser.data.name,
@@ -329,59 +332,100 @@ module.exports.facebookLoginAuthentication = async (req, res, next) => {
       token: jwt.encode({ id: user._id }, process.env.JWT_SECRET),
     });
   } catch (err) {
-    console.log("err is ", err);
+    logger.err("err is ", err);
     next(err);
   }
 };
 
 module.exports.googleLoginAuthentication = async (req, res, next) => {
-  const { code, state } = req.body;
-  if (!code) {
+  const { code } = req.body;
+  if (!code ) {
     return res
       .status(400)
-      .send({ error: 'Please provide valid credentials' });
+      .send({ error: 'Please provide valid code and state.' });
   }
   try{
     const { data } = await axios({
-      url: 'https://graph.facebook.com/v4.0/oauth/access_token',
+      url: 'https://oauth2.googleapis.com/token',
       method: 'post',
-      data: {
+      params: {
         client_id: process.env.GOOGLE_CLIENT_ID,
         client_secret: process.env.GOOGLE_CLIENT_SECRET,
-        redirect_uri: 'http://127.0.0.1:3000/api/auth/authenticate/facebook/',
+        redirect_uri: `http://localhost:9000/api/auth/authenticate/google`,
         grant_type: 'authorization_code',
-        code,
+        code
       },
     });
-    console.log(data); // { access_token, token_type, expires_in }
-    return data.access_token;
-  } catch (err) {
-    console.log("err is ", err);
-    next(err);
+    const accessToken = data.access_token;
+
+    console.log("accessToken is ", accessToken);
+    
+    // Retrieve the user's info
+    const googleUserResponse = await axios.get('https://www.googleapis.com/oauth2/v2/userinfo', {
+      headers: { Authorization: `Bearer ${accessToken}` },
+    });
+    logger.info("googleUser is ", JSON.stringify(googleUserResponse.data))
+    googleUser = googleUserResponse.data;
+    const primaryEmail = googleUser.email;
+    const googleUserId = googleUser.id;
+    const userDocument = await User.findOne({ googleUserId });
+    logger.info('userDocument is ', JSON.stringify(userDocument));
+    if (userDocument) {
+      return res.send({
+        user: {
+          _id: userDocument._id,
+          email: userDocument.email,
+          username: userDocument.username,
+          avatar: userDocument.avatar,
+          bookmarks: userDocument.bookmarks,
+        },
+        token: jwt.encode({ id: userDocument._id }, process.env.JWT_SECRET),
+      });
+    }
+
+    const existingUser = await User.findOne({
+      $or: [{ email: primaryEmail }, { username: googleUser.given_name+googleUser.family_name.toLowerCase() }],
+    });
+
+    logger.info("existingUser is ", JSON.stringify(existingUser));
+
+    if (existingUser) {
+      logger.info("User Exists!!!!");
+      if (existingUser.email === primaryEmail) {
+        return res.status(400).send({
+          error:
+            'A user with the same email already exists, please change your email.',
+        });
+      }
+      if (existingUser.username === googleUser.given_name+googleUser.family_name.toLowerCase()) {
+        const username = await generateUniqueUsername(googleUser.given_name+googleUser.family_name.toLowerCase());
+        fbUser.data.login = username;
+      }
+    }
+    logger.info("googleUser is ", JSON.stringify(googleUser.data));
+    const user = new User({
+      email: primaryEmail,
+      fullName: googleUser.name,
+      username: googleUser.login ? googleUser.login : googleUser.given_name+googleUser.family_name.toLowerCase(),
+      googleUserId: googleUserId,
+    });
+
+    await user.save();
+    return res.send({
+      user: {
+        email: user.email,
+        username: user.username,
+        bookmarks: user.bookmarks,
+      },
+      token: jwt.encode({ id: user._id }, process.env.JWT_SECRET),
+    });
+  }catch (err) {
+    console.log(err)
+    return res
+    .status(400)
+    .send({ err });
   }
 };
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 module.exports.changePassword = async (req, res, next) => {
   const { oldPassword, newPassword } = req.body;

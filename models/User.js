@@ -50,7 +50,8 @@ const UserSchema = new Schema({
     },
   ],
   githubId: Number,
-  faceBookId: Number,
+  faceBookUserId: Number,
+  googleUserId: Number,
   private: {
     type: Boolean,
     default: false,
