@@ -9,6 +9,7 @@ const ObjectId = require('mongoose').Types.ObjectId;
 const cloudinary = require('cloudinary').v2;
 const fs = require('fs');
 const crypto = require('crypto');
+const logger = require('../logger/logger')
 
 const {
   validateEmail,
@@ -700,3 +701,21 @@ module.exports.retrieveSuggestedUsers = async (req, res, next) => {
     next(err);
   }
 };
+
+module.exports.isUsernameAvaialble = async (req, res, next) => {
+  logger.info('****Checking if given username exists or not***')
+  const username = req.params.username;
+  let existingUser = null;
+  try{
+    existingUser = await User.findOne({username});
+    if (existingUser) {
+      res.status(403).send({"isAvailable":false})
+    }
+    else{
+      res.status(200).send({"isAvailable":true});
+    }
+  }
+  catch (err) {
+    next(err);
+  }
+}
