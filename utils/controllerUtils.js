@@ -105,6 +105,9 @@ module.exports.retrieveComments = async (postId, offset, exclude = 0) => {
  * @param {string} subject The subject of the email
  * @param {html} template Html to include in the email
  */
+
+
+
 module.exports.sendEmail = async (to, subject, template) => {
   const transporter = nodemailer.createTransport({
     host: process.env.SMTP_HOST,
@@ -115,12 +118,19 @@ module.exports.sendEmail = async (to, subject, template) => {
       pass: process.env.EMAIL_PASSWORD,
     },
   });
-  await transporter.sendMail({
-    from: '"Tamely Support" <support@tamely.in>',
-    to,
-    subject,
-    html: template,
-  });
+  try {
+    await transporter.sendMail({
+      from: '"Tamely Support" <support@tamely.in>',
+      to,
+      subject,
+      html: template,
+    });
+  }
+
+  catch (err) {
+    console.log(err);
+  }
+  
 };
 
 /**
@@ -135,7 +145,7 @@ module.exports.sendConfirmationEmail = async (
   email,
   confirmationToken
 ) => {
-  if (process.env.NODE_ENV === 'production') {
+   if (process.env.NODE_ENV === 'production') {
     try {
       const source = fs.readFileSync(
         'templates/confirmationEmail.html',
@@ -153,6 +163,31 @@ module.exports.sendConfirmationEmail = async (
     }
   }
 };
+
+module.exports.sendPasswordResetLink = async (email,current_time) => {
+  let user = null;
+   if (process.env.NODE_ENV === 'production') {
+    try {
+      user = await User.findOne({email})
+      if (!user) throw Error('No user with given email id exists')
+      const source = fs.readFileSync(
+        'templates/passwordResetEmail.html',
+        'utf8'
+      );
+      template = handlebars.compile(source);
+      const html = template({
+        passwordResetUrl: `${process.env.HOME_URL}/api/auth/reset-password-form/${user.id}/`,
+        url: `${process.env.HOME_URL}/api/auth/reset-password-form/${user._id}`,
+      });
+      user.passwordResetTime = current_time;
+      await this.sendEmail(user.email, 'Reset Your Password', html);
+    } catch (err) {
+      console.log(err);
+    }
+  }
+}
+
+
 
 /**
  * Formats a cloudinary thumbnail url with a specified size

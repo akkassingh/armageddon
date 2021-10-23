@@ -9,6 +9,8 @@ const logger = require('../logger/logger');
 const {
   sendConfirmationEmail,
   generateUniqueUsername,
+  sendEmail,
+  sendPasswordResetLink
 } = require('../utils/controllerUtils');
 const {
   validateEmail,
@@ -120,7 +122,7 @@ module.exports.loginAuthentication = async (req, res, next) => {
 
 module.exports.register = async (req, res, next) => {
   logger.info("*** Register method called ***");
-  const { email, password } = req.body;
+  const { email, password, username } = req.body;
   let user = null;
   let confirmationToken = null;
 
@@ -131,7 +133,7 @@ module.exports.register = async (req, res, next) => {
   if (passwordError) return res.status(400).send({ error: passwordError });
 
   try {
-    user = new User({ email, password });
+    user = new User({ email, password, username });
     confirmationToken = new ConfirmationToken({
       user: user._id,
       token: crypto.randomBytes(20).toString('hex'),
@@ -145,11 +147,12 @@ module.exports.register = async (req, res, next) => {
       },
       token: jwt.encode({ id: user._id }, process.env.JWT_SECRET),
     });
+    sendConfirmationEmail(user.username, user.email, confirmationToken.token);
   } catch (err) {
     logger.info("error while register new user: ", err);
     next(err);
   }
-  sendConfirmationEmail(user.username, user.email, confirmationToken.token);
+  // sendConfirmationEmail(user.username, user.email, confirmationToken.token);
 };
 
 module.exports.githubLoginAuthentication = async (req, res, next) => {
@@ -252,7 +255,7 @@ module.exports.facebookLoginAuthentication = async (req, res, next) => {
   if (!code || !state) {
     return res
       .status(400)
-      .send({ error: 'Please provide valid credentials' });
+      .send({error: 'Please provide valid credentials'});
   }
   try{
     const { data } = await axios({
@@ -261,14 +264,15 @@ module.exports.facebookLoginAuthentication = async (req, res, next) => {
       params: {
         client_id: process.env.FACEBOOK_CLIENT_ID,
         client_secret: process.env.FACEBOOK_CLIENT_SECRET,
-        redirect_uri: `${process.env.HOME_URL}/api/auth/authenticate/facebook/`,
+        // redirect_uri: `${process.env.HOME_URL}/api/auth/authenticate/facebook/`,
+        redirect_uri: 'https://www.example.com/',
         grant_type: 'authorization_code',
         code,
         state
       },
     });
     const accessToken = data.access_token;
-
+    console.log(accessToken)
     logger.info("accessToken is ",JSON.stringify(accessToken));
     logger.info("*******************************************");
 
@@ -277,6 +281,8 @@ module.exports.facebookLoginAuthentication = async (req, res, next) => {
     const fbUser = await axios.get('https://graph.facebook.com/v2.5/me?fields=id,name,email,first_name,last_name', {
       headers: { Authorization: `Bearer ${accessToken}` },
     });
+    console.log('fbUser is as below');
+    console.log(fbUser.data);
     logger.info("fbUser is ", JSON.stringify(fbUser.data))
     const primaryEmail = fbUser.data.email;
     const facebookId = fbUser.data.id;
@@ -332,6 +338,7 @@ module.exports.facebookLoginAuthentication = async (req, res, next) => {
       token: jwt.encode({ id: user._id }, process.env.JWT_SECRET),
     });
   } catch (err) {
+    console.log(err)
     logger.err("err is ", err);
     next(err);
   }
@@ -454,3 +461,47 @@ module.exports.changePassword = async (req, res, next) => {
     return next(err);
   }
 };
+
+module.exports.resetPassword = async (req, res, next) => {
+  try{
+    logger.info("***Reset Password called***")
+    const {email} = req.body;
+    if (email){
+      const user = await User.findOne({email});
+      if (!user) return res.status(404).send("No user with given username exist");
+
+      // const token = await ConfirmationToken.findOne({user: user._id});
+      const current_time = Date.now();
+      await sendPasswordResetLink(email,current_time);
+      res.status(201).send(`Password Reset Link Sent to Email ID of user ${user._id}`)
+    }
+  }
+  catch (err){
+    logger.info(err)
+    res.status(500).send({err});
+    console.log(error);
+  }
+}
+
+module.exports.updatePassword = async(req,res,next) => {
+  logger.info("***Update Password called***")
+  const {id,time} = req.params;
+  const {newPassword} = req.body;
+  let user = null;
+  try{
+    user = await User.findById(id);
+    if (!user || (user.passwordRestTime + 900000) < Date.now()) res.status(404).send('The link you are trying to access is either invalid or expired. The link was valid for 15 minutes only.');
+    const newPasswordError = validatePassword(newPassword);
+    if (newPasswordError)
+      return res.status(400).send({ error: newPasswordError });
+      
+      await User.findOneAndUpdate({_id: id}, {password: bcrypt.hashSync(newPassword, 10)});
+      sendEmail(user.email,'Password Changed', 'Your password was changed successfully!')
+      res.status(201).send('Your password was reset successfully!')
+  }
+  catch (err){
+    logger.info(err)
+    res.status(500).send({err});
+    console.log(err)
+  }
+}

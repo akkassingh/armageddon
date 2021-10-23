@@ -6,12 +6,15 @@ const {
   register,
   requireAuth,
   changePassword,
+  updatePassword,
   githubLoginAuthentication,
   facebookLoginAuthentication,
   facebookRedirect,
   googleLoginAuthentication,
-  googleRedirect
+  googleRedirect,
+  resetPassword
 } = require('../controllers/authController');
+const { sendPasswordResetLink } = require('../utils/controllerUtils');
 
 authRouter.post('/login/github', githubLoginAuthentication);
 authRouter.post('/login/facebook', facebookLoginAuthentication);// route needs to be updated to authenticate facebook, as logging in is handled by facebook, we will be validating him here.
@@ -23,5 +26,7 @@ authRouter.post('/login', loginAuthentication);
 authRouter.post('/register', register);
 
 authRouter.put('/password', requireAuth, changePassword);
+authRouter.get('/reset-password-mail', resetPassword);
+authRouter.patch('/reset-password-form/:id/:time', updatePassword);
 
 module.exports = authRouter;

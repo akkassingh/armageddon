@@ -30,7 +30,14 @@ app.set('trust proxy', 1);
 app.use('/api', apiRouter);
 
 app.get('/', function (req, res) {
-  res.send('Serivce is runnung. Go to /api route to access RESTful services.');
+  res.send('Serivce is running. Go to /api route to access RESTful services.');
+});
+
+
+//error Handling part
+app.use(express.static('./public'));
+app.get('*', function (req, res) {
+  res.sendFile(path.join(__dirname, '/public', 'not-found.html'));
 });
 
 if (process.env.NODE_ENV === 'production') {
@@ -38,7 +45,7 @@ if (process.env.NODE_ENV === 'production') {
   app.use(express.static(path.join(__dirname, 'client/build')));
 
   app.get('*', function (req, res) {
-    res.sendFile(path.join(__dirname, 'client/build', 'index.html'));
+    res.sendFile(path.join(__dirname, 'errorHandling', '503.html'));
   });
 }
 
