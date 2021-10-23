@@ -26,7 +26,7 @@ authRouter.post('/login', loginAuthentication);
 authRouter.post('/register', register);
 
 authRouter.put('/password', requireAuth, changePassword);
-authRouter.get('/reset-password-mail', resetPassword);
+authRouter.patch('/reset-password-mail', resetPassword);
 authRouter.patch('/reset-password-form/:id', updatePassword);
 
 module.exports = authRouter;
