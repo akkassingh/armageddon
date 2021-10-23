@@ -23,7 +23,7 @@ const UserSchema = new Schema({
   },
   username: {
     type: String,
-    required: false,
+    required: true, //because of null error
     lowercase: true,
     unique: true,
     minlength: 3,
