@@ -179,7 +179,7 @@ module.exports.sendPasswordResetLink = async (email,current_time) => {
         passwordResetUrl: `${process.env.HOME_URL}/api/auth/reset-password-form/${user.id}/`,
         url: `${process.env.HOME_URL}/api/auth/reset-password-form/${user._id}`,
       });
-      user.passwordResetTime = current_time;
+      await User.findOneAndUpdate({ email: email},{passwordResetTime: current_time});
       await this.sendEmail(user.email, 'Reset Your Password', html);
     } catch (err) {
       console.log(err);
