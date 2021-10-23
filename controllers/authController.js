@@ -264,8 +264,7 @@ module.exports.facebookLoginAuthentication = async (req, res, next) => {
       params: {
         client_id: process.env.FACEBOOK_CLIENT_ID,
         client_secret: process.env.FACEBOOK_CLIENT_SECRET,
-        // redirect_uri: `${process.env.HOME_URL}/api/auth/authenticate/facebook/`,
-        redirect_uri: 'https://www.example.com/',
+        redirect_uri: `${process.env.HOME_URL}/api/auth/authenticate/facebook/`,
         grant_type: 'authorization_code',
         code,
         state
