@@ -15,6 +15,7 @@ const {
   removeAvatar,
   updateProfile,
   retrieveSuggestedUsers,
+  isUsernameAvaialble
 } = require('../controllers/userController');
 const { requireAuth, optionalAuth } = require('../controllers/authController');
 
@@ -41,5 +42,5 @@ userRouter.delete('/avatar', requireAuth, removeAvatar);
 
 userRouter.post('/:postId/bookmark', requireAuth, bookmarkPost);
 userRouter.post('/:userId/follow', requireAuth, followUser);
-
+userRouter.get('/isusernameavailable/:username', isUsernameAvaialble);
 module.exports = userRouter;
