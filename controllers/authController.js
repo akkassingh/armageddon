@@ -5,6 +5,7 @@ const ConfirmationToken = require('../models/ConfirmationToken');
 const bcrypt = require('bcrypt');
 const axios = require('axios');
 const logger = require('../logger/logger');
+const UserName = require('../models/UserName');
 
 const {
   sendConfirmationEmail,
@@ -122,7 +123,7 @@ module.exports.loginAuthentication = async (req, res, next) => {
 
 module.exports.register = async (req, res, next) => {
   logger.info("*** Register method called ***");
-  const { email, password, username } = req.body;
+  const { email, password } = req.body;
   let user = null;
   let confirmationToken = null;
 
@@ -133,17 +134,41 @@ module.exports.register = async (req, res, next) => {
   if (passwordError) return res.status(400).send({ error: passwordError });
 
   try {
-    user = new User({ email, password, username });
+    let username = email.split('@')[0];
+    let userName = null;
+    let num = null;
+    const usernameDocument = await UserName.findOne({username});
+    if (usernameDocument){
+      num = usernameDocument.current_num;
+      console.log('this is the value of num now', num);
+      const prefix = num.toString();
+      userName = username + prefix;
+    }
+    else {
+      userName = username + '1';
+    }
+    console.log(email , username);
+    user = new User({ email, password, username:userName });
     confirmationToken = new ConfirmationToken({
       user: user._id,
       token: crypto.randomBytes(20).toString('hex'),
     });
     await user.save();
+    if (usernameDocument){
+      await UserName.findOneAndUpdate({username}, {current_num: num+1})
+      console.log('this is getting updated in the usrname db')
+      console.log(username, num+1);
+    }
+    else{
+      await UserName.create({username, current_num: 2})
+      console.log('this is getting saved newly in the usrname db')
+      console.log(username, 2);
+    }
     await confirmationToken.save();
     res.status(201).send({
       user: {
         email: user.email,
-        isProfileCreated: user.isProfileCreated
+        username: user.username
       },
       token: jwt.encode({ id: user._id }, process.env.JWT_SECRET),
     });
