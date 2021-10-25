@@ -482,7 +482,7 @@ module.exports.resetPassword = async (req, res, next) => {
       // const token = await ConfirmationToken.findOne({user: user._id});
       const current_time = Date.now();
       await sendPasswordResetLink(email,current_time);
-      res.status(201).send(`Password Reset Link Sent to Email ID of user ${user._id}`)
+      res.status(201).json({'message':`Password Reset Link Sent to Email ID of user ${user._id}`, 'result':'success'})
     }
   }
   catch (err){

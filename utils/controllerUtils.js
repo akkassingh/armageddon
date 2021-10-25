@@ -145,7 +145,7 @@ module.exports.sendConfirmationEmail = async (
   email,
   confirmationToken
 ) => {
-   if (process.env.NODE_ENV === 'production') {
+  //  if (process.env.NODE_ENV === 'production') {
     try {
       const source = fs.readFileSync(
         'templates/confirmationEmail.html',
@@ -161,7 +161,7 @@ module.exports.sendConfirmationEmail = async (
     } catch (err) {
       console.log(err);
     }
-  }
+  // }
 };
 
 module.exports.sendPasswordResetLink = async (email,current_time) => {
