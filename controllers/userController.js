@@ -704,15 +704,16 @@ module.exports.retrieveSuggestedUsers = async (req, res, next) => {
 
 module.exports.isUsernameAvaialble = async (req, res, next) => {
   logger.info('****Checking if given username exists or not***')
+  const user = res.locals.user;
   const username = req.params.username;
   let existingUser = null;
   try{
     existingUser = await User.findOne({username});
-    if (existingUser) {
-      res.status(403).send({"isAvailable":false})
+    if (!existingUser || user.username === username) {
+      res.status(200).send({"isAvailable":true});  
     }
     else{
-      res.status(200).send({"isAvailable":true});
+      res.status(403).send({"isAvailable":false})
     }
   }
   catch (err) {
