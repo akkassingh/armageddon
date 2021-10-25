@@ -145,7 +145,7 @@ module.exports.sendConfirmationEmail = async (
   email,
   confirmationToken
 ) => {
-   if (process.env.NODE_ENV === 'production') {
+  //  if (process.env.NODE_ENV === 'production') {
     try {
       const source = fs.readFileSync(
         'templates/confirmationEmail.html',
@@ -161,12 +161,12 @@ module.exports.sendConfirmationEmail = async (
     } catch (err) {
       console.log(err);
     }
-  }
+  // }
 };
 
 module.exports.sendPasswordResetLink = async (email,current_time) => {
   let user = null;
-    if (process.env.NODE_ENV === 'production') {
+    // if (process.env.NODE_ENV === 'production') {
     try {
       user = await User.findOne({email})
       if (!user) throw Error('No user with given email id exists')
@@ -184,7 +184,7 @@ module.exports.sendPasswordResetLink = async (email,current_time) => {
     } catch (err) {
       console.log(err);
     }
-  }
+  // }
 }
 
 
