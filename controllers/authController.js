@@ -482,7 +482,7 @@ module.exports.resetPassword = async (req, res, next) => {
       // const token = await ConfirmationToken.findOne({user: user._id});
       const current_time = Date.now();
       await sendPasswordResetLink(email,current_time);
-      res.status(201).send(`Password Reset Link Sent to Email ID of user ${user._id}`)
+      res.status(201).json({'message':`Password Reset Link Sent to Email ID of user ${user._id}`, 'result':'success'})
     }
   }
   catch (err){
@@ -506,7 +506,7 @@ module.exports.updatePassword = async(req,res,next) => {
       
       await User.findOneAndUpdate({_id: id}, {password: bcrypt.hashSync(newPassword, 10)});
       sendEmail(user.email,'Password Changed', 'Your password was changed successfully!')
-      res.status(201).send('Your password was reset successfully!')
+      res.status(201).json({'message':'Your password was reset successfully!','result':'success'})
   }
   catch (err){
     logger.info(err)
