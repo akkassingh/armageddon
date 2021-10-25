@@ -42,5 +42,5 @@ userRouter.delete('/avatar', requireAuth, removeAvatar);
 
 userRouter.post('/:postId/bookmark', requireAuth, bookmarkPost);
 userRouter.post('/:userId/follow', requireAuth, followUser);
-userRouter.get('/isusernameavailable/:username', isUsernameAvaialble);
+userRouter.get('/isusernameavailable/:username',requireAuth, isUsernameAvaialble);
 module.exports = userRouter;
