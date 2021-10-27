@@ -12,7 +12,8 @@ const {
   facebookRedirect,
   googleLoginAuthentication,
   googleRedirect,
-  resetPassword
+  resetPasswordOTP,
+  verifyResetPasswordOTP
 } = require('../controllers/authController');
 const { sendPasswordResetLink } = require('../utils/controllerUtils');
 
@@ -26,7 +27,8 @@ authRouter.post('/login', loginAuthentication);
 authRouter.post('/register', register);
 
 authRouter.put('/password', requireAuth, changePassword);
-authRouter.patch('/reset-password-mail', resetPassword);
-authRouter.patch('/reset-password-form/:id', updatePassword);
+authRouter.patch('/reset-password-mail', resetPasswordOTP);
+authRouter.put('/verify-reset-otp',requireAuth,verifyResetPasswordOTP)
+authRouter.patch('/update-password/', requireAuth, updatePassword);
 
 module.exports = authRouter;

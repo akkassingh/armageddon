@@ -10,12 +10,15 @@ const {
   sendConfirmationEmail,
   generateUniqueUsername,
   sendEmail,
-  sendPasswordResetLink
+  sendPasswordResetOTP,
+  sendOTPEmail,
+  hashPassword
 } = require('../utils/controllerUtils');
 const {
   validateEmail,
   validatePassword,
 } = require('../utils/validation');
+
 
 module.exports.verifyJwt = (token) => {
   return new Promise(async (resolve, reject) => {
@@ -136,10 +139,14 @@ module.exports.register = async (req, res, next) => {
     let username = email.split('@')[0];
     username = await generateUniqueUsername(username);
     logger.info('Unique username is', username);
+    const otp = Math.floor(Math.random() * (999999 - 100000) ) + 100000;
+    const hashedotp = await hashPassword(otp.toString(),10);
     user = new User({ email, password, username });
     confirmationToken = new ConfirmationToken({
       user: user._id,
-      token: crypto.randomBytes(20).toString('hex'),
+      // token: crypto.randomBytes(20).toString('hex'),
+      token: hashedotp,
+      timestamp: Date.now(),
     });
     await user.save();
     await confirmationToken.save();
@@ -151,7 +158,8 @@ module.exports.register = async (req, res, next) => {
       },
       token: jwt.encode({ id: user._id }, process.env.JWT_SECRET),
     });
-    sendConfirmationEmail(user.username, user.email, confirmationToken.token);
+    // sendConfirmationEmail(user.username, user.email, confirmationToken.token);
+    await sendOTPEmail(username, email, otp);
   } catch (err) {
     logger.info("error while register new user: ", err);
     next(err);
@@ -471,18 +479,19 @@ module.exports.changePassword = async (req, res, next) => {
   }
 };
 
-module.exports.resetPassword = async (req, res, next) => {
+module.exports.resetPasswordOTP = async (req, res, next) => {
   try{
     logger.info("***Reset Password called***")
     const {email} = req.body;
     if (email){
       const user = await User.findOne({email});
       if (!user) return res.status(404).send("No user with given username exist");
-
+      const token = jwt.encode({ id: user._id }, process.env.JWT_SECRET);
+      const otp = Math.floor(Math.random() * (999999 - 100000) ) + 100000;
       // const token = await ConfirmationToken.findOne({user: user._id});
       const current_time = Date.now();
-      await sendPasswordResetLink(email,current_time);
-      res.status(201).json({'message':`Password Reset Link Sent to Email ID of user ${user._id}`, 'result':'success'})
+      await sendPasswordResetOTP(email,current_time,otp.toString());
+      res.status(201).json({'message':`Password Reset OTP Sent to Email ID of user ${user._id}`, 'result':'success', 'token':token})
     }
   }
   catch (err){
@@ -492,19 +501,46 @@ module.exports.resetPassword = async (req, res, next) => {
   }
 }
 
+module.exports.verifyResetPasswordOTP = async (req, res, next) => {
+  const {otp} = req.body;
+  const user = res.locals.user;
+
+  try {
+    const confirmationToken = await ConfirmationToken.findOne({user: user._id});
+    console.log(confirmationToken);
+    if (!confirmationToken || Date.now() > confirmationToken.timestamp + 900000) {
+      return res
+        .status(404)
+        .send({ error: 'Invalid or expired confirmation attempt' });
+    }
+    const token = confirmationToken.resettoken;
+    const compareotp = await bcrypt.compare(otp,token);
+    if (!compareotp){
+      return res.status(401).send({
+        error:
+        'The credentials you provided are incorrect, please try again.',
+        });
+    }
+      await ConfirmationToken.deleteOne({ resettoken: token, user: user._id });
+      return res.status(200).send({message:'verification successful'});    
+  } 
+  catch (err) {
+    next(err);
+  }
+};
+
 module.exports.updatePassword = async(req,res,next) => {
   logger.info("***Update Password called***")
-  const {id,time} = req.params;
-  const {newPassword} = req.body;
-  let user = null;
+  const user = res.locals.user;
+  const {newPassword,otp} = req.body;
+  const hashednewPassword = await hashPassword(newPassword.toString(),10)
   try{
-    user = await User.findById(id);
-    if (!user || (user.passwordRestTime + 900000) < Date.now()) res.status(404).send('The link you are trying to access is either invalid or expired. The link was valid for 15 minutes only.');
+    if (user.passwordRestTime + 900000 < Date.now()) return res.status(404).json({error: 'OTP has been expired. Please try again!'});
     const newPasswordError = validatePassword(newPassword);
     if (newPasswordError)
       return res.status(400).send({ error: newPasswordError });
       
-      await User.findOneAndUpdate({_id: id}, {password: bcrypt.hashSync(newPassword, 10)});
+      await User.updateOne({_id: user._id}, {password: hashednewPassword});
       sendEmail(user.email,'Password Changed', 'Your password was changed successfully!')
       res.status(201).json({'message':'Your password was reset successfully!','result':'success'})
   }
