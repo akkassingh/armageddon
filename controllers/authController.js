@@ -72,8 +72,33 @@ module.exports.loginAuthentication = async (req, res, next) => {
   if (authorization) {
     try {
       const user = await this.verifyJwt(authorization);
+      let isNewUser = true;
+      if (user.avatar) {
+        isNewUser = false;
+      }
+      if (!user.confirmed){
+        const otp = Math.floor(Math.random() * (999999 - 100000) ) + 100000;
+        const hashotp = await hashPassword(otp.toString(),10);
+        await sendOTPEmail(user.username, user.email, otp);
+        const confirmationToken = await ConfirmationToken.findOne({user: user._id});
+        if (confirmationToken){
+          await ConfirmationToken.findOneAndUpdate({user: user._id},{
+            token: hashotp,
+            timestamp: Date.now(),
+          })
+        }
+        else{
+          await ConfirmationToken.create({user: user._id,token: hashotp,
+            timestamp: Date.now()});
+        }
+      }
       return res.send({
-        user,
+        user: {
+          "email" : user.email,
+          "username" : user.username,
+          "confirmed": user.confirmed,
+        },
+        isNewUser,
         token: authorization,
       });
     } catch (err) {
@@ -96,28 +121,43 @@ module.exports.loginAuthentication = async (req, res, next) => {
         error: 'The credentials you provided are incorrect, please try again.',
       });
     }
-
-    bcrypt.compare(password, user.password, (err, result) => {
-      if (err) {
-        return next(err);
+    const comparepwd = await bcrypt.compare(password, user.password);
+    if (!comparepwd){
+      return res.status(401).send({
+        error:
+          'The credentials you provided are incorrect, please try again.',
+      });
+    }
+    let isNewUser = true;
+      if (user.avatar) {
+        isNewUser = false;
       }
-      if (!result) {
-        return res.status(401).send({
-          error:
-            'The credentials you provided are incorrect, please try again.',
-        });
+      if (!user.confirmed){
+        const otp = Math.floor(Math.random() * (999999 - 100000) ) + 100000;
+        const hashotp = await hashPassword(otp.toString(),10);
+        await sendOTPEmail(user.username, user.email, otp);
+        const confirmationToken = await ConfirmationToken.findOne({user: user._id});
+        if (confirmationToken){
+          await ConfirmationToken.findOneAndUpdate({user: user._id},{
+            token: hashotp,
+            timestamp: Date.now(),
+          })
+        }
+        else{
+          await ConfirmationToken.create({user: user._id,token: hashotp,
+            timestamp: Date.now()});
+        }
       }
-
-      res.send({
+      
+      return res.send({
         user: {
-          _id: user._id,
-          email: user.email,
-          username: user.username,
-          avatar: user.avatar,
+          "email" : user.email,
+          "username" : user.username,
+          "confirmed": user.confirmed,
         },
+        isNewUser,
         token: jwt.encode({ id: user._id }, process.env.JWT_SECRET),
       });
-    });
   } catch (err) {
     next(err);
   }
@@ -154,7 +194,6 @@ module.exports.register = async (req, res, next) => {
       user: {
         email: user.email,
         username: user.username,
-        isNewUser: true
       },
       token: jwt.encode({ id: user._id }, process.env.JWT_SECRET),
     });
@@ -301,6 +340,10 @@ module.exports.facebookLoginAuthentication = async (req, res, next) => {
     const facebookId = fbUser.data.id;
     const userDocument = await User.findOne({ facebookId });
     logger.info('userDocument is ', JSON.stringify(userDocument));
+    let isNewUser = true;
+    if (user.avatar) {
+      isNewUser = false;
+    }
     if (userDocument) {
       return res.send({
         user: {
@@ -309,36 +352,51 @@ module.exports.facebookLoginAuthentication = async (req, res, next) => {
           username: userDocument.username,
           avatar: userDocument.avatar,
           bookmarks: userDocument.bookmarks,
-          isNewUser: false,
         },
+        isNewUser,
         token: jwt.encode({ id: userDocument._id }, process.env.JWT_SECRET),
       });
     }
 
-    const existingUser = await User.findOne({
-      $or: [{ email: primaryEmail }, { username: fbUser.data.first_name+fbUser.data.last_name.toLowerCase() }],
-    });
+    const existingUser = await User.findOne({email: primaryEmail});
+    // const existingUser = await User.findOne({
+    //   $or: [{ email: primaryEmail }, { username: fbUser.data.first_name+fbUser.data.last_name.toLowerCase() }],
+    // });
 
     logger.info("existingUser is ", JSON.stringify(existingUser));
 
     if (existingUser) {
+      let isNewUser = true;
+      if (existingUser.avatar) {
+        isNewUser = false;
+      }
       logger.info("User Exists!!!!");
       if (existingUser.email === primaryEmail) {
-        return res.status(400).send({
-          error:
-            'A user with the same email already exists, please change your email.',
-        });
+        // return res.status(400).send({
+        //   error:
+        //     'A user with the same email already exists, please change your email.',
+        // });
+        return res.send(200).json({
+          user: {
+            email: primaryEmail,
+            username: existingUser.username,
+          },
+          isNewUser,
+          token: jwt.encode({ id: existingUser._id }, process.env.JWT_SECRET),
+        })
       }
-      if (existingUser.username === fbUser.data.first_name+fbUser.data.last_name.toLowerCase()) {
-        const username = await generateUniqueUsername(fbUser.data.first_name+fbUser.data.last_name.toLowerCase());
-        fbUser.data.login = username;
-      }
+      // if (existingUser.username === fbUser.data.first_name+fbUser.data.last_name.toLowerCase()) {
+      //   const username = await generateUniqueUsername(fbUser.data.first_name+fbUser.data.last_name.toLowerCase());
+      //   fbUser.data.login = username;
+      // }
     }
     logger.info("fbUser is ", JSON.stringify(fbUser.data));
     const user = new User({
       email: primaryEmail,
       fullName: fbUser.data.name,
-      username: fbUser.data.login ? fbUser.data.login : fbUser.data.first_name+fbUser.data.last_name.toLowerCase(),
+      // username: fbUser.data.login ? fbUser.data.login : fbUser.data.first_name+fbUser.data.last_name.toLowerCase(),
+      username: await generateUniqueUsername(fbUser.data.first_name+fbUser.data.last_name.toLowerCase()),
+      confirmed: true,
       facebookId: fbUser.data.id,
     });
 
@@ -348,8 +406,8 @@ module.exports.facebookLoginAuthentication = async (req, res, next) => {
         email: user.email,
         username: user.username,
         bookmarks: user.bookmarks,
-        isNewUser: true,
       },
+      isNewUser: true,
       token: jwt.encode({ id: user._id }, process.env.JWT_SECRET),
     });
   } catch (err) {
@@ -393,6 +451,8 @@ module.exports.googleLoginAuthentication = async (req, res, next) => {
     const userDocument = await User.findOne({ googleUserId });
     logger.info('userDocument is ', JSON.stringify(userDocument));
     if (userDocument) {
+      let isNewUser = true;
+      if (userDocument.avatar) {isNewUser = false;}
       return res.send({
         user: {
           _id: userDocument._id,
@@ -400,37 +460,51 @@ module.exports.googleLoginAuthentication = async (req, res, next) => {
           username: userDocument.username,
           avatar: userDocument.avatar,
           bookmarks: userDocument.bookmarks,
-          isNewUser: false,
         },
+        isNewUser,
         token: jwt.encode({ id: userDocument._id }, process.env.JWT_SECRET),
       });
     }
 
-    const existingUser = await User.findOne({
-      $or: [{ email: primaryEmail }, { username: googleUser.given_name+googleUser.family_name.toLowerCase() }],
-    });
+    const existingUser = await User.findOne({email:primaryEmail});
+
+    // const existingUser = await User.findOne({
+    //   $or: [{ email: primaryEmail }, { username: googleUser.given_name+googleUser.family_name.toLowerCase() }],
+    // });
 
     logger.info("existingUser is ", JSON.stringify(existingUser));
 
     if (existingUser) {
       logger.info("User Exists!!!!");
       if (existingUser.email === primaryEmail) {
-        return res.status(400).send({
-          error:
-            'A user with the same email already exists, please change your email.',
-        });
+        // return res.status(400).send({
+        //   error:
+        //     'A user with the same email already exists, please change your email.',
+        // });
+        let isNewUser = true;
+        if (existingUser.avatar) {isNewUser = false;}
+        return res.send(200).json({
+          user: {
+            email: primaryEmail,
+            username: existingUser.username,
+          },
+          isNewUser,
+          token: jwt.encode({ id: existingUser._id }, process.env.JWT_SECRET),
+        })
       }
-      if (existingUser.username === googleUser.given_name+googleUser.family_name.toLowerCase()) {
-        const username = await generateUniqueUsername(googleUser.given_name+googleUser.family_name.toLowerCase());
-        fbUser.data.login = username;
-      }
+      // if (existingUser.username === googleUser.given_name+googleUser.family_name.toLowerCase()) {
+      //   const username = await generateUniqueUsername(googleUser.given_name+googleUser.family_name.toLowerCase());
+      //   fbUser.data.login = username;
+      // }
     }
     logger.info("googleUser is ", JSON.stringify(googleUser.data));
     const user = new User({
       email: primaryEmail,
       fullName: googleUser.name,
-      username: googleUser.login ? googleUser.login : googleUser.given_name+googleUser.family_name.toLowerCase(),
+      // username: googleUser.login ? googleUser.login : await generateUniqueUsername(googleUser.given_name+googleUser.family_name.toLowerCase());,
+      username: await generateUniqueUsername(googleUser.given_name+googleUser.family_name.toLowerCase()),
       googleUserId: googleUserId,
+      confirmed: true,
     });
 
     await user.save();
@@ -439,8 +513,8 @@ module.exports.googleLoginAuthentication = async (req, res, next) => {
         email: user.email,
         username: user.username,
         bookmarks: user.bookmarks,
-        isNewUser: true,
       },
+      isNewUser: true,
       token: jwt.encode({ id: user._id }, process.env.JWT_SECRET),
     });
   }catch (err) {

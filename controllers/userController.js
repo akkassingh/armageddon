@@ -472,12 +472,12 @@ module.exports.searchUsers = async (req, res, next) => {
 };
 
 module.exports.confirmUser = async (req, res, next) => {
+  logger.info('***CONFIRM USER CALLED TO VERIFY OTP***');
   const { otp } = req.body;
   const user = res.locals.user;
 
   try {
     const confirmationToken = await ConfirmationToken.findOne({user: user._id});
-    console.log(confirmationToken);
     if (!confirmationToken || Date.now() > confirmationToken.timestamp + 900000) {
       return res
         .status(404)
