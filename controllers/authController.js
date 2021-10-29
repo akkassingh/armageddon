@@ -624,3 +624,44 @@ module.exports.updatePassword = async(req,res,next) => {
     console.log(err)
   }
 }
+
+module.exports.resendOTP = async (req, res, next) => {
+  const {num} = req.params;
+  const user = res.locals.user;
+  const otp = Math.floor(Math.random() * (999999 - 100000) ) + 100000;
+  const hashotp = await hashPassword(otp.toString(),10);
+  //num will tell us the case for which we are using the resend otp
+  // 1 - register
+  // 2 - login
+  // 3 - Password Reset
+  try {
+    if (num === '1' || num === '2') {
+      // register and login can be handeled together
+      const confirmationToken = await ConfirmationToken.findOne({user: user._id});
+      if (confirmationToken){
+        await ConfirmationToken.findOneAndUpdate({user: user._id},{
+          token: hashotp,
+          timestamp: Date.now(),
+        });
+      }
+      else{
+        await ConfirmationToken.create({
+          user: user._id,
+          token: hashotp,
+          timestamp: Date.now(),
+        });
+      }
+      await sendOTPEmail(user.username,user.email,otp);
+      res.status(201).send({message: 'OTP has been sent again!'})
+    }
+    else{
+      await sendPasswordResetOTP(user.email, Date.now(), otp);
+      res.status(201).send({message: 'OTP has been sent again!'})
+    }
+  }
+  catch (err) {
+    console.log(err)
+    logger.err("err is ", err);
+    next(err);
+  }
+}

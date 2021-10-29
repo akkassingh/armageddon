@@ -220,7 +220,7 @@ module.exports.sendPasswordResetOTP = async (email,current_time,otp) => {
         confirmationToken.save();
       }
       else{
-        await confirmationToken.findOneAndUpdate({user: user._id},{
+        await ConfirmationToken.findOneAndUpdate({user: user._id},{
           resettoken: hashedotp,
           timestampreset: current_time,
         });
