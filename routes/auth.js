@@ -31,6 +31,6 @@ authRouter.put('/password', requireAuth, changePassword);
 authRouter.patch('/reset-password-mail', resetPasswordOTP);
 authRouter.put('/verify-reset-otp',requireAuth,verifyResetPasswordOTP)
 authRouter.patch('/update-password/', requireAuth, updatePassword);
-authRouter.post('/resendotp/:num', requireAuth, resendOTP)
+authRouter.post('/resendotp/:path', requireAuth, resendOTP)
 
 module.exports = authRouter;

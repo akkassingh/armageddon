@@ -98,7 +98,7 @@ module.exports.loginAuthentication = async (req, res, next) => {
             "confirmed": user.confirmed,
           },
           isNewUser,
-          message: 'OTP has been sent successfully!'
+          message: 'OTP has been sent successfully!',
           token: authorization,
         });
       }
@@ -207,7 +207,7 @@ module.exports.register = async (req, res, next) => {
         confirmed: false,
       },
       isNewUser: true,
-      message: 'OTP has been sent successfully!'
+      message: 'OTP has been sent successfully!',
       token: jwt.encode({ id: user._id }, process.env.JWT_SECRET),
     });
     // sendConfirmationEmail(user.username, user.email, confirmationToken.token);
@@ -639,16 +639,14 @@ module.exports.updatePassword = async(req,res,next) => {
 }
 
 module.exports.resendOTP = async (req, res, next) => {
-  const {num} = req.params;
+  const {path} = req.params; 
+  // 2 cases as of now, login/register will be one and forget pwd will be another one
+  // for login/register we will pass 'login' in params and for forget pwd, we will pass 'forgetpwd' in params
   const user = res.locals.user;
   const otp = Math.floor(Math.random() * (999999 - 100000) ) + 100000;
   const hashotp = await hashPassword(otp.toString(),10);
-  //num will tell us the case for which we are using the resend otp
-  // 1 - register
-  // 2 - login
-  // 3 - Password Reset
   try {
-    if (num === '1' || num === '2') {
+    if (path === 'login') {
       // register and login can be handeled together
       const confirmationToken = await ConfirmationToken.findOne({user: user._id});
       if (confirmationToken){
@@ -667,7 +665,7 @@ module.exports.resendOTP = async (req, res, next) => {
       await sendOTPEmail(user.username,user.email,otp);
       res.status(201).send({message: 'OTP has been sent again!'})
     }
-    else{
+    else if (path === 'forgetpwd'){
       await sendPasswordResetOTP(user.email, Date.now(), otp);
       res.status(201).send({message: 'OTP has been sent again!'})
     }
