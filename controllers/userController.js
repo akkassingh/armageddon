@@ -9,7 +9,8 @@ const ObjectId = require('mongoose').Types.ObjectId;
 const cloudinary = require('cloudinary').v2;
 const fs = require('fs');
 const crypto = require('crypto');
-const logger = require('../logger/logger')
+const logger = require('../logger/logger');
+const bcrypt = require('bcrypt');
 
 const {
   validateEmail,
@@ -471,30 +472,37 @@ module.exports.searchUsers = async (req, res, next) => {
 };
 
 module.exports.confirmUser = async (req, res, next) => {
-  const { token } = req.body;
+  logger.info('***CONFIRM USER CALLED TO VERIFY OTP***');
+  const { otp } = req.body;
   const user = res.locals.user;
 
   try {
-    const confirmationToken = await ConfirmationToken.findOne({
-      token,
-      user: user._id,
-    });
-    if (!confirmationToken) {
+    const confirmationToken = await ConfirmationToken.findOne({user: user._id});
+    if (!confirmationToken || Date.now() > confirmationToken.timestamp + 900000) {
       return res
         .status(404)
         .send({ error: 'Invalid or expired confirmation link.' });
     }
-    await ConfirmationToken.deleteOne({ token, user: user._id });
-    await User.updateOne({ _id: user._id }, { confirmed: true });
-    return res.send();
-  } catch (err) {
+    const token = confirmationToken.token
+    const compareotp = await bcrypt.compare(otp,token);
+    if (!compareotp){
+      return res.status(401).send({
+        error:
+        'The credentials you provided are incorrect, please try again.',
+        });
+    }
+      await ConfirmationToken.deleteOne({ token, user: user._id });
+      await User.updateOne({ _id: user._id }, { confirmed: true });
+      return res.status(200).send({message:'verification successful'});    
+  } 
+  catch (err) {
     next(err);
   }
 };
 
 module.exports.changeAvatar = async (req, res, next) => {
   const user = res.locals.user;
-  
+
   if (!req.file) {
     return res
       .status(400)
