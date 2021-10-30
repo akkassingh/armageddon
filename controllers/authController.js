@@ -194,7 +194,9 @@ module.exports.register = async (req, res, next) => {
       user: {
         email: user.email,
         username: user.username,
+        confirmed: false,
       },
+      isNewUser: true,
       token: jwt.encode({ id: user._id }, process.env.JWT_SECRET),
     });
     // sendConfirmationEmail(user.username, user.email, confirmationToken.token);
