@@ -91,6 +91,16 @@ module.exports.loginAuthentication = async (req, res, next) => {
           await ConfirmationToken.create({user: user._id,token: hashotp,
             timestamp: Date.now()});
         }
+        return res.send({
+          user: {
+            "email" : user.email,
+            "username" : user.username,
+            "confirmed": user.confirmed,
+          },
+          isNewUser,
+          message: 'OTP has been sent successfully!'
+          token: authorization,
+        });
       }
       return res.send({
         user: {
