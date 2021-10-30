@@ -197,6 +197,7 @@ module.exports.register = async (req, res, next) => {
         confirmed: false,
       },
       isNewUser: true,
+      message: 'OTP has been sent successfully!'
       token: jwt.encode({ id: user._id }, process.env.JWT_SECRET),
     });
     // sendConfirmationEmail(user.username, user.email, confirmationToken.token);
