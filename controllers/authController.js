@@ -560,7 +560,7 @@ module.exports.changePassword = async (req, res, next) => {
 
     userDocument.password = newPassword;
     await userDocument.save();
-    return res.send();
+    return res.send({message: "Password has been changed successfully!"});
   } catch (err) {
     return next(err);
   }
@@ -572,7 +572,7 @@ module.exports.resetPasswordOTP = async (req, res, next) => {
     const {email} = req.body;
     if (email){
       const user = await User.findOne({email});
-      if (!user) return res.status(404).send("No user with given username exist");
+      if (!user) return res.status(404).send({error: "No user with given username exist"});
       const token = jwt.encode({ id: user._id }, process.env.JWT_SECRET);
       const otp = Math.floor(Math.random() * (999999 - 100000) ) + 100000;
       // const token = await ConfirmationToken.findOne({user: user._id});
