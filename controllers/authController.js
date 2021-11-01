@@ -26,7 +26,7 @@ module.exports.verifyJwt = (token) => {
       const id = jwt.decode(token, process.env.JWT_SECRET).id;
       const user = await User.findOne(
         { _id: id },
-        'email username avatar bookmarks bio fullName confirmed website'
+        'email username avatar bookmarks bio fullName confirmed website pets'
       );
       if (user) {
         return resolve(user);
