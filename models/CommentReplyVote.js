@@ -6,6 +6,7 @@ const CommentReplyVoteSchema = new Schema({
     type: Schema.ObjectId,
     ref: 'CommentReply'
   },
+  //TODO : change the format to {commentid: userid}
   votes: [
     {
       author: {

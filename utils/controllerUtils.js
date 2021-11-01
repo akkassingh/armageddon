@@ -7,9 +7,20 @@ const handlebars = require('handlebars');
 const linkify = require('linkifyjs');
 require('linkifyjs/plugins/mention')(linkify);
 const fs = require('fs');
+const ConfirmationToken = require('../models/ConfirmationToken')
+const bcrypt = require('bcrypt');
 
 const socketHandler = require('../handlers/socketHandler');
 
+module.exports.hashPassword = async(password,saltRounds) => {
+  try{
+    const hashedPassword = await bcrypt.hash(password, saltRounds);
+    return hashedPassword;
+  }
+  catch (err) {
+    return null;
+  }
+}
 /**
  * Retrieves a post's comments with a specified offset
  * @function retrieveComments
@@ -145,7 +156,7 @@ module.exports.sendConfirmationEmail = async (
   email,
   confirmationToken
 ) => {
-   if (process.env.NODE_ENV === 'production') {
+  //  if (process.env.NODE_ENV === 'production') {
     try {
       const source = fs.readFileSync(
         'templates/confirmationEmail.html',
@@ -161,12 +172,31 @@ module.exports.sendConfirmationEmail = async (
     } catch (err) {
       console.log(err);
     }
-  }
+  // }
 };
 
-module.exports.sendPasswordResetLink = async (email,current_time) => {
+module.exports.sendOTPEmail = async(username,email,otp) => {
+  try {
+    const source = fs.readFileSync(
+      'templates/verifyEmailOtp.html',
+      'utf8'
+    );
+    template = handlebars.compile(source);
+    const html = template({
+      username: username,
+      url: process.env.HOME_URL,
+      otp: otp,
+    });
+    await this.sendEmail(email, 'Confirm your Tamely account', html);
+  }
+  catch (err) {
+    throw new Error(err.message);
+  }
+}
+
+module.exports.sendPasswordResetOTP = async (email,current_time,otp) => {
   let user = null;
-   if (process.env.NODE_ENV === 'production') {
+    // if (process.env.NODE_ENV === 'production') {
     try {
       user = await User.findOne({email})
       if (!user) throw Error('No user with given email id exists')
@@ -176,15 +206,31 @@ module.exports.sendPasswordResetLink = async (email,current_time) => {
       );
       template = handlebars.compile(source);
       const html = template({
-        passwordResetUrl: `${process.env.HOME_URL}/api/auth/reset-password-form/${user.id}/`,
-        url: `${process.env.HOME_URL}/api/auth/reset-password-form/${user._id}`,
+        username: user.username,
+        otp: otp,
       });
-      await User.findOneAndUpdate({ email: email},{passwordResetTime: current_time});
-      await this.sendEmail(user.email, 'Reset Your Password', html);
+      const hashedotp = await this.hashPassword(otp,10);
+      const confirmationTokenDocument = await ConfirmationToken.findOne({user: user._id});
+      if (!confirmationTokenDocument){
+        const confirmationToken = new ConfirmationToken({
+          user: user._id,
+          resettoken: hashedotp,
+          timestampreset: current_time,
+        });
+        confirmationToken.save();
+      }
+      else{
+        await ConfirmationToken.findOneAndUpdate({user: user._id},{
+          resettoken: hashedotp,
+          timestampreset: current_time,
+        });
+      }
+      // await User.findOneAndUpdate({ email: email},{passwordResetTime: current_time});
+      await this.sendEmail(user.email, "Reset Your Tamely Account Password", html);
     } catch (err) {
       console.log(err);
     }
-  }
+  // }
 }
 
 

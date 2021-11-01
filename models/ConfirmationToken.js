@@ -7,6 +7,9 @@ const ConfirmationTokenSchema = new Schema({
     ref: 'User',
   },
   token: String,
+  timestamp: Number,
+  timestampreset: Number,
+  resettoken: String,
 });
 
 const ConfirmationTokenModel = mongoose.model(

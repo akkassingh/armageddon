@@ -1,4 +1,5 @@
 const User = require('../models/User');
+const Animal = require('../models/Animal');
 const Post = require('../models/Post');
 const Followers = require('../models/Followers');
 const Following = require('../models/Following');
@@ -9,7 +10,8 @@ const ObjectId = require('mongoose').Types.ObjectId;
 const cloudinary = require('cloudinary').v2;
 const fs = require('fs');
 const crypto = require('crypto');
-const logger = require('../logger/logger')
+const logger = require('../logger/logger');
+const bcrypt = require('bcrypt');
 
 const {
   validateEmail,
@@ -471,30 +473,37 @@ module.exports.searchUsers = async (req, res, next) => {
 };
 
 module.exports.confirmUser = async (req, res, next) => {
-  const { token } = req.body;
+  logger.info('***CONFIRM USER CALLED TO VERIFY OTP***');
+  const { otp } = req.body;
   const user = res.locals.user;
 
   try {
-    const confirmationToken = await ConfirmationToken.findOne({
-      token,
-      user: user._id,
-    });
-    if (!confirmationToken) {
+    const confirmationToken = await ConfirmationToken.findOne({user: user._id});
+    if (!confirmationToken || Date.now() > confirmationToken.timestamp + 900000) {
       return res
         .status(404)
         .send({ error: 'Invalid or expired confirmation link.' });
     }
-    await ConfirmationToken.deleteOne({ token, user: user._id });
-    await User.updateOne({ _id: user._id }, { confirmed: true });
-    return res.send();
-  } catch (err) {
+    const token = confirmationToken.token
+    const compareotp = await bcrypt.compare(otp,token);
+    if (!compareotp){
+      return res.status(401).send({
+        error:
+        'The credentials you provided are incorrect, please try again.',
+        });
+    }
+      await ConfirmationToken.deleteOne({ token, user: user._id });
+      await User.updateOne({ _id: user._id }, { confirmed: true });
+      return res.status(200).send({message:'verification successful'});    
+  } 
+  catch (err) {
     next(err);
   }
 };
 
 module.exports.changeAvatar = async (req, res, next) => {
   const user = res.locals.user;
-  
+
   if (!req.file) {
     return res
       .status(400)
@@ -704,18 +713,40 @@ module.exports.retrieveSuggestedUsers = async (req, res, next) => {
 
 module.exports.isUsernameAvaialble = async (req, res, next) => {
   logger.info('****Checking if given username exists or not***')
+  const user = res.locals.user;
   const username = req.params.username;
   let existingUser = null;
   try{
     existingUser = await User.findOne({username});
-    if (existingUser) {
-      res.status(403).send({"isAvailable":false})
+    if (!existingUser || user.username === username) {
+      res.status(200).send({"isAvailable":true});  
     }
     else{
-      res.status(200).send({"isAvailable":true});
+      res.status(403).send({"isAvailable":false})
     }
   }
   catch (err) {
     next(err);
+  }
+}
+
+module.exports.addPet = async (req, res, next) => {
+  const user = res.locals.user;
+  const {idPet} = req.body;
+  try{
+    const animal = await Animal.findById(idPet);
+    if (!animal) return res.status(404).send({error: 'No such pet exists!'})
+    const found = user.pets.some(el => el.pet == idPet);
+    if (found) return res.status(403).send({error: "User is already the guardian of this pet!"})
+    const petObject = {
+      pet: idPet,
+      confirmed: false,
+    };
+    await User.updateOne({_id: user._id}, {$push: {pets: petObject}});
+    return res.status(201).send({message: `Hurray! Now, you are the guardian of ${animal.name}!`})
+  }
+  catch (err){
+    logger.info(err);
+    res.status(400).send({error: err});
   }
 }

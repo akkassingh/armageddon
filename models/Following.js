@@ -6,6 +6,7 @@ const FollowingSchema = new Schema({
     type: Schema.ObjectId,
     ref: 'User'
   },
+  //TODO : change the format to {userid: followingid}
   following: [
     {
       user: {
