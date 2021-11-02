@@ -31,17 +31,17 @@ module.exports.verifyJwt = (token) => {
       if (user) {
         return resolve(user);
       } else {
-        reject('Not authorized.');
+        reject("Not authorized.");
       }
     } catch (err) {
-      return reject('Not authorized.');
+      return reject("Not authorized.");
     }
   });
 };
 
 module.exports.requireAuth = async (req, res, next) => {
   const { authorization } = req.headers;
-  if (!authorization) return res.status(401).send({ error: 'Not authorized.' });
+  if (!authorization) return res.status(401).send({ error: "Not authorized." });
   try {
     const user = await this.verifyJwt(authorization);
     // Allow other middlewares to access the authenticated user details.
@@ -119,7 +119,7 @@ module.exports.loginAuthentication = async (req, res, next) => {
   if (!usernameOrEmail || !password) {
     return res
       .status(400)
-      .send({ error: 'Please provide both a username/email and a password.' });
+      .send({ error: "Please provide both a username/email and a password." });
   }
 
   try {
@@ -128,7 +128,7 @@ module.exports.loginAuthentication = async (req, res, next) => {
     });
     if (!user || !user.password) {
       return res.status(401).send({
-        error: 'The credentials you provided are incorrect, please try again.',
+        error: "The credentials you provided are incorrect, please try again.",
       });
     }
     const comparepwd = await bcrypt.compare(password, user.password);
@@ -224,13 +224,13 @@ module.exports.githubLoginAuthentication = async (req, res, next) => {
   if (!code || !state) {
     return res
       .status(400)
-      .send({ error: 'Please provide a github access code and state.' });
+      .send({ error: "Please provide a github access code and state." });
   }
 
   try {
     // Exchange the temporary code with an access token
     const response = await axios.post(
-      'https://github.com/login/oauth/access_token',
+      "https://github.com/login/oauth/access_token",
       {
         client_id: process.env.GITHUB_CLIENT_ID,
         client_secret: process.env.GITHUB_CLIENT_SECRET,
@@ -238,16 +238,16 @@ module.exports.githubLoginAuthentication = async (req, res, next) => {
         state,
       }
     );
-    const accessToken = response.data.split('&')[0].split('=')[1];
+    const accessToken = response.data.split("&")[0].split("=")[1];
 
     // Retrieve the user's info
-    const githubUser = await axios.get('https://api.github.com/user', {
+    const githubUser = await axios.get("https://api.github.com/user", {
       headers: { Authorization: `token ${accessToken}` },
     });
 
     // Retrieve the user's email addresses
     // Private emails are not provided in the previous request
-    const emails = await axios.get('https://api.github.com/user/emails', {
+    const emails = await axios.get("https://api.github.com/user/emails", {
       headers: { Authorization: `token ${accessToken}` },
     });
     const primaryEmail = emails.data.find((email) => email.primary).email;
@@ -275,7 +275,7 @@ module.exports.githubLoginAuthentication = async (req, res, next) => {
       if (existingUser.email === primaryEmail) {
         return res.status(400).send({
           error:
-            'A user with the same email already exists, please change your primary github email.',
+            "A user with the same email already exists, please change your primary github email.",
         });
       }
       if (existingUser.username === githubUser.data.login.toLowerCase()) {
@@ -309,46 +309,47 @@ module.exports.githubLoginAuthentication = async (req, res, next) => {
 };
 
 module.exports.facebookRedirect = async (req, res, next) => {
-  return res.status(200).send('success');
+  return res.status(200).send("success");
 };
 
 module.exports.googleRedirect = async (req, res, next) => {
-  return res.status(200).send('success');
+  return res.status(200).send("success");
 };
 
 module.exports.facebookLoginAuthentication = async (req, res, next) => {
   const { code, state } = req.body;
   if (!code || !state) {
-    return res
-      .status(400)
-      .send({error: 'Please provide valid credentials'});
+    return res.status(400).send({ error: "Please provide valid credentials" });
   }
-  try{
+  try {
     const { data } = await axios({
-      url: 'https://graph.facebook.com/v4.0/oauth/access_token',
-      method: 'get',
+      url: "https://graph.facebook.com/v4.0/oauth/access_token",
+      method: "get",
       params: {
         client_id: process.env.FACEBOOK_CLIENT_ID,
         client_secret: process.env.FACEBOOK_CLIENT_SECRET,
         redirect_uri: `${process.env.HOME_URL}/api/auth/authenticate/facebook/`,
-        grant_type: 'authorization_code',
+        grant_type: "authorization_code",
         code,
-        state
+        state,
       },
     });
     const accessToken = data.access_token;
-    console.log(accessToken)
-    logger.info("accessToken is ",JSON.stringify(accessToken));
+    console.log(accessToken);
+    logger.info("accessToken is ", JSON.stringify(accessToken));
     logger.info("*******************************************");
 
     // Retrieve the user's info
     //{ locale: 'en_US', fields: 'name, email' }
-    const fbUser = await axios.get('https://graph.facebook.com/v2.5/me?fields=id,name,email,first_name,last_name', {
-      headers: { Authorization: `Bearer ${accessToken}` },
-    });
-    console.log('fbUser is as below');
+    const fbUser = await axios.get(
+      "https://graph.facebook.com/v2.5/me?fields=id,name,email,first_name,last_name",
+      {
+        headers: { Authorization: `Bearer ${accessToken}` },
+      }
+    );
+    console.log("fbUser is as below");
     console.log(fbUser.data);
-    logger.info("fbUser is ", JSON.stringify(fbUser.data))
+    logger.info("fbUser is ", JSON.stringify(fbUser.data));
     const primaryEmail = fbUser.data.email;
     const facebookId = fbUser.data.id;
     const userDocument = await User.findOne({ facebookId });
@@ -424,7 +425,7 @@ module.exports.facebookLoginAuthentication = async (req, res, next) => {
       token: jwt.encode({ id: user._id }, process.env.JWT_SECRET),
     });
   } catch (err) {
-    console.log(err)
+    console.log(err);
     logger.err("err is ", err);
     next(err);
   }
@@ -432,38 +433,45 @@ module.exports.facebookLoginAuthentication = async (req, res, next) => {
 
 module.exports.googleLoginAuthentication = async (req, res, next) => {
   const { code } = req.body;
-  if (!code ) {
+  if (!code) {
     return res
       .status(400)
-      .send({ error: 'Please provide valid code and state.' });
+      .send({ error: "Please provide valid code and state." });
   }
-  try{
+  try {
     const { data } = await axios({
-      url: 'https://oauth2.googleapis.com/token',
-      method: 'post',
+      url: "https://oauth2.googleapis.com/token",
+      method: "post",
       params: {
         client_id: process.env.GOOGLE_CLIENT_ID,
         client_secret: process.env.GOOGLE_CLIENT_SECRET,
         redirect_uri: `http://localhost:9000/api/auth/authenticate/google`,
-        grant_type: 'authorization_code',
-        code
+        grant_type: "authorization_code",
+        code,
       },
     });
     const accessToken = data.access_token;
 
     console.log("accessToken is ", accessToken);
-    
+
     // Retrieve the user's info
-    const googleUserResponse = await axios.get('https://www.googleapis.com/oauth2/v2/userinfo', {
-      headers: { Authorization: `Bearer ${accessToken}` },
-    });
-    logger.info("googleUser is ", JSON.stringify(googleUserResponse.data))
+    const googleUserResponse = await axios.get(
+      "https://www.googleapis.com/oauth2/v2/userinfo",
+      {
+        headers: { Authorization: `Bearer ${accessToken}` },
+      }
+    );
+    logger.info("googleUser is ", JSON.stringify(googleUserResponse.data));
     googleUser = googleUserResponse.data;
     const primaryEmail = googleUser.email;
     const googleUserId = googleUser.id;
     const userDocument = await User.findOne({ googleUserId });
-    logger.info('userDocument is ', JSON.stringify(userDocument));
+    logger.info("userDocument is ", JSON.stringify(userDocument));
     if (userDocument) {
+      let isNewUser = true;
+      if (userDocument.avatar) {
+        isNewUser = false;
+      }
       return res.send({
         user: {
           _id: userDocument._id,
@@ -472,12 +480,12 @@ module.exports.googleLoginAuthentication = async (req, res, next) => {
           avatar: userDocument.avatar,
           bookmarks: userDocument.bookmarks,
         },
-        isNewUser: false,
+        isNewUser,
         token: jwt.encode({ id: userDocument._id }, process.env.JWT_SECRET),
       });
     }
 
-    const existingUser = await User.findOne({email:primaryEmail});
+    const existingUser = await User.findOne({ email: primaryEmail });
 
     // const existingUser = await User.findOne({
     //   $or: [{ email: primaryEmail }, { username: googleUser.given_name+googleUser.family_name.toLowerCase() }],
@@ -493,7 +501,9 @@ module.exports.googleLoginAuthentication = async (req, res, next) => {
         //     'A user with the same email already exists, please change your email.',
         // });
         let isNewUser = true;
-        if (existingUser.avatar) {isNewUser = false;}
+        if (existingUser.avatar) {
+          isNewUser = false;
+        }
         return res.send(200).json({
           user: {
             email: primaryEmail,
@@ -501,19 +511,21 @@ module.exports.googleLoginAuthentication = async (req, res, next) => {
           },
           isNewUser,
           token: jwt.encode({ id: existingUser._id }, process.env.JWT_SECRET),
-        })
+        });
       }
       // if (existingUser.username === googleUser.given_name+googleUser.family_name.toLowerCase()) {
       //   const username = await generateUniqueUsername(googleUser.given_name+googleUser.family_name.toLowerCase());
       //   fbUser.data.login = username;
       // }
     }
-    logger.info("googleUser is ", JSON.stringify(googleUser.data));
+    logger.info("googleUser is ", JSON.stringify(googleUser));
     const user = new User({
       email: primaryEmail,
-      fullName: googleUser.name,
+      fullName: googleUser.email.split('@')[0],
       // username: googleUser.login ? googleUser.login : await generateUniqueUsername(googleUser.given_name+googleUser.family_name.toLowerCase());,
-      username: await generateUniqueUsername(googleUser.given_name+googleUser.family_name.toLowerCase()),
+      username: await generateUniqueUsername(
+        googleUser.email.split('@')[0]
+      ),
       googleUserId: googleUserId,
       confirmed: true,
     });
@@ -528,11 +540,9 @@ module.exports.googleLoginAuthentication = async (req, res, next) => {
       isNewUser: true,
       token: jwt.encode({ id: user._id }, process.env.JWT_SECRET),
     });
-  }catch (err) {
-    console.log(err)
-    return res
-    .status(400)
-    .send({ err });
+  } catch (err) {
+    console.log("------------------------------", err);
+    return res.status(400).send({ err });
   }
 };
 
@@ -547,8 +557,8 @@ module.exports.changePassword = async (req, res, next) => {
 
     const result = await bcrypt.compare(oldPassword, currentPassword);
     if (!result) {
-      return res.status('401').send({
-        error: 'Your old password was entered incorrectly, please try again.',
+      return res.status("401").send({
+        error: "Your old password was entered incorrectly, please try again.",
       });
     }
 
@@ -578,13 +588,12 @@ module.exports.resetPasswordOTP = async (req, res, next) => {
       await sendPasswordResetOTP(email,current_time,otp.toString());
       res.status(201).json({'message':`Password Reset OTP Sent to Email ID of user ${user._id}`, 'result':'success', 'token':token})
     }
-  }
-  catch (err){
-    logger.info(err)
-    res.status(500).send({err});
+  } catch (err) {
+    logger.info(err);
+    res.status(500).send({ err });
     console.log(error);
   }
-}
+};
 
 module.exports.verifyResetPasswordOTP = async (req, res, next) => {
   const {otp} = req.body;
@@ -630,9 +639,48 @@ module.exports.updatePassword = async(req,res,next) => {
       res.status(201).json({'message':'Your password was reset successfully!','result':'success'})
   }
   catch (err){
-    logger.info(err)
-    res.status(500).send({err});
-    console.log(err)
+    res.status(400).send({error: err});
+  }
+};
+
+module.exports.resendOTP = async (req, res, next) => {
+  const { path } = req.params;
+  // 2 cases as of now, login/register will be one and forget pwd will be another one
+  // for login/register we will pass 'login' in params and for forget pwd, we will pass 'forgetpwd' in params
+  const user = res.locals.user;
+  const otp = Math.floor(Math.random() * (999999 - 100000)) + 100000;
+  const hashotp = await hashPassword(otp.toString(), 10);
+  try {
+    if (path === "login") {
+      // register and login can be handeled together
+      const confirmationToken = await ConfirmationToken.findOne({
+        user: user._id,
+      });
+      if (confirmationToken) {
+        await ConfirmationToken.findOneAndUpdate(
+          { user: user._id },
+          {
+            token: hashotp,
+            timestamp: Date.now(),
+          }
+        );
+      } else {
+        await ConfirmationToken.create({
+          user: user._id,
+          token: hashotp,
+          timestamp: Date.now(),
+        });
+      }
+      await sendOTPEmail(user.username, user.email, otp);
+      res.status(201).send({ message: "OTP has been sent again!" });
+    } else if (path === "forgetpwd") {
+      await sendPasswordResetOTP(user.email, Date.now(), otp);
+      res.status(201).send({ message: "OTP has been sent again!" });
+    }
+  } catch (err) {
+    console.log(err);
+    logger.err("err is ", err);
+    next(err);
   }
 }
 
