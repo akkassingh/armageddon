@@ -109,7 +109,6 @@ ServiceProviderSchema.pre('save', async function (next) {
         }
       } catch (err) {
         // console.log(err)
-        console.log('Chacha 420')
         return next((err.statusCode = 400));
 
       }

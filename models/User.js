@@ -62,7 +62,17 @@ const UserSchema = new Schema({
   },
   passwordResetTime: {
     type: Number
-  }
+  },
+  pets: [{
+    pet: {
+        type: Schema.ObjectId,
+        ref: 'User',
+    },
+    confirmed: {
+        type: Boolean,
+        default: false,
+    },
+}],
 });
 
 UserSchema.pre('save', function (next) {

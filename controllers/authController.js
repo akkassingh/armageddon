@@ -26,7 +26,7 @@ module.exports.verifyJwt = (token) => {
       const id = jwt.decode(token, process.env.JWT_SECRET).id;
       const user = await User.findOne(
         { _id: id },
-        'email username avatar bookmarks bio fullName confirmed website'
+        'email username avatar bookmarks bio fullName confirmed website pets'
       );
       if (user) {
         return resolve(user);
@@ -200,6 +200,7 @@ module.exports.register = async (req, res, next) => {
     });
     await user.save();
     await confirmationToken.save();
+    await sendOTPEmail(username, email, otp);
     res.status(201).send({
       user: {
         email: user.email,
@@ -211,7 +212,6 @@ module.exports.register = async (req, res, next) => {
       token: jwt.encode({ id: user._id }, process.env.JWT_SECRET),
     });
     // sendConfirmationEmail(user.username, user.email, confirmationToken.token);
-    await sendOTPEmail(username, email, otp);
   } catch (err) {
     logger.info("error while register new user: ", err);
     next(err);
@@ -464,8 +464,6 @@ module.exports.googleLoginAuthentication = async (req, res, next) => {
     const userDocument = await User.findOne({ googleUserId });
     logger.info('userDocument is ', JSON.stringify(userDocument));
     if (userDocument) {
-      let isNewUser = true;
-      if (userDocument.avatar) {isNewUser = false;}
       return res.send({
         user: {
           _id: userDocument._id,
@@ -474,7 +472,7 @@ module.exports.googleLoginAuthentication = async (req, res, next) => {
           avatar: userDocument.avatar,
           bookmarks: userDocument.bookmarks,
         },
-        isNewUser,
+        isNewUser: false,
         token: jwt.encode({ id: userDocument._id }, process.env.JWT_SECRET),
       });
     }

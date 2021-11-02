@@ -1,4 +1,5 @@
 const User = require('../models/User');
+const Animal = require('../models/Animal');
 const Post = require('../models/Post');
 const Followers = require('../models/Followers');
 const Following = require('../models/Following');
@@ -726,5 +727,27 @@ module.exports.isUsernameAvaialble = async (req, res, next) => {
   }
   catch (err) {
     next(err);
+  }
+}
+
+module.exports.addPet = async (req, res, next) => {
+  console.log("addPet activated");
+  const user = res.locals.user;
+  const {idPet} = req.body;
+  try{
+    const animal = await Animal.findById(idPet);
+    if (!animal) return res.status(404).send({error: 'No such pet exists!'})
+    const found = user.pets.some(el => el.pet == idPet);
+    if (found) return res.status(403).send({error: "User is already the guardian of this pet!"})
+    const petObject = {
+      pet: idPet,
+      confirmed: false,
+    };
+    await User.updateOne({_id: user._id}, {$push: {pets: petObject}});
+    return res.status(201).send({message: `Hurray! Now, you are the guardian of ${animal.name}!`})
+  }
+  catch (err){
+    logger.info(err);
+    res.status(400).send({error: err});
   }
 }
