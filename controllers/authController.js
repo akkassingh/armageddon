@@ -1,10 +1,10 @@
-const jwt = require('jwt-simple');
-const crypto = require('crypto');
-const User = require('../models/User');
-const ConfirmationToken = require('../models/ConfirmationToken');
-const bcrypt = require('bcrypt');
-const axios = require('axios');
-const logger = require('../logger/logger');
+const jwt = require("jwt-simple");
+const crypto = require("crypto");
+const User = require("../models/User");
+const ConfirmationToken = require("../models/ConfirmationToken");
+const bcrypt = require("bcrypt");
+const axios = require("axios");
+const logger = require("../logger/logger");
 
 const {
   sendConfirmationEmail,
@@ -12,13 +12,9 @@ const {
   sendEmail,
   sendPasswordResetOTP,
   sendOTPEmail,
-  hashPassword
-} = require('../utils/controllerUtils');
-const {
-  validateEmail,
-  validatePassword,
-} = require('../utils/validation');
-
+  hashPassword,
+} = require("../utils/controllerUtils");
+const { validateEmail, validatePassword } = require("../utils/validation");
 
 module.exports.verifyJwt = (token) => {
   return new Promise(async (resolve, reject) => {
@@ -26,7 +22,7 @@ module.exports.verifyJwt = (token) => {
       const id = jwt.decode(token, process.env.JWT_SECRET).id;
       const user = await User.findOne(
         { _id: id },
-        'email username avatar bookmarks bio fullName confirmed website pets'
+        "email username avatar bookmarks bio fullName confirmed website pets"
       );
       if (user) {
         return resolve(user);
@@ -76,37 +72,44 @@ module.exports.loginAuthentication = async (req, res, next) => {
       if (user.avatar) {
         isNewUser = false;
       }
-      if (!user.confirmed){
-        const otp = Math.floor(Math.random() * (999999 - 100000) ) + 100000;
-        const hashotp = await hashPassword(otp.toString(),10);
+      if (!user.confirmed) {
+        const otp = Math.floor(Math.random() * (999999 - 100000)) + 100000;
+        const hashotp = await hashPassword(otp.toString(), 10);
         await sendOTPEmail(user.username, user.email, otp);
-        const confirmationToken = await ConfirmationToken.findOne({user: user._id});
-        if (confirmationToken){
-          await ConfirmationToken.findOneAndUpdate({user: user._id},{
+        const confirmationToken = await ConfirmationToken.findOne({
+          user: user._id,
+        });
+        if (confirmationToken) {
+          await ConfirmationToken.findOneAndUpdate(
+            { user: user._id },
+            {
+              token: hashotp,
+              timestamp: Date.now(),
+            }
+          );
+        } else {
+          await ConfirmationToken.create({
+            user: user._id,
             token: hashotp,
             timestamp: Date.now(),
-          })
-        }
-        else{
-          await ConfirmationToken.create({user: user._id,token: hashotp,
-            timestamp: Date.now()});
+          });
         }
         return res.send({
           user: {
-            "email" : user.email,
-            "username" : user.username,
-            "confirmed": user.confirmed,
+            email: user.email,
+            username: user.username,
+            confirmed: user.confirmed,
           },
           isNewUser,
-          message: 'OTP has been sent successfully!',
+          message: "OTP has been sent successfully!",
           token: authorization,
         });
       }
       return res.send({
         user: {
-          "email" : user.email,
-          "username" : user.username,
-          "confirmed": user.confirmed,
+          email: user.email,
+          username: user.username,
+          confirmed: user.confirmed,
         },
         isNewUser,
         token: authorization,
@@ -132,42 +135,48 @@ module.exports.loginAuthentication = async (req, res, next) => {
       });
     }
     const comparepwd = await bcrypt.compare(password, user.password);
-    if (!comparepwd){
+    if (!comparepwd) {
       return res.status(401).send({
-        error:
-          'The credentials you provided are incorrect, please try again.',
+        error: "The credentials you provided are incorrect, please try again.",
       });
     }
     let isNewUser = true;
-      if (user.avatar) {
-        isNewUser = false;
-      }
-      if (!user.confirmed){
-        const otp = Math.floor(Math.random() * (999999 - 100000) ) + 100000;
-        const hashotp = await hashPassword(otp.toString(),10);
-        await sendOTPEmail(user.username, user.email, otp);
-        const confirmationToken = await ConfirmationToken.findOne({user: user._id});
-        if (confirmationToken){
-          await ConfirmationToken.findOneAndUpdate({user: user._id},{
+    if (user.avatar) {
+      isNewUser = false;
+    }
+    if (!user.confirmed) {
+      const otp = Math.floor(Math.random() * (999999 - 100000)) + 100000;
+      const hashotp = await hashPassword(otp.toString(), 10);
+      await sendOTPEmail(user.username, user.email, otp);
+      const confirmationToken = await ConfirmationToken.findOne({
+        user: user._id,
+      });
+      if (confirmationToken) {
+        await ConfirmationToken.findOneAndUpdate(
+          { user: user._id },
+          {
             token: hashotp,
             timestamp: Date.now(),
-          })
-        }
-        else{
-          await ConfirmationToken.create({user: user._id,token: hashotp,
-            timestamp: Date.now()});
-        }
+          }
+        );
+      } else {
+        await ConfirmationToken.create({
+          user: user._id,
+          token: hashotp,
+          timestamp: Date.now(),
+        });
       }
-      
-      return res.send({
-        user: {
-          "email" : user.email,
-          "username" : user.username,
-          "confirmed": user.confirmed,
-        },
-        isNewUser,
-        token: jwt.encode({ id: user._id }, process.env.JWT_SECRET),
-      });
+    }
+
+    return res.send({
+      user: {
+        email: user.email,
+        username: user.username,
+        confirmed: user.confirmed,
+      },
+      isNewUser,
+      token: jwt.encode({ id: user._id }, process.env.JWT_SECRET),
+    });
   } catch (err) {
     next(err);
   }
@@ -186,11 +195,11 @@ module.exports.register = async (req, res, next) => {
   if (passwordError) return res.status(400).send({ error: passwordError });
 
   try {
-    let username = email.split('@')[0];
+    let username = email.split("@")[0];
     username = await generateUniqueUsername(username);
-    logger.info('Unique username is', username);
-    const otp = Math.floor(Math.random() * (999999 - 100000) ) + 100000;
-    const hashedotp = await hashPassword(otp.toString(),10);
+    logger.info("Unique username is", username);
+    const otp = Math.floor(Math.random() * (999999 - 100000)) + 100000;
+    const hashedotp = await hashPassword(otp.toString(), 10);
     user = new User({ email, password, username });
     confirmationToken = new ConfirmationToken({
       user: user._id,
@@ -208,7 +217,7 @@ module.exports.register = async (req, res, next) => {
         confirmed: false,
       },
       isNewUser: true,
-      message: 'OTP has been sent successfully!',
+      message: "OTP has been sent successfully!",
       token: jwt.encode({ id: user._id }, process.env.JWT_SECRET),
     });
     // sendConfirmationEmail(user.username, user.email, confirmationToken.token);
@@ -353,7 +362,7 @@ module.exports.facebookLoginAuthentication = async (req, res, next) => {
     const primaryEmail = fbUser.data.email;
     const facebookId = fbUser.data.id;
     const userDocument = await User.findOne({ facebookId });
-    logger.info('userDocument is ', JSON.stringify(userDocument));
+    logger.info("userDocument is ", JSON.stringify(userDocument));
     let isNewUser = true;
     if (user.avatar) {
       isNewUser = false;
@@ -372,7 +381,7 @@ module.exports.facebookLoginAuthentication = async (req, res, next) => {
       });
     }
 
-    const existingUser = await User.findOne({email: primaryEmail});
+    const existingUser = await User.findOne({ email: primaryEmail });
     // const existingUser = await User.findOne({
     //   $or: [{ email: primaryEmail }, { username: fbUser.data.first_name+fbUser.data.last_name.toLowerCase() }],
     // });
@@ -397,7 +406,7 @@ module.exports.facebookLoginAuthentication = async (req, res, next) => {
           },
           isNewUser,
           token: jwt.encode({ id: existingUser._id }, process.env.JWT_SECRET),
-        })
+        });
       }
       // if (existingUser.username === fbUser.data.first_name+fbUser.data.last_name.toLowerCase()) {
       //   const username = await generateUniqueUsername(fbUser.data.first_name+fbUser.data.last_name.toLowerCase());
@@ -409,7 +418,9 @@ module.exports.facebookLoginAuthentication = async (req, res, next) => {
       email: primaryEmail,
       fullName: fbUser.data.name,
       // username: fbUser.data.login ? fbUser.data.login : fbUser.data.first_name+fbUser.data.last_name.toLowerCase(),
-      username: await generateUniqueUsername(fbUser.data.first_name+fbUser.data.last_name.toLowerCase()),
+      username: await generateUniqueUsername(
+        fbUser.data.first_name + fbUser.data.last_name.toLowerCase()
+      ),
       confirmed: true,
       facebookId: fbUser.data.id,
     });
@@ -439,18 +450,7 @@ module.exports.googleLoginAuthentication = async (req, res, next) => {
       .send({ error: "Please provide valid code and state." });
   }
   try {
-    const { data } = await axios({
-      url: "https://oauth2.googleapis.com/token",
-      method: "post",
-      params: {
-        client_id: process.env.GOOGLE_CLIENT_ID,
-        client_secret: process.env.GOOGLE_CLIENT_SECRET,
-        redirect_uri: `http://localhost:9000/api/auth/authenticate/google`,
-        grant_type: "authorization_code",
-        code,
-      },
-    });
-    const accessToken = data.access_token;
+    const accessToken = code;
 
     console.log("accessToken is ", accessToken);
 
@@ -504,7 +504,15 @@ module.exports.googleLoginAuthentication = async (req, res, next) => {
         if (existingUser.avatar) {
           isNewUser = false;
         }
-        return res.send(200).json({
+        // res.sendStatus(200).json({
+        //   user: {
+        //     email: primaryEmail,
+        //     username: existingUser.username,
+        //   },
+        //   isNewUser,
+        //   token: jwt.encode({ id: existingUser._id }, process.env.JWT_SECRET),
+        // });
+        res.send({
           user: {
             email: primaryEmail,
             username: existingUser.username,
@@ -521,11 +529,9 @@ module.exports.googleLoginAuthentication = async (req, res, next) => {
     logger.info("googleUser is ", JSON.stringify(googleUser));
     const user = new User({
       email: primaryEmail,
-      fullName: googleUser.email.split('@')[0],
+      fullName: googleUser.email.split("@")[0],
       // username: googleUser.login ? googleUser.login : await generateUniqueUsername(googleUser.given_name+googleUser.family_name.toLowerCase());,
-      username: await generateUniqueUsername(
-        googleUser.email.split('@')[0]
-      ),
+      username: await generateUniqueUsername(googleUser.email.split("@")[0]),
       googleUserId: googleUserId,
       confirmed: true,
     });
@@ -542,9 +548,124 @@ module.exports.googleLoginAuthentication = async (req, res, next) => {
     });
   } catch (err) {
     console.log("------------------------------", err);
-    return res.status(400).send({ err });
+    res.send({ err });
   }
 };
+
+// module.exports.googleLoginAuthentication = async (req, res, next) => {
+//   const { code } = req.body;
+//   if (!code) {
+//     return res
+//       .status(400)
+//       .send({ error: "Please provide valid code and state." });
+//   }
+//   try {
+//     const { data } = await axios({
+//       url: "https://oauth2.googleapis.com/token",
+//       method: "post",
+//       params: {
+//         client_id: process.env.GOOGLE_CLIENT_ID,
+//         client_secret: process.env.GOOGLE_CLIENT_SECRET,
+//         redirect_uri: `http://localhost:9000/api/auth/authenticate/google`,
+//         grant_type: "authorization_code",
+//         code,
+//       },
+//     });
+//     const accessToken = data.access_token;
+
+//     console.log("accessToken is ", accessToken);
+
+//     // Retrieve the user's info
+//     const googleUserResponse = await axios.get(
+//       "https://www.googleapis.com/oauth2/v2/userinfo",
+//       {
+//         headers: { Authorization: `Bearer ${accessToken}` },
+//       }
+//     );
+//     logger.info("googleUser is ", JSON.stringify(googleUserResponse.data));
+//     googleUser = googleUserResponse.data;
+//     const primaryEmail = googleUser.email;
+//     const googleUserId = googleUser.id;
+//     const userDocument = await User.findOne({ googleUserId });
+//     logger.info("userDocument is ", JSON.stringify(userDocument));
+//     if (userDocument) {
+//       let isNewUser = true;
+//       if (userDocument.avatar) {
+//         isNewUser = false;
+//       }
+//       return res.send({
+//         user: {
+//           _id: userDocument._id,
+//           email: userDocument.email,
+//           username: userDocument.username,
+//           avatar: userDocument.avatar,
+//           bookmarks: userDocument.bookmarks,
+//         },
+//         isNewUser,
+//         token: jwt.encode({ id: userDocument._id }, process.env.JWT_SECRET),
+//       });
+//     }
+
+//     const existingUser = await User.findOne({ email: primaryEmail });
+
+//     // const existingUser = await User.findOne({
+//     //   $or: [{ email: primaryEmail }, { username: googleUser.given_name+googleUser.family_name.toLowerCase() }],
+//     // });
+
+//     logger.info("existingUser is ", JSON.stringify(existingUser));
+
+//     if (existingUser) {
+//       logger.info("User Exists!!!!");
+//       if (existingUser.email === primaryEmail) {
+//         // return res.status(400).send({
+//         //   error:
+//         //     'A user with the same email already exists, please change your email.',
+//         // });
+//         let isNewUser = true;
+//         if (existingUser.avatar) {
+//           isNewUser = false;
+//         }
+//         return res.send(200).json({
+//           user: {
+//             email: primaryEmail,
+//             username: existingUser.username,
+//           },
+//           isNewUser,
+//           token: jwt.encode({ id: existingUser._id }, process.env.JWT_SECRET),
+//         });
+//       }
+//       // if (existingUser.username === googleUser.given_name+googleUser.family_name.toLowerCase()) {
+//       //   const username = await generateUniqueUsername(googleUser.given_name+googleUser.family_name.toLowerCase());
+//       //   fbUser.data.login = username;
+//       // }
+//     }
+//     logger.info("googleUser is ", JSON.stringify(googleUser));
+//     const user = new User({
+//       email: primaryEmail,
+//       fullName: googleUser.email.split('@')[0],
+//       // username: googleUser.login ? googleUser.login : await generateUniqueUsername(googleUser.given_name+googleUser.family_name.toLowerCase());,
+//       username: await generateUniqueUsername(
+//         googleUser.email.split('@')[0]
+//       ),
+//       googleUserId: googleUserId,
+//       confirmed: true,
+//     });
+
+//     await user.save();
+//     return res.send({
+//       user: {
+//         email: user.email,
+//         username: user.username,
+//         bookmarks: user.bookmarks,
+//       },
+//       isNewUser: true,
+//       token: jwt.encode({ id: user._id }, process.env.JWT_SECRET),
+//     });
+//   } catch (err) {
+//     console.log("------------------------------", err);
+//     return res.status(400).send({ err });
+//   }
+// };
 
 module.exports.changePassword = async (req, res, next) => {
   const { oldPassword, newPassword } = req.body;
@@ -568,25 +689,32 @@ module.exports.changePassword = async (req, res, next) => {
 
     userDocument.password = newPassword;
     await userDocument.save();
-    return res.send({message: "Password has been changed successfully!"});
+    return res.send({ message: "Password has been changed successfully!" });
   } catch (err) {
     return next(err);
   }
 };
 
 module.exports.resetPasswordOTP = async (req, res, next) => {
-  try{
-    logger.info("***Reset Password called***")
-    const {email} = req.body;
-    if (email){
-      const user = await User.findOne({email});
-      if (!user) return res.status(404).send({error: "No user with given username exist"});
+  try {
+    logger.info("***Reset Password called***");
+    const { email } = req.body;
+    if (email) {
+      const user = await User.findOne({ email });
+      if (!user)
+        return res
+          .status(404)
+          .send({ error: "No user with given username exist" });
       const token = jwt.encode({ id: user._id }, process.env.JWT_SECRET);
-      const otp = Math.floor(Math.random() * (999999 - 100000) ) + 100000;
+      const otp = Math.floor(Math.random() * (999999 - 100000)) + 100000;
       // const token = await ConfirmationToken.findOne({user: user._id});
       const current_time = Date.now();
-      await sendPasswordResetOTP(email,current_time,otp.toString());
-      res.status(201).json({'message':`Password Reset OTP Sent to Email ID of user ${user._id}`, 'result':'success', 'token':token})
+      await sendPasswordResetOTP(email, current_time, otp.toString());
+      res.status(201).json({
+        message: `Password Reset OTP Sent to Email ID of user ${user._id}`,
+        result: "success",
+        token: token,
+      });
     }
   } catch (err) {
     logger.info(err);
@@ -596,50 +724,62 @@ module.exports.resetPasswordOTP = async (req, res, next) => {
 };
 
 module.exports.verifyResetPasswordOTP = async (req, res, next) => {
-  const {otp} = req.body;
+  const { otp } = req.body;
   const user = res.locals.user;
 
   try {
-    const confirmationToken = await ConfirmationToken.findOne({user: user._id});
+    const confirmationToken = await ConfirmationToken.findOne({
+      user: user._id,
+    });
     console.log(confirmationToken);
-    if (!confirmationToken || Date.now() > confirmationToken.timestamp + 900000) {
+    if (
+      !confirmationToken ||
+      Date.now() > confirmationToken.timestamp + 900000
+    ) {
       return res
         .status(404)
-        .send({ error: 'Invalid or expired confirmation attempt' });
+        .send({ error: "Invalid or expired confirmation attempt" });
     }
     const token = confirmationToken.resettoken;
-    const compareotp = await bcrypt.compare(otp,token);
-    if (!compareotp){
+    const compareotp = await bcrypt.compare(otp, token);
+    if (!compareotp) {
       return res.status(401).send({
-        error:
-        'The credentials you provided are incorrect, please try again.',
-        });
+        error: "The credentials you provided are incorrect, please try again.",
+      });
     }
-      await ConfirmationToken.deleteOne({ resettoken: token, user: user._id });
-      return res.status(200).send({message:'verification successful'});    
-  } 
-  catch (err) {
+    await ConfirmationToken.deleteOne({ resettoken: token, user: user._id });
+    return res.status(200).send({ message: "verification successful" });
+  } catch (err) {
     next(err);
   }
 };
 
-module.exports.updatePassword = async(req,res,next) => {
-  logger.info("***Update Password called***")
+module.exports.updatePassword = async (req, res, next) => {
+  logger.info("***Update Password called***");
   const user = res.locals.user;
-  const {newPassword,otp} = req.body;
-  const hashednewPassword = await hashPassword(newPassword.toString(),10)
-  try{
-    if (user.passwordRestTime + 900000 < Date.now()) return res.status(404).json({error: 'OTP has been expired. Please try again!'});
+  const { newPassword, otp } = req.body;
+  const hashednewPassword = await hashPassword(newPassword.toString(), 10);
+  try {
+    if (user.passwordRestTime + 900000 < Date.now())
+      return res
+        .status(404)
+        .json({ error: "OTP has been expired. Please try again!" });
     const newPasswordError = validatePassword(newPassword);
     if (newPasswordError)
       return res.status(400).send({ error: newPasswordError });
-      
-      await User.updateOne({_id: user._id}, {password: hashednewPassword});
-      sendEmail(user.email,'Password Changed', 'Your password was changed successfully!')
-      res.status(201).json({'message':'Your password was reset successfully!','result':'success'})
-  }
-  catch (err){
-    res.status(400).send({error: err});
+
+    await User.updateOne({ _id: user._id }, { password: hashednewPassword });
+    sendEmail(
+      user.email,
+      "Password Changed",
+      "Your password was changed successfully!"
+    );
+    res.status(201).json({
+      message: "Your password was reset successfully!",
+      result: "success",
+    });
+  } catch (err) {
+    res.status(400).send({ error: err });
   }
 };
 
@@ -682,43 +822,45 @@ module.exports.resendOTP = async (req, res, next) => {
     logger.err("err is ", err);
     next(err);
   }
-}
+};
 
 module.exports.resendOTP = async (req, res, next) => {
-  const {path} = req.params; 
+  const { path } = req.params;
   // 2 cases as of now, login/register will be one and forget pwd will be another one
   // for login/register we will pass 'login' in params and for forget pwd, we will pass 'forgetpwd' in params
   const user = res.locals.user;
-  const otp = Math.floor(Math.random() * (999999 - 100000) ) + 100000;
-  const hashotp = await hashPassword(otp.toString(),10);
+  const otp = Math.floor(Math.random() * (999999 - 100000)) + 100000;
+  const hashotp = await hashPassword(otp.toString(), 10);
   try {
-    if (path === 'login') {
+    if (path === "login") {
       // register and login can be handeled together
-      const confirmationToken = await ConfirmationToken.findOne({user: user._id});
-      if (confirmationToken){
-        await ConfirmationToken.findOneAndUpdate({user: user._id},{
-          token: hashotp,
-          timestamp: Date.now(),
-        });
-      }
-      else{
+      const confirmationToken = await ConfirmationToken.findOne({
+        user: user._id,
+      });
+      if (confirmationToken) {
+        await ConfirmationToken.findOneAndUpdate(
+          { user: user._id },
+          {
+            token: hashotp,
+            timestamp: Date.now(),
+          }
+        );
+      } else {
         await ConfirmationToken.create({
           user: user._id,
           token: hashotp,
           timestamp: Date.now(),
         });
       }
-      await sendOTPEmail(user.username,user.email,otp);
-      res.status(201).send({message: 'OTP has been sent again!'})
-    }
-    else if (path === 'forgetpwd'){
+      await sendOTPEmail(user.username, user.email, otp);
+      res.status(201).send({ message: "OTP has been sent again!" });
+    } else if (path === "forgetpwd") {
       await sendPasswordResetOTP(user.email, Date.now(), otp);
-      res.status(201).send({message: 'OTP has been sent again!'})
+      res.status(201).send({ message: "OTP has been sent again!" });
     }
-  }
-  catch (err) {
-    console.log(err)
+  } catch (err) {
+    console.log(err);
     logger.err("err is ", err);
     next(err);
   }
-}
+};
