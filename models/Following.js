@@ -6,7 +6,14 @@ const FollowingSchema = new Schema({
     type: Schema.ObjectId,
     ref: 'User'
   },
-  //TODO : change the format to {userid: followingid}
+  // userType: {
+  //   type: String,
+  //   required: true,
+  // },
+  // following: {
+  //   type: Schema.ObjectId,
+  //   ref: 'userType',
+  // }
   following: [
     {
       user: {

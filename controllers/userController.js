@@ -730,21 +730,34 @@ module.exports.isUsernameAvaialble = async (req, res, next) => {
   }
 }
 
-module.exports.addPet = async (req, res, next) => {
-  console.log("addPet activated");
+module.exports.becomeGuardian = async (req, res, next) => {
   const user = res.locals.user;
   const {idPet} = req.body;
   try{
     const animal = await Animal.findById(idPet);
     if (!animal) return res.status(404).send({error: 'No such pet exists!'})
-    const found = user.pets.some(el => el.pet == idPet);
-    if (found) return res.status(403).send({error: "User is already the guardian of this pet!"})
+    const found = user.pets.findIndex(function(ele,index) {
+      if (ele.user == idUser) return true;
+    })
+    if (found!=-1) {
+      if (user.pets[found].confirmed) {
+        return res.status(403).send({error: `You are already guardian of ${animal.name}`})
+      }
+      else{
+        return res.status(403).send({error: `You have already requested to become guardian of ${animal.name}!`})
+      }
+    }
     const petObject = {
       pet: idPet,
       confirmed: false,
     };
+    const userObject = {
+      user: user._id,
+      confirmed: false,
+    }
     await User.updateOne({_id: user._id}, {$push: {pets: petObject}});
-    return res.status(201).send({message: `Hurray! Now, you are the guardian of ${animal.name}!`})
+    await Animal.updateOne({_id: animal._id}, {$push: {guardians: userObject}});
+    return res.status(201).send({message: `Request has been sent to ${animal.name} successfully!`})
   }
   catch (err){
     logger.info(err);

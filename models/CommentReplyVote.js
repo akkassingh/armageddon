@@ -7,6 +7,14 @@ const CommentReplyVoteSchema = new Schema({
     ref: 'CommentReply'
   },
   //TODO : change the format to {commentid: userid}
+  // userType: {
+  //   type: String,
+  //   required: true,
+  // },
+  // voter: {
+  //   type: Schema.ObjectId,
+  //   ref: 'userType',
+  // },
   votes: [
     {
       author: {

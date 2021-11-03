@@ -1,6 +1,7 @@
 const jwt = require('jwt-simple');
 const crypto = require('crypto');
 const User = require('../models/User');
+const Animal = require('../models/Animal');
 const ConfirmationToken = require('../models/ConfirmationToken');
 const bcrypt = require('bcrypt');
 const axios = require('axios');
@@ -39,6 +40,25 @@ module.exports.verifyJwt = (token) => {
   });
 };
 
+module.exports.verifyJwtAnimal = (token) => {
+  return new Promise(async (resolve, reject) => {
+    try {
+      const id = jwt.decode(token, process.env.JWT_SECRET).id;
+      const animal = await Animal.findOne(
+        { _id: id },
+        'name username avatar guardians relatedAnimals'
+      );
+      if (user) {
+        return resolve(user);
+      } else {
+        reject("Not authorized.");
+      }
+    } catch (err) {
+      return reject("Not authorized.");
+    }
+  });
+};
+
 module.exports.requireAuth = async (req, res, next) => {
   const { authorization } = req.headers;
   if (!authorization) return res.status(401).send({ error: "Not authorized." });
@@ -46,6 +66,19 @@ module.exports.requireAuth = async (req, res, next) => {
     const user = await this.verifyJwt(authorization);
     // Allow other middlewares to access the authenticated user details.
     res.locals.user = user;
+    return next();
+  } catch (err) {
+    return res.status(401).send({ error: err });
+  }
+};
+
+module.exports.requireAuthAnimal = async (req, res, next) => {
+  const { authorization } = req.headers;
+  if (!authorization) return res.status(401).send({ error: "Not authorized." });
+  try {
+    const animal = await this.verifyJwt(authorization);
+    // Allow other middlewares to access the authenticated user details.
+    res.locals.animal = animal;
     return next();
   } catch (err) {
     return res.status(401).send({ error: err });
