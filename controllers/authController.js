@@ -199,13 +199,42 @@ module.exports.loginAuthentication = async (req, res, next) => {
           timestamp: Date.now(),
         });
       }
+      return res.status(201).send({
+        user: {
+            email: user.email,
+            fullName: user.fullName,
+            username: user.username,
+            avatar: user.avatar,
+            bio : user.bio,
+            website: user.website,
+            bookmarks: user.bookmarks,
+            private: user.private,
+            confirmed: user.confirmed,
+            pets: user.pets,
+            githubId: user.githubId,
+            faceBookUserId: user.faceBookUserId,
+            googleUserId: user.googleUserId,
+        },
+        message: 'OTP has been sent to your email for verification as the account is not verified!',
+        token: jwt.encode({ id: user._id }, process.env.JWT_SECRET),
+      })
     }
 
-    return res.send({
+    return res.status(200).send({
       user: {
-        email: user.email,
-        username: user.username,
-        confirmed: user.confirmed,
+            email: user.email,
+            fullName: user.fullName,
+            username: user.username,
+            avatar: user.avatar,
+            bio : user.bio,
+            website: user.website,
+            bookmarks: user.bookmarks,
+            private: user.private,
+            confirmed: user.confirmed,
+            pets: user.pets,
+            githubId: user.githubId,
+            faceBookUserId: user.faceBookUserId,
+            googleUserId: user.googleUserId,
       },
       isNewUser,
       token: jwt.encode({ id: user._id }, process.env.JWT_SECRET),
@@ -245,9 +274,19 @@ module.exports.register = async (req, res, next) => {
     await sendOTPEmail(username, email, otp);
     res.status(201).send({
       user: {
-        email: user.email,
-        username: user.username,
-        confirmed: false,
+            email: user.email,
+            fullName: user.fullName,
+            username: user.username,
+            avatar: user.avatar,
+            bio : user.bio,
+            website: user.website,
+            bookmarks: user.bookmarks,
+            private: user.private,
+            confirmed: user.confirmed,
+            pets: user.pets,
+            githubId: user.githubId,
+            faceBookUserId: user.faceBookUserId,
+            googleUserId: user.googleUserId,
       },
       isNewUser: true,
       message: "OTP has been sent successfully!",
@@ -393,21 +432,30 @@ module.exports.facebookLoginAuthentication = async (req, res, next) => {
     console.log(fbUser.data);
     logger.info("fbUser is ", JSON.stringify(fbUser.data));
     const primaryEmail = fbUser.data.email;
-    const facebookId = fbUser.data.id;
-    const userDocument = await User.findOne({ facebookId });
+    const faceBookUserId = fbUser.data.id;
+    const userDocument = await User.findOne({ faceBookUserId });
     logger.info("userDocument is ", JSON.stringify(userDocument));
-    let isNewUser = true;
-    if (user.avatar) {
-      isNewUser = false;
-    }
     if (userDocument) {
-      return res.send({
+      await User.findByIdAndUpdate(userDocument._id, {confirmed: true});
+      let isNewUser = true;
+      if (userDocument.avatar) {
+        isNewUser = false;
+      }
+      return res.status(200).send({
         user: {
-          _id: userDocument._id,
-          email: userDocument.email,
-          username: userDocument.username,
-          avatar: userDocument.avatar,
-          bookmarks: userDocument.bookmarks,
+            email: userDocument.email,
+            fullName: userDocument.fullName,
+            username: userDocument.username,
+            avatar: userDocument.avatar,
+            bio : userDocument.bio,
+            website: userDocument.website,
+            bookmarks: userDocument.bookmarks,
+            private: userDocument.private,
+            confirmed: true,
+            pets: userDocument.pets,
+            githubId: userDocument.githubId,
+            faceBookUserId: userDocument.faceBookUserId,
+            googleUserId: userDocument.googleUserId,
         },
         isNewUser,
         token: jwt.encode({ id: userDocument._id }, process.env.JWT_SECRET),
@@ -427,20 +475,32 @@ module.exports.facebookLoginAuthentication = async (req, res, next) => {
         isNewUser = false;
       }
       logger.info("User Exists!!!!");
-      if (existingUser.email === primaryEmail) {
+      
         // return res.status(400).send({
         //   error:
         //     'A user with the same email already exists, please change your email.',
         // });
+        await User.updateOne({ _id: existingUser._id }, {confirmed: true, faceBookUserId: faceBookUserId});
         return res.send(200).json({
           user: {
             email: primaryEmail,
+            fullName: existingUser.fullName,
             username: existingUser.username,
+            avatar: existingUser.avatar,
+            bio : existingUser.bio,
+            website: existingUser.website,
+            bookmarks: existingUser.bookmarks,
+            private: existingUser.private,
+            confirmed: true,
+            pets: existingUser.pets,
+            githubId: existingUser.githubId,
+            faceBookUserId:faceBookUserId,
+            googleUserId: existingUser.googleUserId,
           },
           isNewUser,
           token: jwt.encode({ id: existingUser._id }, process.env.JWT_SECRET),
         });
-      }
+
       // if (existingUser.username === fbUser.data.first_name+fbUser.data.last_name.toLowerCase()) {
       //   const username = await generateUniqueUsername(fbUser.data.first_name+fbUser.data.last_name.toLowerCase());
       //   fbUser.data.login = username;
@@ -455,15 +515,25 @@ module.exports.facebookLoginAuthentication = async (req, res, next) => {
         fbUser.data.first_name + fbUser.data.last_name.toLowerCase()
       ),
       confirmed: true,
-      facebookId: fbUser.data.id,
+      faceBookUserId: fbUser.data.id,
     });
 
     await user.save();
-    return res.send({
+    return res.status(201).send({
       user: {
-        email: user.email,
-        username: user.username,
-        bookmarks: user.bookmarks,
+            email: primaryEmail,
+            fullName: user.fullName,
+            username: user.username,
+            avatar: user.avatar,
+            bio : user.bio,
+            website: user.website,
+            bookmarks: user.bookmarks,
+            private: user.private,
+            confirmed: true,
+            pets: user.pets,
+            githubId: user.githubId,
+            faceBookUserId: user.faceBookUserId,
+            googleUserId: user.googleUserId,
       },
       isNewUser: true,
       token: jwt.encode({ id: user._id }, process.env.JWT_SECRET),
@@ -501,17 +571,26 @@ module.exports.googleLoginAuthentication = async (req, res, next) => {
     const userDocument = await User.findOne({ googleUserId });
     logger.info("userDocument is ", JSON.stringify(userDocument));
     if (userDocument) {
+      await User.findByIdAndUpdate(userDocument._id, {confirmed: true});
       let isNewUser = true;
       if (userDocument.avatar) {
         isNewUser = false;
       }
-      return res.send({
+      return res.status(200).send({
         user: {
-          _id: userDocument._id,
-          email: userDocument.email,
-          username: userDocument.username,
-          avatar: userDocument.avatar,
-          bookmarks: userDocument.bookmarks,
+            email: userDocument.email,
+            fullName: userDocument.fullName,
+            username: userDocument.username,
+            avatar: userDocument.avatar,
+            bio : userDocument.bio,
+            website: userDocument.website,
+            bookmarks: userDocument.bookmarks,
+            private: userDocument.private,
+            confirmed: true,
+            pets: userDocument.pets,
+            githubId: userDocument.githubId,
+            faceBookUserId: userDocument.faceBookUserId,
+            googleUserId: userDocument.googleUserId,
         },
         isNewUser,
         token: jwt.encode({ id: userDocument._id }, process.env.JWT_SECRET),
@@ -528,7 +607,6 @@ module.exports.googleLoginAuthentication = async (req, res, next) => {
 
     if (existingUser) {
       logger.info("User Exists!!!!");
-      if (existingUser.email === primaryEmail) {
         // return res.status(400).send({
         //   error:
         //     'A user with the same email already exists, please change your email.',
@@ -545,15 +623,26 @@ module.exports.googleLoginAuthentication = async (req, res, next) => {
         //   isNewUser,
         //   token: jwt.encode({ id: existingUser._id }, process.env.JWT_SECRET),
         // });
-        res.send({
+        await User.updateOne({ _id: existingUser._id }, {confirmed: true, googleUserId: googleUserId});
+        res.status(200).send({
           user: {
             email: primaryEmail,
+            fullName: existingUser.fullName,
             username: existingUser.username,
+            avatar: existingUser.avatar,
+            bio : existingUser.bio,
+            website: existingUser.website,
+            bookmarks: existingUser.bookmarks,
+            private: existingUser.private,
+            confirmed: true,
+            pets: existingUser.pets,
+            githubId: existingUser.githubId,
+            faceBookUserId: existingUser.faceBookUserId,
+            googleUserId: googleUserId,
           },
           isNewUser,
           token: jwt.encode({ id: existingUser._id }, process.env.JWT_SECRET),
         });
-      }
       // if (existingUser.username === googleUser.given_name+googleUser.family_name.toLowerCase()) {
       //   const username = await generateUniqueUsername(googleUser.given_name+googleUser.family_name.toLowerCase());
       //   fbUser.data.login = username;
@@ -572,9 +661,19 @@ module.exports.googleLoginAuthentication = async (req, res, next) => {
     await user.save();
     return res.send({
       user: {
-        email: user.email,
-        username: user.username,
-        bookmarks: user.bookmarks,
+            email: primaryEmail,
+            fullName: user.fullName,
+            username: user.username,
+            avatar: user.avatar,
+            bio : user.bio,
+            website: user.website,
+            bookmarks: user.bookmarks,
+            private: user.private,
+            confirmed: true,
+            pets: user.pets,
+            githubId: user.githubId,
+            faceBookUserId: user.faceBookUserId,
+            googleUserId: user.googleUserId,
       },
       isNewUser: true,
       token: jwt.encode({ id: user._id }, process.env.JWT_SECRET),
