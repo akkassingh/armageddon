@@ -16,7 +16,7 @@ const {
   updateProfile,
   retrieveSuggestedUsers,
   isUsernameAvaialble,
-  addPet
+  becomeGuardian
 } = require('../controllers/userController');
 const { requireAuth, optionalAuth } = require('../controllers/authController');
 
@@ -44,5 +44,5 @@ userRouter.delete('/avatar', requireAuth, removeAvatar);
 userRouter.post('/:postId/bookmark', requireAuth, bookmarkPost);
 userRouter.post('/:userId/follow', requireAuth, followUser);
 userRouter.get('/isusernameavailable/:username',requireAuth, isUsernameAvaialble);
-userRouter.patch('/addPet', requireAuth,addPet);
+userRouter.patch('/addPet', requireAuth,becomeGuardian);
 module.exports = userRouter;

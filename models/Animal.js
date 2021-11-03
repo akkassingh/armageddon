@@ -15,6 +15,7 @@ const AnimalSchema = new Schema({
         lowercase: true,
         minlength: 3,
     },
+    avatar: String,
     guardians: [{
         user: {
             type: Schema.ObjectId,
@@ -45,7 +46,7 @@ const AnimalSchema = new Schema({
         type: String,
         maxlength: 130,
     },
-    animal_type: {
+    animalType: {
         type: String,
         required: true,
     },
