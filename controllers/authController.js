@@ -529,7 +529,7 @@ module.exports.googleLoginAuthentication = async (req, res, next) => {
     logger.info("googleUser is ", JSON.stringify(googleUser));
     const user = new User({
       email: primaryEmail,
-      fullName: googleUser.email.split("@")[0],
+      fullName: googleUser.email.name,
       // username: googleUser.login ? googleUser.login : await generateUniqueUsername(googleUser.given_name+googleUser.family_name.toLowerCase());,
       username: await generateUniqueUsername(googleUser.email.split("@")[0]),
       googleUserId: googleUserId,
