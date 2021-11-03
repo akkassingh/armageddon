@@ -6,7 +6,14 @@ const PostVoteSchema = new Schema({
     type: Schema.ObjectId,
     ref: 'Post'
   },
-  //TODO: change the format to {postid : userid}
+  // userType: {
+  //   type: String,
+  //   required: true,
+  // }
+  // voter: {
+  //   type: Schema.ObjectId,
+  //   ref: 'userType',
+  // }
   votes: [{ author: { type: Schema.ObjectId, ref: 'User' } }]
 });
 

@@ -11,8 +11,7 @@ const {
     requireAuth,
 } = require('../controllers/authController');
 
-animalRouter.post('/register', registerPet);
-
-
+animalRouter.post('/register', requireAuth, registerPet);
+animalRouter.patch('/addGuardian', addGuardian);
 
 module.exports = animalRouter;
