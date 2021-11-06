@@ -561,115 +561,226 @@ module.exports.googleRedirect = async (req, res, next) => {
 };
 
 module.exports.facebookLoginAuthentication = async (req, res, next) => {
-  const { code, state } = req.body;
+  const { code, state, type } = req.body;
   if (!code || !state) {
     return res.status(400).send({ error: "Please provide valid credentials" });
   }
   try {
-    const { data } = await axios({
-      url: "https://graph.facebook.com/v4.0/oauth/access_token",
-      method: "get",
-      params: {
-        client_id: process.env.FACEBOOK_CLIENT_ID,
-        client_secret: process.env.FACEBOOK_CLIENT_SECRET,
-        redirect_uri: `${process.env.HOME_URL}/api/auth/authenticate/facebook/`,
-        grant_type: "authorization_code",
-        code,
-        state,
-      },
-    });
-    const accessToken = data.access_token;
-    console.log(accessToken);
-    logger.info("accessToken is ", JSON.stringify(accessToken));
-    logger.info("*******************************************");
-
-    // Retrieve the user's info
-    //{ locale: 'en_US', fields: 'name, email' }
-    const fbUser = await axios.get(
-      "https://graph.facebook.com/v2.5/me?fields=id,name,email,first_name,last_name",
-      {
-        headers: { Authorization: `Bearer ${accessToken}` },
-      }
-    );
-    console.log("fbUser is as below");
-    console.log(fbUser.data);
-    logger.info("fbUser is ", JSON.stringify(fbUser.data));
-    const primaryEmail = fbUser.data.email;
-    const facebookId = fbUser.data.id;
-    const userDocument = await User.findOne({ facebookId });
-    logger.info("userDocument is ", JSON.stringify(userDocument));
-    let isNewUser = true;
-    if (user.avatar) {
-      isNewUser = false;
-    }
-    if (userDocument) {
-      return res.send({
-        user: {
-          _id: userDocument._id,
-          email: userDocument.email,
-          username: userDocument.username,
-          avatar: userDocument.avatar,
-          bookmarks: userDocument.bookmarks,
+    if (type && type === "sp") {
+      const { data } = await axios({
+        url: "https://graph.facebook.com/v4.0/oauth/access_token",
+        method: "get",
+        params: {
+          client_id: process.env.FACEBOOK_CLIENT_ID,
+          client_secret: process.env.FACEBOOK_CLIENT_SECRET,
+          redirect_uri: `${process.env.HOME_URL}/api/auth/authenticate/facebook/`,
+          grant_type: "authorization_code",
+          code,
+          state,
         },
-        isNewUser,
-        token: jwt.encode({ id: userDocument._id }, process.env.JWT_SECRET),
       });
-    }
+      const accessToken = data.access_token;
+      console.log(accessToken);
+      logger.info("accessToken is ", JSON.stringify(accessToken));
+      logger.info("*******************************************");
 
-    const existingUser = await User.findOne({ email: primaryEmail });
-    // const existingUser = await User.findOne({
-    //   $or: [{ email: primaryEmail }, { username: fbUser.data.first_name+fbUser.data.last_name.toLowerCase() }],
-    // });
-
-    logger.info("existingUser is ", JSON.stringify(existingUser));
-
-    if (existingUser) {
+      // Retrieve the user's info
+      //{ locale: 'en_US', fields: 'name, email' }
+      const fbUser = await axios.get(
+        "https://graph.facebook.com/v2.5/me?fields=id,name,email,first_name,last_name",
+        {
+          headers: { Authorization: `Bearer ${accessToken}` },
+        }
+      );
+      console.log("fbUser is as below");
+      console.log(fbUser.data);
+      logger.info("fbUser is ", JSON.stringify(fbUser.data));
+      const primaryEmail = fbUser.data.email;
+      const facebookId = fbUser.data.id;
+      const userDocument = await ServiceProvider.findOne({
+        faceBookUserId: facebookId,
+      });
+      logger.info("userDocument is ", JSON.stringify(userDocument));
       let isNewUser = true;
-      if (existingUser.avatar) {
+      if (user.avatar) {
         isNewUser = false;
       }
-      logger.info("User Exists!!!!");
-      if (existingUser.email === primaryEmail) {
-        // return res.status(400).send({
-        //   error:
-        //     'A user with the same email already exists, please change your email.',
-        // });
-        return res.send(200).json({
+      if (userDocument) {
+        return res.send({
           user: {
-            email: primaryEmail,
-            username: existingUser.username,
+            _id: userDocument._id,
+            email: userDocument.email,
+            username: userDocument.username,
+            avatar: userDocument.avatar,
+            bookmarks: userDocument.bookmarks,
           },
           isNewUser,
-          token: jwt.encode({ id: existingUser._id }, process.env.JWT_SECRET),
+          token: jwt.encode({ id: userDocument._id }, process.env.JWT_SECRET),
         });
       }
-      // if (existingUser.username === fbUser.data.first_name+fbUser.data.last_name.toLowerCase()) {
-      //   const username = await generateUniqueUsername(fbUser.data.first_name+fbUser.data.last_name.toLowerCase());
-      //   fbUser.data.login = username;
-      // }
-    }
-    logger.info("fbUser is ", JSON.stringify(fbUser.data));
-    const user = new User({
-      email: primaryEmail,
-      fullName: fbUser.data.name,
-      // username: fbUser.data.login ? fbUser.data.login : fbUser.data.first_name+fbUser.data.last_name.toLowerCase(),
-      username: await generateUniqueUsername(
-        fbUser.data.first_name + fbUser.data.last_name.toLowerCase()
-      ),
-      confirmed: true,
-      facebookId: fbUser.data.id,
-    });
 
-    await user.save();
-    return res.send({
-      user: {
-        email: user.email,
-        username: user.username,
-        bookmarks: user.bookmarks,
-      },
-      isNewUser: true,
-      token: jwt.encode({ id: user._id }, process.env.JWT_SECRET),
-    });
+      const existingUser = await ServiceProvider.findOne({
+        email: primaryEmail,
+      });
+      // const existingUser = await User.findOne({
+      //   $or: [{ email: primaryEmail }, { username: fbUser.data.first_name+fbUser.data.last_name.toLowerCase() }],
+      // });
+
+      logger.info("existingUser is ", JSON.stringify(existingUser));
+
+      if (existingUser) {
+        let isNewUser = true;
+        if (existingUser.avatar) {
+          isNewUser = false;
+        }
+        logger.info("User Exists!!!!");
+        if (existingUser.email === primaryEmail) {
+          // return res.status(400).send({
+          //   error:
+          //     'A user with the same email already exists, please change your email.',
+          // });
+          return res.send(200).json({
+            user: {
+              email: primaryEmail,
+              username: existingUser.username,
+            },
+            isNewUser,
+            token: jwt.encode({ id: existingUser._id }, process.env.JWT_SECRET),
+          });
+        }
+        // if (existingUser.username === fbUser.data.first_name+fbUser.data.last_name.toLowerCase()) {
+        //   const username = await generateUniqueUsername(fbUser.data.first_name+fbUser.data.last_name.toLowerCase());
+        //   fbUser.data.login = username;
+        // }
+      }
+      logger.info("fbUser is ", JSON.stringify(fbUser.data));
+      const user = new ServiceProvider({
+        email: primaryEmail,
+        fullName: fbUser.data.name,
+        // username: fbUser.data.login ? fbUser.data.login : fbUser.data.first_name+fbUser.data.last_name.toLowerCase(),
+        userName: await generateUniqueUsername(
+          fbUser.data.first_name + fbUser.data.last_name.toLowerCase()
+        ),
+        confirmed: true,
+        faceBookUserId: fbUser.data.id,
+      });
+
+      await user.save();
+      return res.send({
+        user: {
+          email: user.email,
+          username: user.username,
+          bookmarks: user.bookmarks,
+        },
+        isNewUser: true,
+        token: jwt.encode({ id: user._id }, process.env.JWT_SECRET),
+      });
+    } else {
+      const { data } = await axios({
+        url: "https://graph.facebook.com/v4.0/oauth/access_token",
+        method: "get",
+        params: {
+          client_id: process.env.FACEBOOK_CLIENT_ID,
+          client_secret: process.env.FACEBOOK_CLIENT_SECRET,
+          redirect_uri: `${process.env.HOME_URL}/api/auth/authenticate/facebook/`,
+          grant_type: "authorization_code",
+          code,
+          state,
+        },
+      });
+      const accessToken = data.access_token;
+      console.log(accessToken);
+      logger.info("accessToken is ", JSON.stringify(accessToken));
+      logger.info("*******************************************");
+
+      // Retrieve the user's info
+      //{ locale: 'en_US', fields: 'name, email' }
+      const fbUser = await axios.get(
+        "https://graph.facebook.com/v2.5/me?fields=id,name,email,first_name,last_name",
+        {
+          headers: { Authorization: `Bearer ${accessToken}` },
+        }
+      );
+      console.log("fbUser is as below");
+      console.log(fbUser.data);
+      logger.info("fbUser is ", JSON.stringify(fbUser.data));
+      const primaryEmail = fbUser.data.email;
+      const facebookId = fbUser.data.id;
+      const userDocument = await User.findOne({ faceBookUserId: facebookId });
+      logger.info("userDocument is ", JSON.stringify(userDocument));
+      let isNewUser = true;
+      if (user.avatar) {
+        isNewUser = false;
+      }
+      if (userDocument) {
+        return res.send({
+          user: {
+            _id: userDocument._id,
+            email: userDocument.email,
+            username: userDocument.username,
+            avatar: userDocument.avatar,
+            bookmarks: userDocument.bookmarks,
+          },
+          isNewUser,
+          token: jwt.encode({ id: userDocument._id }, process.env.JWT_SECRET),
+        });
+      }
+
+      const existingUser = await User.findOne({ email: primaryEmail });
+      // const existingUser = await User.findOne({
+      //   $or: [{ email: primaryEmail }, { username: fbUser.data.first_name+fbUser.data.last_name.toLowerCase() }],
+      // });
+
+      logger.info("existingUser is ", JSON.stringify(existingUser));
+
+      if (existingUser) {
+        let isNewUser = true;
+        if (existingUser.avatar) {
+          isNewUser = false;
+        }
+        logger.info("User Exists!!!!");
+        if (existingUser.email === primaryEmail) {
+          // return res.status(400).send({
+          //   error:
+          //     'A user with the same email already exists, please change your email.',
+          // });
+          return res.send(200).json({
+            user: {
+              email: primaryEmail,
+              username: existingUser.username,
+            },
+            isNewUser,
+            token: jwt.encode({ id: existingUser._id }, process.env.JWT_SECRET),
+          });
+        }
+        // if (existingUser.username === fbUser.data.first_name+fbUser.data.last_name.toLowerCase()) {
+        //   const username = await generateUniqueUsername(fbUser.data.first_name+fbUser.data.last_name.toLowerCase());
+        //   fbUser.data.login = username;
+        // }
+      }
+      logger.info("fbUser is ", JSON.stringify(fbUser.data));
+      const user = new User({
+        email: primaryEmail,
+        fullName: fbUser.data.name,
+        // username: fbUser.data.login ? fbUser.data.login : fbUser.data.first_name+fbUser.data.last_name.toLowerCase(),
+        username: await generateUniqueUsername(
+          fbUser.data.first_name + fbUser.data.last_name.toLowerCase()
+        ),
+        confirmed: true,
+        faceBookUserId: fbUser.data.id,
+      });
+
+      await user.save();
+      return res.send({
+        user: {
+          email: user.email,
+          username: user.username,
+          bookmarks: user.bookmarks,
+        },
+        isNewUser: true,
+        token: jwt.encode({ id: user._id }, process.env.JWT_SECRET),
+      });
+    }
   } catch (err) {
     console.log(err);
     logger.err("err is ", err);
@@ -678,109 +789,210 @@ module.exports.facebookLoginAuthentication = async (req, res, next) => {
 };
 
 module.exports.googleLoginAuthentication = async (req, res, next) => {
-  const { code } = req.body;
+  const { code, type } = req.body;
   if (!code) {
     return res
       .status(400)
       .send({ error: "Please provide valid code and state." });
   }
   try {
-    const accessToken = code;
+    if (type && type === "sp") {
+      const accessToken = code;
 
-    console.log("accessToken is ", accessToken);
+      console.log("accessToken is ", accessToken);
 
-    // Retrieve the user's info
-    const googleUserResponse = await axios.get(
-      "https://www.googleapis.com/oauth2/v2/userinfo",
-      {
-        headers: { Authorization: `Bearer ${accessToken}` },
-      }
-    );
-    logger.info("googleUser is ", JSON.stringify(googleUserResponse.data));
-    googleUser = googleUserResponse.data;
-    const primaryEmail = googleUser.email;
-    const googleUserId = googleUser.id;
-    const userDocument = await User.findOne({ googleUserId });
-    logger.info("userDocument is ", JSON.stringify(userDocument));
-    if (userDocument) {
-      let isNewUser = true;
-      if (userDocument.avatar) {
-        isNewUser = false;
-      }
-      return res.send({
-        user: {
-          _id: userDocument._id,
-          email: userDocument.email,
-          username: userDocument.username,
-          avatar: userDocument.avatar,
-          bookmarks: userDocument.bookmarks,
-        },
-        isNewUser,
-        token: jwt.encode({ id: userDocument._id }, process.env.JWT_SECRET),
-      });
-    }
-
-    const existingUser = await User.findOne({ email: primaryEmail });
-
-    // const existingUser = await User.findOne({
-    //   $or: [{ email: primaryEmail }, { username: googleUser.given_name+googleUser.family_name.toLowerCase() }],
-    // });
-
-    logger.info("existingUser is ", JSON.stringify(existingUser));
-
-    if (existingUser) {
-      logger.info("User Exists!!!!");
-      if (existingUser.email === primaryEmail) {
-        // return res.status(400).send({
-        //   error:
-        //     'A user with the same email already exists, please change your email.',
-        // });
+      // Retrieve the user's info
+      const googleUserResponse = await axios.get(
+        "https://www.googleapis.com/oauth2/v2/userinfo",
+        {
+          headers: { Authorization: `Bearer ${accessToken}` },
+        }
+      );
+      logger.info("googleUser is ", JSON.stringify(googleUserResponse.data));
+      googleUser = googleUserResponse.data;
+      const primaryEmail = googleUser.email;
+      const googleUserId = googleUser.id;
+      const userDocument = await ServiceProvider.findOne({ googleUserId });
+      logger.info("userDocument is ", JSON.stringify(userDocument));
+      if (userDocument) {
         let isNewUser = true;
-        if (existingUser.avatar) {
+        if (userDocument.avatar) {
           isNewUser = false;
         }
-        // res.sendStatus(200).json({
-        //   user: {
-        //     email: primaryEmail,
-        //     username: existingUser.username,
-        //   },
-        //   isNewUser,
-        //   token: jwt.encode({ id: existingUser._id }, process.env.JWT_SECRET),
-        // });
-        res.send({
+        return res.send({
           user: {
-            email: primaryEmail,
-            username: existingUser.username,
+            _id: userDocument._id,
+            email: userDocument.email,
+            username: userDocument.username,
+            avatar: userDocument.avatar,
+            bookmarks: userDocument.bookmarks,
           },
           isNewUser,
-          token: jwt.encode({ id: existingUser._id }, process.env.JWT_SECRET),
+          token: jwt.encode({ id: userDocument._id }, process.env.JWT_SECRET),
         });
       }
-      // if (existingUser.username === googleUser.given_name+googleUser.family_name.toLowerCase()) {
-      //   const username = await generateUniqueUsername(googleUser.given_name+googleUser.family_name.toLowerCase());
-      //   fbUser.data.login = username;
-      // }
-    }
-    logger.info("googleUser is ", JSON.stringify(googleUser));
-    const user = new User({
-      email: primaryEmail,
-      fullName: googleUser.email.name,
-      // username: googleUser.login ? googleUser.login : await generateUniqueUsername(googleUser.given_name+googleUser.family_name.toLowerCase());,
-      username: await generateUniqueUsername(googleUser.email.split("@")[0]),
-      googleUserId: googleUserId,
-      confirmed: true,
-    });
 
-    await user.save();
-    return res.send({
-      user: {
-        email: user.email,
-        username: user.username,
-        bookmarks: user.bookmarks,
-      },
-      isNewUser: true,
-      token: jwt.encode({ id: user._id }, process.env.JWT_SECRET),
-    });
+      const existingUser = await ServiceProvider.findOne({
+        email: primaryEmail,
+      });
+
+      // const existingUser = await User.findOne({
+      //   $or: [{ email: primaryEmail }, { username: googleUser.given_name+googleUser.family_name.toLowerCase() }],
+      // });
+
+      logger.info("existingUser is ", JSON.stringify(existingUser));
+
+      if (existingUser) {
+        logger.info("User Exists!!!!");
+        if (existingUser.email === primaryEmail) {
+          // return res.status(400).send({
+          //   error:
+          //     'A user with the same email already exists, please change your email.',
+          // });
+          let isNewUser = true;
+          if (existingUser.avatar) {
+            isNewUser = false;
+          }
+          // res.sendStatus(200).json({
+          //   user: {
+          //     email: primaryEmail,
+          //     username: existingUser.username,
+          //   },
+          //   isNewUser,
+          //   token: jwt.encode({ id: existingUser._id }, process.env.JWT_SECRET),
+          // });
+          res.send({
+            user: {
+              email: primaryEmail,
+              username: existingUser.username,
+            },
+            isNewUser,
+            token: jwt.encode({ id: existingUser._id }, process.env.JWT_SECRET),
+          });
+        }
+        // if (existingUser.username === googleUser.given_name+googleUser.family_name.toLowerCase()) {
+        //   const username = await generateUniqueUsername(googleUser.given_name+googleUser.family_name.toLowerCase());
+        //   fbUser.data.login = username;
+        // }
+      }
+      logger.info("googleUser is ", JSON.stringify(googleUser));
+      const user = new ServiceProvider({
+        email: primaryEmail,
+        fullName: googleUser.email.name,
+        // username: googleUser.login ? googleUser.login : await generateUniqueUsername(googleUser.given_name+googleUser.family_name.toLowerCase());,
+        userName: await generateUniqueUsername(googleUser.email.split("@")[0]),
+        googleUserId: googleUserId,
+        confirmed: true,
+      });
+
+      await user.save();
+      return res.send({
+        user: {
+          email: user.email,
+          username: user.username,
+          bookmarks: user.bookmarks,
+        },
+        isNewUser: true,
+        token: jwt.encode({ id: user._id }, process.env.JWT_SECRET),
+      });
+    } else {
+      const accessToken = code;
+
+      console.log("accessToken is ", accessToken);
+
+      // Retrieve the user's info
+      const googleUserResponse = await axios.get(
+        "https://www.googleapis.com/oauth2/v2/userinfo",
+        {
+          headers: { Authorization: `Bearer ${accessToken}` },
+        }
+      );
+      logger.info("googleUser is ", JSON.stringify(googleUserResponse.data));
+      googleUser = googleUserResponse.data;
+      const primaryEmail = googleUser.email;
+      const googleUserId = googleUser.id;
+      const userDocument = await User.findOne({ googleUserId });
+      logger.info("userDocument is ", JSON.stringify(userDocument));
+      if (userDocument) {
+        let isNewUser = true;
+        if (userDocument.avatar) {
+          isNewUser = false;
+        }
+        return res.send({
+          user: {
+            _id: userDocument._id,
+            email: userDocument.email,
+            username: userDocument.username,
+            avatar: userDocument.avatar,
+            bookmarks: userDocument.bookmarks,
+          },
+          isNewUser,
+          token: jwt.encode({ id: userDocument._id }, process.env.JWT_SECRET),
+        });
+      }
+
+      const existingUser = await User.findOne({ email: primaryEmail });
+
+      // const existingUser = await User.findOne({
+      //   $or: [{ email: primaryEmail }, { username: googleUser.given_name+googleUser.family_name.toLowerCase() }],
+      // });
+
+      logger.info("existingUser is ", JSON.stringify(existingUser));
+
+      if (existingUser) {
+        logger.info("User Exists!!!!");
+        if (existingUser.email === primaryEmail) {
+          // return res.status(400).send({
+          //   error:
+          //     'A user with the same email already exists, please change your email.',
+          // });
+          let isNewUser = true;
+          if (existingUser.avatar) {
+            isNewUser = false;
+          }
+          // res.sendStatus(200).json({
+          //   user: {
+          //     email: primaryEmail,
+          //     username: existingUser.username,
+          //   },
+          //   isNewUser,
+          //   token: jwt.encode({ id: existingUser._id }, process.env.JWT_SECRET),
+          // });
+          res.send({
+            user: {
+              email: primaryEmail,
+              username: existingUser.username,
+            },
+            isNewUser,
+            token: jwt.encode({ id: existingUser._id }, process.env.JWT_SECRET),
+          });
+        }
+        // if (existingUser.username === googleUser.given_name+googleUser.family_name.toLowerCase()) {
+        //   const username = await generateUniqueUsername(googleUser.given_name+googleUser.family_name.toLowerCase());
+        //   fbUser.data.login = username;
+        // }
+      }
+      logger.info("googleUser is ", JSON.stringify(googleUser));
+      const user = new User({
+        email: primaryEmail,
+        fullName: googleUser.email.name,
+        // username: googleUser.login ? googleUser.login : await generateUniqueUsername(googleUser.given_name+googleUser.family_name.toLowerCase());,
+        username: await generateUniqueUsername(googleUser.email.split("@")[0]),
+        googleUserId: googleUserId,
+        confirmed: true,
+      });
+
+      await user.save();
+      return res.send({
+        user: {
+          email: user.email,
+          username: user.username,
+          bookmarks: user.bookmarks,
+        },
+        isNewUser: true,
+        token: jwt.encode({ id: user._id }, process.env.JWT_SECRET),
+      });
+    }
   } catch (err) {
     console.log("------------------------------", err);
     res.send({ err });

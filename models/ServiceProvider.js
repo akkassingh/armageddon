@@ -78,8 +78,8 @@ const ServiceProviderSchema = new Schema({
   pan: String,
   aadhar: String,
   githubId: Number,
-  faceBookUserId: Number,
-  googleUserId: Number,
+  faceBookUserId: String,
+  googleUserId: String,
   private: {
     type: Boolean,
     default: false,
