@@ -356,7 +356,7 @@ module.exports.loginAuthentication = async (req, res, next) => {
 };
 
 module.exports.register = async (req, res, next) => {
-  logger.info("*** Register method called ***");
+  logger.info("*** Register method called *** ");
   const { email, password, type } = req.body;
   if (type && type === "sp") {
     let user = null;
