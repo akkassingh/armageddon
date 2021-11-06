@@ -96,7 +96,7 @@ ServiceProviderSchema.pre("save", async function (next) {
     try {
       const document = await ServiceProvider.findOne({
         $or: [{ email: this.email }, { username: this.userName }],
-      });{
+      });
       if (document) {
         console.log(document);
         return next(
