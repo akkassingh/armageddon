@@ -1,11 +1,12 @@
-const jwt = require('jwt-simple');
-const crypto = require('crypto');
-const User = require('../models/User');
-const Animal = require('../models/Animal');
-const ConfirmationToken = require('../models/ConfirmationToken');
-const bcrypt = require('bcrypt');
-const axios = require('axios');
-const logger = require('../logger/logger');
+const jwt = require("jwt-simple");
+const crypto = require("crypto");
+const User = require("../models/User");
+const ServiceProvider = require("../models/ServiceProvider");
+const Animal = require("../models/Animal");
+const ConfirmationToken = require("../models/ConfirmationToken");
+const bcrypt = require("bcrypt");
+const axios = require("axios");
+const logger = require("../logger/logger");
 
 const {
   sendConfirmationEmail,
@@ -17,18 +18,28 @@ const {
 } = require("../utils/controllerUtils");
 const { validateEmail, validatePassword } = require("../utils/validation");
 
-module.exports.verifyJwt = (token) => {
+module.exports.verifyJwt = (token, type) => {
   return new Promise(async (resolve, reject) => {
     try {
-      const id = jwt.decode(token, process.env.JWT_SECRET).id;
-      const user = await User.findOne(
-        { _id: id },
-        "email username avatar bookmarks bio fullName confirmed website pets"
-      );
-      if (user) {
-        return resolve(user);
+      if (type && type === "sp") {
+        const id = jwt.decode(token, process.env.JWT_SECRET).id;
+        const user = await ServiceProvider.findOne({ _id: id });
+        if (user) {
+          return resolve(user);
+        } else {
+          reject("Not authorized.");
+        }
       } else {
-        reject("Not authorized.");
+        const id = jwt.decode(token, process.env.JWT_SECRET).id;
+        const user = await User.findOne(
+          { _id: id },
+          "email username avatar bookmarks bio fullName confirmed website pets"
+        );
+        if (user) {
+          return resolve(user);
+        } else {
+          reject("Not authorized.");
+        }
       }
     } catch (err) {
       return reject("Not authorized.");
@@ -42,7 +53,7 @@ module.exports.verifyJwtAnimal = (token) => {
       const id = jwt.decode(token, process.env.JWT_SECRET).id;
       const animal = await Animal.findOne(
         { _id: id },
-        'name username avatar guardians relatedAnimals'
+        "name username avatar guardians relatedAnimals"
       );
       if (user) {
         return resolve(user);
@@ -57,9 +68,16 @@ module.exports.verifyJwtAnimal = (token) => {
 
 module.exports.requireAuth = async (req, res, next) => {
   const { authorization } = req.headers;
+  const { type } = req.body;
   if (!authorization) return res.status(401).send({ error: "Not authorized." });
   try {
-    const user = await this.verifyJwt(authorization);
+    let user;
+    if (type && type === "sp") {
+      user = await this.verifyJwt(authorization, type);
+    } else {
+      user = await this.verifyJwt(authorization);
+    }
+
     // Allow other middlewares to access the authenticated user details.
     res.locals.user = user;
     return next();
@@ -97,10 +115,85 @@ module.exports.optionalAuth = async (req, res, next) => {
 
 module.exports.loginAuthentication = async (req, res, next) => {
   const { authorization } = req.headers;
-  const { usernameOrEmail, password } = req.body;
-  if (authorization) {
+  const { usernameOrEmail, password, type } = req.body;
+  if (type && type === "sp") {
+    if (authorization) {
+      try {
+        const user = await this.verifyJwt(authorization, type);
+        let isNewUser = true;
+        if (user.avatar) {
+          isNewUser = false;
+        }
+        if (!user.confirmed) {
+          const otp = Math.floor(Math.random() * (999999 - 100000)) + 100000;
+          const hashotp = await hashPassword(otp.toString(), 10);
+          await sendOTPEmail(user.username, user.email, otp);
+          const confirmationToken = await ConfirmationToken.findOne({
+            user: user._id,
+          });
+          if (confirmationToken) {
+            await ConfirmationToken.findOneAndUpdate(
+              { user: user._id },
+              {
+                token: hashotp,
+                timestamp: Date.now(),
+              }
+            );
+          } else {
+            await ConfirmationToken.create({
+              user: user._id,
+              token: hashotp,
+              timestamp: Date.now(),
+            });
+          }
+          return res.send({
+            user: {
+              email: user.email,
+              username: user.username,
+              confirmed: user.confirmed,
+            },
+            isNewUser,
+            message: "OTP has been sent successfully!",
+            token: authorization,
+          });
+        }
+        return res.send({
+          user: {
+            email: user.email,
+            username: user.username,
+            confirmed: user.confirmed,
+          },
+          isNewUser,
+          token: authorization,
+        });
+      } catch (err) {
+        return res.status(401).send({ error: err });
+      }
+    }
+
+    if (!usernameOrEmail || !password) {
+      return res.status(400).send({
+        error: "Please provide both a username/email and a password.",
+      });
+    }
+
     try {
-      const user = await this.verifyJwt(authorization);
+      const user = await ServiceProvider.findOne({
+        $or: [{ userName: usernameOrEmail }, { email: usernameOrEmail }],
+      });
+      if (!user || !user.password) {
+        return res.status(401).send({
+          error:
+            "The credentials you provided are incorrect, please try again.",
+        });
+      }
+      const comparepwd = await bcrypt.compare(password, user.password);
+      if (!comparepwd) {
+        return res.status(401).send({
+          error:
+            "The credentials you provided are incorrect, please try again.",
+        });
+      }
       let isNewUser = true;
       if (user.avatar) {
         isNewUser = false;
@@ -127,17 +220,8 @@ module.exports.loginAuthentication = async (req, res, next) => {
             timestamp: Date.now(),
           });
         }
-        return res.send({
-          user: {
-            email: user.email,
-            username: user.username,
-            confirmed: user.confirmed,
-          },
-          isNewUser,
-          message: "OTP has been sent successfully!",
-          token: authorization,
-        });
       }
+
       return res.send({
         user: {
           email: user.email,
@@ -145,120 +229,238 @@ module.exports.loginAuthentication = async (req, res, next) => {
           confirmed: user.confirmed,
         },
         isNewUser,
-        token: authorization,
+        token: jwt.encode({ id: user._id }, process.env.JWT_SECRET),
       });
     } catch (err) {
-      return res.status(401).send({ error: err });
+      next(err);
     }
-  }
-
-  if (!usernameOrEmail || !password) {
-    return res
-      .status(400)
-      .send({ error: "Please provide both a username/email and a password." });
-  }
-
-  try {
-    const user = await User.findOne({
-      $or: [{ username: usernameOrEmail }, { email: usernameOrEmail }],
-    });
-    if (!user || !user.password) {
-      return res.status(401).send({
-        error: "The credentials you provided are incorrect, please try again.",
-      });
-    }
-    const comparepwd = await bcrypt.compare(password, user.password);
-    if (!comparepwd) {
-      return res.status(401).send({
-        error: "The credentials you provided are incorrect, please try again.",
-      });
-    }
-    let isNewUser = true;
-    if (user.avatar) {
-      isNewUser = false;
-    }
-    if (!user.confirmed) {
-      const otp = Math.floor(Math.random() * (999999 - 100000)) + 100000;
-      const hashotp = await hashPassword(otp.toString(), 10);
-      await sendOTPEmail(user.username, user.email, otp);
-      const confirmationToken = await ConfirmationToken.findOne({
-        user: user._id,
-      });
-      if (confirmationToken) {
-        await ConfirmationToken.findOneAndUpdate(
-          { user: user._id },
-          {
-            token: hashotp,
-            timestamp: Date.now(),
+  } else {
+    if (authorization) {
+      try {
+        const user = await this.verifyJwt(authorization);
+        let isNewUser = true;
+        if (user.avatar) {
+          isNewUser = false;
+        }
+        if (!user.confirmed) {
+          const otp = Math.floor(Math.random() * (999999 - 100000)) + 100000;
+          const hashotp = await hashPassword(otp.toString(), 10);
+          await sendOTPEmail(user.username, user.email, otp);
+          const confirmationToken = await ConfirmationToken.findOne({
+            user: user._id,
+          });
+          if (confirmationToken) {
+            await ConfirmationToken.findOneAndUpdate(
+              { user: user._id },
+              {
+                token: hashotp,
+                timestamp: Date.now(),
+              }
+            );
+          } else {
+            await ConfirmationToken.create({
+              user: user._id,
+              token: hashotp,
+              timestamp: Date.now(),
+            });
           }
-        );
-      } else {
-        await ConfirmationToken.create({
-          user: user._id,
-          token: hashotp,
-          timestamp: Date.now(),
+          return res.send({
+            user: {
+              email: user.email,
+              username: user.username,
+              confirmed: user.confirmed,
+            },
+            isNewUser,
+            message: "OTP has been sent successfully!",
+            token: authorization,
+          });
+        }
+        return res.send({
+          user: {
+            email: user.email,
+            username: user.username,
+            confirmed: user.confirmed,
+          },
+          isNewUser,
+          token: authorization,
         });
+      } catch (err) {
+        return res.status(401).send({ error: err });
       }
     }
 
-    return res.send({
-      user: {
-        email: user.email,
-        username: user.username,
-        confirmed: user.confirmed,
-      },
-      isNewUser,
-      token: jwt.encode({ id: user._id }, process.env.JWT_SECRET),
-    });
-  } catch (err) {
-    next(err);
+    if (!usernameOrEmail || !password) {
+      return res.status(400).send({
+        error: "Please provide both a username/email and a password.",
+      });
+    }
+
+    try {
+      const user = await User.findOne({
+        $or: [{ username: usernameOrEmail }, { email: usernameOrEmail }],
+      });
+      if (!user || !user.password) {
+        return res.status(401).send({
+          error:
+            "The credentials you provided are incorrect, please try again.",
+        });
+      }
+      const comparepwd = await bcrypt.compare(password, user.password);
+      if (!comparepwd) {
+        return res.status(401).send({
+          error:
+            "The credentials you provided are incorrect, please try again.",
+        });
+      }
+      let isNewUser = true;
+      if (user.avatar) {
+        isNewUser = false;
+      }
+      if (!user.confirmed) {
+        const otp = Math.floor(Math.random() * (999999 - 100000)) + 100000;
+        const hashotp = await hashPassword(otp.toString(), 10);
+        await sendOTPEmail(user.username, user.email, otp);
+        const confirmationToken = await ConfirmationToken.findOne({
+          user: user._id,
+        });
+        if (confirmationToken) {
+          await ConfirmationToken.findOneAndUpdate(
+            { user: user._id },
+            {
+              token: hashotp,
+              timestamp: Date.now(),
+            }
+          );
+        } else {
+          await ConfirmationToken.create({
+            user: user._id,
+            token: hashotp,
+            timestamp: Date.now(),
+          });
+        }
+      }
+
+      return res.send({
+        user: {
+          email: user.email,
+          username: user.username,
+          confirmed: user.confirmed,
+        },
+        isNewUser,
+        token: jwt.encode({ id: user._id }, process.env.JWT_SECRET),
+      });
+    } catch (err) {
+      next(err);
+    }
   }
 };
 
 module.exports.register = async (req, res, next) => {
-  logger.info("*** Register method called ***");
-  const { email, password } = req.body;
-  let user = null;
-  let confirmationToken = null;
+  logger.info("*** Register method called *** ");
+  const { email, password, type } = req.body;
+  if (type && type === "sp") {
+    let user = null;
+    let confirmationToken = null;
 
-  const emailError = validateEmail(email);
-  if (emailError) return res.status(400).send({ error: emailError });
+    const emailError = validateEmail(email);
+    if (emailError) return res.status(400).send({ error: emailError });
 
-  const passwordError = validatePassword(password);
-  if (passwordError) return res.status(400).send({ error: passwordError });
+    if (password.length < 8) {
+      return res
+        .status(400)
+        .send({ error: "Password must be at least 8 characters long" });
+    }
 
-  try {
-    let username = email.split("@")[0];
-    username = await generateUniqueUsername(username);
-    logger.info("Unique username is", username);
-    const otp = Math.floor(Math.random() * (999999 - 100000)) + 100000;
-    const hashedotp = await hashPassword(otp.toString(), 10);
-    user = new User({ email, password, username });
-    confirmationToken = new ConfirmationToken({
-      user: user._id,
-      // token: crypto.randomBytes(20).toString('hex'),
-      token: hashedotp,
-      timestamp: Date.now(),
-    });
-    await user.save();
-    await confirmationToken.save();
-    await sendOTPEmail(username, email, otp);
-    res.status(201).send({
-      user: {
-        email: user.email,
-        username: user.username,
-        confirmed: false,
-      },
-      isNewUser: true,
-      message: "OTP has been sent successfully!",
-      token: jwt.encode({ id: user._id }, process.env.JWT_SECRET),
-    });
+    const passwordError = validatePassword(password);
+    if (passwordError) return res.status(400).send({ error: passwordError });
+
+    try {
+      let username = email.split("@")[0];
+      username = await generateUniqueUsername(username);
+      logger.info("Unique username is", username);
+      const otp = Math.floor(Math.random() * (999999 - 100000)) + 100000;
+      const hashedotp = await hashPassword(otp.toString(), 10);
+      const hasedPassword = await hashPassword(password, 10);
+      user = new ServiceProvider({
+        email,
+        password: hasedPassword,
+        userName: username,
+      });
+      confirmationToken = new ConfirmationToken({
+        user: user._id,
+        // token: crypto.randomBytes(20).toString('hex'),
+        token: hashedotp,
+        timestamp: Date.now(),
+      });
+      await user.save();
+      await confirmationToken.save();
+      await sendOTPEmail(username, email, otp);
+      res.status(201).send({
+        user: {
+          email: user.email,
+          username: user.username,
+          confirmed: false,
+        },
+        isNewUser: true,
+        message: "OTP has been sent successfully!",
+        token: jwt.encode({ id: user._id }, process.env.JWT_SECRET),
+      });
+      // sendConfirmationEmail(user.username, user.email, confirmationToken.token);
+    } catch (err) {
+      logger.info("error while register new user: ", err);
+      next(err);
+    }
     // sendConfirmationEmail(user.username, user.email, confirmationToken.token);
-  } catch (err) {
-    logger.info("error while register new user: ", err);
-    next(err);
+  } else {
+    let user = null;
+    let confirmationToken = null;
+
+    const emailError = validateEmail(email);
+    if (emailError) return res.status(400).send({ error: emailError });
+
+    if (password.length < 8) {
+      return res
+        .status(400)
+        .send({ error: "Password must be at least 8 characters long" });
+    }
+
+    const passwordError = validatePassword(password);
+    if (passwordError) return res.status(400).send({ error: passwordError });
+
+    try {
+      let username = email.split("@")[0];
+      username = await generateUniqueUsername(username);
+      logger.info("Unique username is", username);
+      const otp = Math.floor(Math.random() * (999999 - 100000)) + 100000;
+      const hashedotp = await hashPassword(otp.toString(), 10);
+      const hasedPassword = await hashPassword(password, 10);
+      user = new User({ email, password: hasedPassword, username });
+      confirmationToken = new ConfirmationToken({
+        user: user._id,
+        // token: crypto.randomBytes(20).toString('hex'),
+        token: hashedotp,
+        timestamp: Date.now(),
+      });
+      await user.save();
+      await confirmationToken.save();
+      await sendOTPEmail(username, email, otp);
+      res.status(201).send({
+        user: {
+          email: user.email,
+          username: user.username,
+          confirmed: false,
+        },
+        isNewUser: true,
+        message: "OTP has been sent successfully!",
+        token: jwt.encode({ id: user._id }, process.env.JWT_SECRET),
+      });
+      // sendConfirmationEmail(user.username, user.email, confirmationToken.token);
+    } catch (err) {
+      logger.info("error while register new user: ", err);
+      next(err);
+    }
+    // sendConfirmationEmail(user.username, user.email, confirmationToken.token);
   }
-  // sendConfirmationEmail(user.username, user.email, confirmationToken.token);
 };
 
 module.exports.githubLoginAuthentication = async (req, res, next) => {
@@ -757,7 +959,7 @@ module.exports.resetPasswordOTP = async (req, res, next) => {
 };
 
 module.exports.verifyResetPasswordOTP = async (req, res, next) => {
-  const { otp } = req.body;
+  const { otp, type, path } = req.body;
   const user = res.locals.user;
 
   try {
@@ -773,12 +975,32 @@ module.exports.verifyResetPasswordOTP = async (req, res, next) => {
         .status(404)
         .send({ error: "Invalid or expired confirmation attempt" });
     }
-    const token = confirmationToken.resettoken;
-    const compareotp = await bcrypt.compare(otp, token);
-    if (!compareotp) {
-      return res.status(401).send({
-        error: "The credentials you provided are incorrect, please try again.",
-      });
+    let token;
+    if (type && type == "sp" && path == "login") {
+      token = confirmationToken.token;
+      const compareotp = await bcrypt.compare(otp, token);
+      if (!compareotp) {
+        return res.status(401).send({
+          error:
+            "The credentials you provided are incorrect, please try again.",
+        });
+      }
+    } else {
+      token = confirmationToken.resettoken;
+      const compareotp = await bcrypt.compare(otp, token);
+      if (!compareotp) {
+        return res.status(401).send({
+          error:
+            "The credentials you provided are incorrect, please try again.",
+        });
+      }
+    }
+
+    if (type && type == "sp" && path == "login") {
+      await ServiceProvider.findByIdAndUpdate(
+        { _id: user._id },
+        { confirmed: true }
+      );
     }
     await ConfirmationToken.deleteOne({ resettoken: token, user: user._id });
     return res.status(200).send({ message: "verification successful" });
