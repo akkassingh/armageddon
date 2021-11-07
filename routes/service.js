@@ -13,6 +13,7 @@ const {
   addBackgroundCheckToService,
   addDogWalkingPreferences,
   addServiceProfile,
+  getCreatedServicesList
 } = require("../controllers/serviceController");
 
 const { requireAuth } = require("../controllers/authController");
@@ -27,5 +28,7 @@ serviceRouter.post(
 );
 serviceRouter.post("/preferences", requireAuth, addDogWalkingPreferences);
 serviceRouter.post("/serviceProfile", upload, requireAuth, addServiceProfile);
+
+serviceRouter.post("/getServices", upload, requireAuth, getCreatedServicesList);
 
 module.exports = serviceRouter;
