@@ -43,6 +43,35 @@ const BackgroundCheck = mongoose.model(
 
 module.exports.BackgroundCheck = BackgroundCheck;
 
+const DogWalkingPreferencesSchema = new Schema({
+  service: {
+    type: Schema.ObjectId,
+    ref: "Service",
+  },
+  availableDays: [{ day: String, available: Boolean }],
+  weekDayTimings: [String],
+  weekendTimings: [String],
+  dogSizes: [String],
+  serviceAreaRadius: String,
+  covidVaccinated: Boolean,
+  ableToRunWithDogs: Boolean,
+  ableToAdministerMedicine: Boolean,
+  ableToTakeCareOfSeniorDogs: Boolean,
+  ableToTakeCareOfSpecialNeeds: Boolean,
+  ableToManageHighEnergyDogs: Boolean,
+  ableToWalkFaster: Boolean,
+  ableToManageDogsWhoPull: Boolean,
+  ableToTakeCareOfPuppies: Boolean,
+  ableToTrainDogs: Boolean,
+});
+
+const DogWalkingPreferences = mongoose.model(
+  "DogWalkingPreferences",
+  DogWalkingPreferencesSchema
+);
+
+module.exports.DogWalkingPreferences = DogWalkingPreferences;
+
 const ServiceSchema = new Schema({
   serviceProvider: {
     type: Schema.ObjectId,
@@ -62,6 +91,10 @@ const ServiceSchema = new Schema({
     type: Boolean,
     default: false,
     required: false,
+  },
+  dogWalkingPreferences: {
+    type: Schema.ObjectId,
+    ref: "DogWalkingPreferences",
   },
   isRates: {
     type: Boolean,
