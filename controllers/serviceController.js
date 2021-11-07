@@ -3,6 +3,7 @@ const {
   Service,
   BackgroundCheck,
   DogWalkingPreferences,
+  ServiceProfile,
 } = require("../models/Service");
 const ObjectId = require("mongoose").Types.ObjectId;
 const logger = require("../logger/logger");
@@ -90,6 +91,35 @@ module.exports.addBackgroundCheckToService = async (req, res, next) => {
       { backgroundCheck: BackgroundCheckModel._id, isBackgroundCheck: true }
     );
     let resp = await BackgroundCheckModel.save();
+    return res.status(200).json(resp);
+  } catch (err) {
+    console.log(err);
+    next(err);
+  }
+};
+
+module.exports.addServiceProfile = async (req, res, next) => {
+  try {
+    console.log("------inside addServiceProfile route-------");
+    let fileArr = [];
+    for (let fl of req.files) {
+      const response = await cloudinary.uploader.upload(fl.path);
+      fileArr.push(response.secure_url);
+      fs.unlinkSync(fl.path);
+    }
+
+    let ServiceProfileModel = new ServiceProfile({
+      service: req.body.serviceId,
+      mainLine: req.body.mainLine,
+      description: req.body.description,
+      address: req.body.address,
+      pictures: fileArr,
+    });
+    await Service.findByIdAndUpdate(
+      { _id: req.body.serviceId },
+      { ServiceProfile: ServiceProfileModel._id, isServiceProfile: true }
+    );
+    let resp = await ServiceProfileModel.save();
     return res.status(200).json(resp);
   } catch (err) {
     console.log(err);
