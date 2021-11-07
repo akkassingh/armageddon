@@ -166,3 +166,31 @@ module.exports.addDogWalkingPreferences = async (req, res, next) => {
     next(err);
   }
 };
+
+module.exports.getCreatedServicesList = async (req, res, next) => {
+  try {
+    let serviceList = await Service.find({
+      serviceProvider: res.locals.user._id,
+    });
+
+    let finalData = [];
+
+    for (let s1 of serviceList) {
+      let resp = await Service.findById({ _id: s1._id })
+        .populate({ path: "backgroundCheck", model: BackgroundCheck })
+        .populate({
+          path: "dogWalkingPreferences",
+          model: DogWalkingPreferences,
+        })
+        .populate({ path: "ServiceProfile", model: ServiceProfile })
+        .exec();
+      console.log("---------resp-------", resp);
+      finalData.push(resp);
+    }
+
+    return res.status(200).json(finalData);
+  } catch (err) {
+    console.log(err);
+    next(err);
+  }
+};
