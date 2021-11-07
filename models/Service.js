@@ -72,6 +72,27 @@ const DogWalkingPreferences = mongoose.model(
 
 module.exports.DogWalkingPreferences = DogWalkingPreferences;
 
+const ServiceProfileSchema = new Schema({
+  service: {
+    type: Schema.ObjectId,
+    ref: "Service",
+  },
+  mainLine: String,
+  description: String,
+  address: {
+    addressLine1: String,
+    addressLine2: String,
+    state: String,
+    city: String,
+    pinCode: String,
+  },
+  pictures: [String],
+});
+
+const ServiceProfile = mongoose.model("ServiceProfile", ServiceProfileSchema);
+
+module.exports.ServiceProfile = ServiceProfile;
+
 const ServiceSchema = new Schema({
   serviceProvider: {
     type: Schema.ObjectId,
@@ -96,17 +117,26 @@ const ServiceSchema = new Schema({
     type: Schema.ObjectId,
     ref: "DogWalkingPreferences",
   },
-  isRates: {
-    type: Boolean,
-    default: false,
-    required: false,
-  },
   isServiceProfile: {
     type: Boolean,
     default: false,
     required: false,
   },
+  ServiceProfile: {
+    type: Schema.ObjectId,
+    ref: "ServiceProfile",
+  },
+  isRates: {
+    type: Boolean,
+    default: true,
+    required: false,
+  },
   isReviewsAndRatings: {
+    type: Boolean,
+    default: false,
+    required: false,
+  },
+  isVerified: {
     type: Boolean,
     default: false,
     required: false,
