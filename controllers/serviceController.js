@@ -1,5 +1,9 @@
 const ServiceType = require("../models/ServiceType");
-const { Service, BackgroundCheck } = require("../models/Service");
+const {
+  Service,
+  BackgroundCheck,
+  DogWalkingPreferences,
+} = require("../models/Service");
 const ObjectId = require("mongoose").Types.ObjectId;
 const logger = require("../logger/logger");
 const cloudinary = require("cloudinary").v2;
@@ -86,6 +90,46 @@ module.exports.addBackgroundCheckToService = async (req, res, next) => {
       { backgroundCheck: BackgroundCheckModel._id, isBackgroundCheck: true }
     );
     let resp = await BackgroundCheckModel.save();
+    return res.status(200).json(resp);
+  } catch (err) {
+    console.log(err);
+    next(err);
+  }
+};
+
+module.exports.addDogWalkingPreferences = async (req, res, next) => {
+  try {
+    let DogWalkingPreferencesModel = new DogWalkingPreferences({
+      service: req.body.serviceId,
+      availableDays: req.body.availableDays,
+      weekDayTimings: req.body.weekDayTimings,
+      weekendTimings: req.body.weekendTimings,
+      dogSizes: req.body.dogSizes,
+      serviceAreaRadius: req.body.serviceAreaRadius,
+      covidVaccinated: req.body.covidVaccinated,
+      ableToRunWithDogs: req.body.ableToRunWithDogs,
+      ableToAdministerMedicine: req.body.ableToAdministerMedicine,
+      ableToTakeCareOfSeniorDogs: req.body.ableToTakeCareOfSeniorDogs,
+      ableToTakeCareOfSpecialNeeds: req.body.ableToTakeCareOfSpecialNeeds,
+      ableToManageHighEnergyDogs: req.body.ableToManageHighEnergyDogs,
+      ableToWalkFaster: req.body.ableToWalkFaster,
+      ableToManageDogsWhoPull: req.body.ableToManageDogsWhoPull,
+      ableToTakeCareOfPuppies: req.body.ableToTakeCareOfPuppies,
+      ableToTrainDogs: req.body.ableToTrainDogs,
+    });
+
+    console.log(
+      "----------DogWalkingPreferencesModel----------",
+      DogWalkingPreferencesModel
+    );
+    await Service.findByIdAndUpdate(
+      { _id: req.body.serviceId },
+      {
+        dogWalkingPreferences: DogWalkingPreferencesModel._id,
+        isDogWalkingPreferences: true,
+      }
+    );
+    let resp = await DogWalkingPreferencesModel.save();
     return res.status(200).json(resp);
   } catch (err) {
     console.log(err);
