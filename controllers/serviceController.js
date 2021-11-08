@@ -3,6 +3,7 @@ const {
   Service,
   BackgroundCheck,
   DogWalkingPreferences,
+  ReviewsandRatings,
   ServiceProfile,
 } = require("../models/Service");
 const ObjectId = require("mongoose").Types.ObjectId;
@@ -167,6 +168,18 @@ module.exports.addDogWalkingPreferences = async (req, res, next) => {
   }
 };
 
+module.exports.sendReviewsandRatings = async (req, res, next) => {
+  try {
+    let resp = await ReviewsandRatings.findOne({service:req.body.serviceId})
+  
+
+    return res.status(200).json(resp);
+  } catch (err) {
+    console.log(err);
+    next(err);
+  }
+};
+
 module.exports.getCreatedServicesList = async (req, res, next) => {
   try {
     let serviceList = await Service.find({
@@ -189,6 +202,42 @@ module.exports.getCreatedServicesList = async (req, res, next) => {
     }
 
     return res.status(200).json(finalData);
+  } catch (err) {
+    console.log(err);
+    next(err);
+  }
+};
+
+
+module.exports.getmyAppointments = async (req, res, next) => {
+  try {
+    let serviceList = await ServiceAppointment.find({
+      ServiceProvider: res.locals.user._id,
+    });    
+    return res.status(200).json(serviceList);
+  } catch (err) {
+    console.log(err);
+    next(err);
+  }
+};
+
+module.exports.changeAppointmentstatus = async (req, res, next) => {
+  try {
+    let serviceList = await ServiceAppointment.findByIdAndUpdate(     
+      { _id: req.body.appointmentId },
+      { bookingStatus: req.body.bookingStatus });
+    return res.status(200).json(serviceList);
+  } catch (err) {
+    console.log(err);
+    next(err);
+  }
+};
+
+module.exports.getAppointmentDetails = async (req, res, next) => {
+  try {
+    let serviceList = await ServiceAppointment.findById(     
+      { _id: req.body.appointmentId }).populate('bookingDetails').populate('petDetails');
+    return res.status(200).json(serviceList);
   } catch (err) {
     console.log(err);
     next(err);

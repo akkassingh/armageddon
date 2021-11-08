@@ -72,6 +72,37 @@ const DogWalkingPreferences = mongoose.model(
 
 module.exports.DogWalkingPreferences = DogWalkingPreferences;
 
+
+
+const ReviewsandRatingsSchema = new Schema({
+  ServiceProvider: {
+    type: Schema.ObjectId,
+    ref: "ServiceProvider",
+  },
+  ReviewsandRating:[new Schema({   
+    User: {
+      type: Schema.ObjectId,
+      ref: "User",
+    },
+    ServiceAppointment:{
+      type: Schema.ObjectId,
+      ref: "ServiceAppointment",
+    },
+    rating:{type: Number, required:false},
+    review:{type: Number, required:false}
+  },{ _id: false })]
+});
+
+const ReviewsandRatingsSchema = mongoose.model(
+  "ReviewsandRatings",
+  ReviewsandRatingsSchema
+);
+
+module.exports.ReviewsandRatings = ReviewsandRatings;
+
+
+
+
 const ServiceProfileSchema = new Schema({
   service: {
     type: Schema.ObjectId,
@@ -136,6 +167,10 @@ const ServiceSchema = new Schema({
     default: false,
     required: false,
   },
+  ReviewsandRatings: {
+    type: Schema.ObjectId,
+    ref: "ReviewsandRatings",
+  },
   isVerified: {
     type: Boolean,
     default: false,
@@ -146,4 +181,69 @@ const ServiceSchema = new Schema({
 const Service = mongoose.model("Service", ServiceSchema);
 module.exports.Service = Service;
 
+
+
+const ServiceAppointment = new Schema({
+  ServiceProvider: {
+    type: Schema.ObjectId,
+    ref: "ServiceProvider",
+  },
+  User: {
+    type: Schema.ObjectId,
+    ref: "User",
+  },
+  bookingDetails: {
+    type: Schema.ObjectId,
+    ref: "bookingDetails",
+  },
+  petDetails: {
+    type: Schema.ObjectId,
+    ref: "petDetails",
+  },
+  startTIme:Number,
+  bookingStatus:{
+    type: Boolean,
+    default: false,
+    required: false,
+  }
+  
+});
+
+const ServiceAppointment = mongoose.model("ServiceAppointment", ServiceAppointmentSchema);
+
+module.exports.ServiceAppointment = ServiceAppointment;
+
+
+
+const ServiceReport = new Schema({
+  ServiceProvider: {
+    type: Schema.ObjectId,
+    ref: "ServiceProvider",
+  },
+  User: {
+    type: Schema.ObjectId,
+    ref: "User",
+  },
+  ServiceAppointment: {
+    type: Schema.ObjectId,
+    ref: "ServiceAppointment",
+  },
+  distance:Number,
+  time:Number,
+  pee:{
+    type: Boolean,
+    default: false,
+    required: false,
+  },
+  poo:{
+    type: Boolean,
+    default: false,
+    required: false,
+  }
+  
+});
+
+const ServiceReport = mongoose.model("ServiceReport", ServiceReportSchema);
+
+module.exports.ServiceReport = ServiceReport;
 //------------------------------
