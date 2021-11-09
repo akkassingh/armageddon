@@ -16,7 +16,7 @@ const {
 const { requireAuth } = require("../controllers/authController");
 
 //get service providers list
-serviceRouter.post("/serviceProvidersList", requireAuth, serviceProvidersList);
+serviceRouter.get("/serviceProvidersList", requireAuth, serviceProvidersList);
 //bookService
 serviceRouter.post("/serviceBooking", requireAuth, bookService);
 
