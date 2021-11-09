@@ -197,8 +197,8 @@ const ServiceAppointmentSchema = new Schema({
   petDetails: [
     {
       type: Schema.ObjectId,
-      ref: "petDetails",
-    },
+      ref: "Animal",
+    }
   ],
   startTIme: String,
   bookingStatus: {
@@ -246,7 +246,8 @@ const ServiceReportSchema = new Schema({
     default: false,
     required: false,
   },
-  rating:Number
+  rating:Number,
+  pictures: [String]
   
 });
 

@@ -5,11 +5,14 @@ const {
   DogWalkingPreferences,
   ReviewsandRatings,
   ServiceProfile,
+  ServiceAppointment,
+  ServiceReport
 } = require("../models/Service");
 const ObjectId = require("mongoose").Types.ObjectId;
 const logger = require("../logger/logger");
 const cloudinary = require("cloudinary").v2;
 const fs = require("fs");
+const Animal = require("../models/Animal");
 
 cloudinary.config({
   cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
@@ -213,7 +216,7 @@ module.exports.getmyAppointments = async (req, res, next) => {
   try {
     let serviceList = await ServiceAppointment.find({
       ServiceProvider: res.locals.user._id,
-    });    
+    }).populate({path:'bookingDetails'}).populate({path:'petDetails'});    
     return res.status(200).json(serviceList);
   } catch (err) {
     console.log(err);
@@ -225,8 +228,8 @@ module.exports.changeAppointmentstatus = async (req, res, next) => {
   try {
     let serviceList = await ServiceAppointment.findByIdAndUpdate(     
       { _id: req.body.appointmentId },
-      { bookingStatus: req.body.bookingStatus
-      });
+      { bookingStatus: req.body.bookingStatus},
+      { new: true });
     return res.status(200).json(serviceList);
   } catch (err) {
     console.log(err);
@@ -265,8 +268,7 @@ module.exports.generateReport = async (req, res, next) => {
       fileArr.push(response.secure_url);
       fs.unlinkSync(fl.path);
     }
-
-    let ServiceReport = new ServiceReport({
+    let ServiceReportModel = new ServiceReport({
       ServiceProvider: req.body.ServiceProvider,
       User: req.body.mainLine, //populate from appointment
       //add array of lat long
@@ -278,7 +280,7 @@ module.exports.generateReport = async (req, res, next) => {
       rating: req.body.rating,
       pictures: fileArr,
     });
-    let resp = await ServiceReport.save();
+    let resp = await ServiceReportModel.save();
     return res.status(200).json(resp);
   } catch (err) {
     console.log(err);
