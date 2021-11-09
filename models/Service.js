@@ -72,36 +72,36 @@ const DogWalkingPreferences = mongoose.model(
 
 module.exports.DogWalkingPreferences = DogWalkingPreferences;
 
-
-
 const ReviewsandRatingsSchema = new Schema({
   ServiceProvider: {
     type: Schema.ObjectId,
     ref: "ServiceProvider",
   },
-  ReviewsandRating:[new Schema({   
-    User: {
-      type: Schema.ObjectId,
-      ref: "User",
-    },
-    ServiceAppointment:{
-      type: Schema.ObjectId,
-      ref: "ServiceAppointment",
-    },
-    rating:{type: Number, required:false},
-    review:{type: Number, required:false}
-  },{ _id: false })]
+  ReviewsandRating: [
+    new Schema(
+      {
+        User: {
+          type: Schema.ObjectId,
+          ref: "User",
+        },
+        ServiceAppointment: {
+          type: Schema.ObjectId,
+          ref: "ServiceAppointment",
+        },
+        rating: { type: Number, required: false },
+        review: { type: Number, required: false },
+      },
+      { _id: false }
+    ),
+  ],
 });
 
-const ReviewsandRatingsSchema = mongoose.model(
+const ReviewsandRatings = mongoose.model(
   "ReviewsandRatings",
   ReviewsandRatingsSchema
 );
 
 module.exports.ReviewsandRatings = ReviewsandRatings;
-
-
-
 
 const ServiceProfileSchema = new Schema({
   service: {
@@ -181,9 +181,7 @@ const ServiceSchema = new Schema({
 const Service = mongoose.model("Service", ServiceSchema);
 module.exports.Service = Service;
 
-
-
-const ServiceAppointment = new Schema({
+const ServiceAppointmentSchema = new Schema({
   ServiceProvider: {
     type: Schema.ObjectId,
     ref: "ServiceProvider",
@@ -196,12 +194,14 @@ const ServiceAppointment = new Schema({
     type: Schema.ObjectId,
     ref: "bookingDetails",
   },
-  petDetails: {
-    type: Schema.ObjectId,
-    ref: "petDetails",
-  },
-  startTIme:Number,
-  bookingStatus:{
+  petDetails: [
+    {
+      type: Schema.ObjectId,
+      ref: "petDetails",
+    },
+  ],
+  startTIme: String,
+  bookingStatus: {
     type: Boolean,
     default: false,
     required: false,
@@ -213,13 +213,14 @@ const ServiceAppointment = new Schema({
   }
 });
 
-const ServiceAppointment = mongoose.model("ServiceAppointment", ServiceAppointmentSchema);
+const ServiceAppointment = mongoose.model(
+  "ServiceAppointment",
+  ServiceAppointmentSchema
+);
 
 module.exports.ServiceAppointment = ServiceAppointment;
 
-
-
-const ServiceReport = new Schema({
+const ServiceReportSchema = new Schema({
   ServiceProvider: {
     type: Schema.ObjectId,
     ref: "ServiceProvider",
@@ -232,14 +233,14 @@ const ServiceReport = new Schema({
     type: Schema.ObjectId,
     ref: "ServiceAppointment",
   },
-  distance:Number,
-  time:Number,
-  pee:{
+  distance: Number,
+  time: Number,
+  pee: {
     type: Boolean,
     default: false,
     required: false,
   },
-  poo:{
+  poo: {
     type: Boolean,
     default: false,
     required: false,
@@ -251,4 +252,3 @@ const ServiceReport = new Schema({
 const ServiceReport = mongoose.model("ServiceReport", ServiceReportSchema);
 
 module.exports.ServiceReport = ServiceReport;
-//------------------------------

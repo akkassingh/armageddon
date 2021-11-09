@@ -6,6 +6,7 @@ const postRouter = require("./post");
 const commentRouter = require("./comment");
 const notificationRouter = require("./notification");
 const serviceRouter = require("./service");
+const serviceBookingRouter = require("./serviceBooking");
 const apiRouter = express.Router();
 
 apiRouter.use("/auth", authRouter);
@@ -15,6 +16,7 @@ apiRouter.use("/comment", commentRouter);
 apiRouter.use("/notification", notificationRouter);
 apiRouter.use("/animal", animalRouter);
 apiRouter.use("/service", serviceRouter);
+apiRouter.use("/serviceBooking", serviceBookingRouter);
 module.exports = apiRouter;
 
 //-------code to add initial services types-----------------------------
