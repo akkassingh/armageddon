@@ -50,8 +50,8 @@ const bookingDetailsSchema = new Schema({
     description: String,
     amount: String,
     frequency: {
-      type: String,
-      enum: ["Weekly", "Monthly", "SingleRun"],
+      type: Number,
+      enum: [7, 30, 1],
     },
   },
   startDate: String,
