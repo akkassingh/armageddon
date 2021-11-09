@@ -62,11 +62,13 @@ const bookingDetailsSchema = new Schema({
     transactionId: String,
     Status: {
       type: String,
-      enum: ["Success", "Fail"],
+      default: "Pending",
+      enum: ["Success", "Fail", "Pending"],
     },
   },
   bookingStatus: {
     type: String,
+    default: "Dog Runner will be assigned shortly",
     enum: ["Dog Runner will be assigned shortly", "Completed"],
   },
 });

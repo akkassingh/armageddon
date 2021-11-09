@@ -23,7 +23,7 @@ module.exports.registerPet = async (req, res, next) => {
           user: user._id,
           confirmed: true,
         })
-        await animal.save();
+        let pet = await animal.save();
         return res.status(201).json({pet, token: jwt.encode({ id: animal._id }, process.env.JWT_SECRET)});
     }
     catch (err) {

@@ -6,6 +6,7 @@ const {
   DogWalkingPreferences,
   ReviewsandRatings,
   ServiceProfile,
+  ServiceAppointment,
 } = require("../models/Service");
 
 const { ServiceProvider } = require("../models/ServiceProvider");
@@ -81,51 +82,50 @@ module.exports.bookService = async (req, res, next) => {
   try {
     let payload = {
       type: "sp",
-      numberOfPets: 2,
-      petDetails: [
-        {
-          petId: "",
-          size: "medium",
-        },
-        {
-          petId: "",
-          size: "large",
-        },
-      ],
-      specialInstructions: "",
-      petBehaviour: {
-        pullsOnTheLeash: true,
-        likeInteractingWithOtherDogsOrPeople: true,
-        jumpsUpOnPeopleAndThings: true,
-        chaseSmallerAnimals: true,
-        protectiveOfHome: true,
-      },
-      petRunningLocation: {
-        addressLine1: "shani chowk",
-        addressLine2: "rahata",
-        state: "maharashtra",
-        city: "rahata",
-        pinCode: "423107",
-      },
-      phone: "7385440392",
-      alternatePhone: ["9579902562"],
-      package: {
-        description: "Monthly",
-        amount: "400",
-        frequency: "Weekly",
-      },
-      startDate: "09/11/2021",
-      dayOff: "Sun",
-      run1: "06:30 am",
-      run2: "07:30 pm",
-      paymentDetails: {
-        transactionId: "",
-        Status: "Success",
-      },
-      bookingStatus: "Dog Runner will be assigned shortly",
+      numberOfPets: req.body.numberOfPets,
+      petDetails: [],
+      specialInstructions: req.body.specialInstructions,
+      petBehaviour: req.body.petBehaviour,
+      petRunningLocation: req.body.petRunningLocation,
+      phone: req.body.phone,
+      alternatePhone: req.body.alternatePhone,
+      package: req.body.package,
+      startDate: new Date(req.body.startDate).toISOString(),
+      dayOff: req.body.dayOff,
+      run1: req.body.run1,
+      run2: req.body.run2,
     };
+
+    let petArr = [];
+    for (let p1 of req.body.petDetails) {
+      petArr.push({
+        pet: p1.petId,
+        size: p1.size,
+      });
+    }
+
+    let petArr1 = [];
+    for (let p1 of req.body.petDetails) {
+      petArr1.push(p1.petId);
+    }
+    payload.petDetails = petArr;
+
     let ServiceBookingModel = new bookingDetails(payload);
     let resp = await ServiceBookingModel.save();
+
+    let getServiceProviders = await Service.find({});
+    for (let sp1 of getServiceProviders) {
+      let ServiceAppointmentSave = new ServiceAppointment({
+        ServiceProvider: sp1._id,
+        User: res.locals.user._id,
+        bookingDetails: ServiceBookingModel._id,
+        petDetails: petArr1,
+        startTIme: new Date(req.body.startDate).toISOString(),
+        bookingStatus: false,
+      });
+      let resp = await ServiceAppointmentSave.save();
+    }
+
     return res.status(200).json(resp);
   } catch (err) {
     console.log(err);
