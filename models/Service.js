@@ -206,11 +206,12 @@ const ServiceAppointmentSchema = new Schema({
     default: false,
     required: false,
   },
-  serviceStatus:{
+  serviceStatus: {
     type: Boolean,
     default: false,
     required: false,
-  }
+  },
+  rating: Number,
 });
 
 const ServiceAppointment = mongoose.model(
