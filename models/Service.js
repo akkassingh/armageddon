@@ -205,8 +205,12 @@ const ServiceAppointment = new Schema({
     type: Boolean,
     default: false,
     required: false,
+  },
+  serviceStatus:{
+    type: Boolean,
+    default: false,
+    required: false,
   }
-  
 });
 
 const ServiceAppointment = mongoose.model("ServiceAppointment", ServiceAppointmentSchema);
@@ -239,7 +243,8 @@ const ServiceReport = new Schema({
     type: Boolean,
     default: false,
     required: false,
-  }
+  },
+  rating:Number
   
 });
 

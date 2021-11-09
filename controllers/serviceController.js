@@ -225,7 +225,8 @@ module.exports.changeAppointmentstatus = async (req, res, next) => {
   try {
     let serviceList = await ServiceAppointment.findByIdAndUpdate(     
       { _id: req.body.appointmentId },
-      { bookingStatus: req.body.bookingStatus });
+      { bookingStatus: req.body.bookingStatus
+      });
     return res.status(200).json(serviceList);
   } catch (err) {
     console.log(err);
@@ -238,6 +239,47 @@ module.exports.getAppointmentDetails = async (req, res, next) => {
     let serviceList = await ServiceAppointment.findById(     
       { _id: req.body.appointmentId }).populate('bookingDetails').populate('petDetails');
     return res.status(200).json(serviceList);
+  } catch (err) {
+    console.log(err);
+    next(err);
+  }
+};
+
+module.exports.endService = async (req, res, next) => {
+  try {
+    let serviceList = await ServiceAppointment.findByIdAndUpdate(     
+      { _id: req.body.appointmentId },
+      {serviceStatus:true});
+    return res.status(200).json(serviceList);
+  } catch (err) {
+    console.log(err);
+    next(err);
+  }
+};
+
+module.exports.generateReport = async (req, res, next) => {
+  try {
+    let fileArr = [];
+    for (let fl of req.files) {
+      const response = await cloudinary.uploader.upload(fl.path);
+      fileArr.push(response.secure_url);
+      fs.unlinkSync(fl.path);
+    }
+
+    let ServiceReport = new ServiceReport({
+      ServiceProvider: req.body.ServiceProvider,
+      User: req.body.mainLine, //populate from appointment
+      //add array of lat long
+      distance: req.body.distance,
+      time: req.body.time,
+      ServiceAppointment: req.body.appointmentId,
+      pee: req.body.pee,
+      poo: req.body.poo,
+      rating: req.body.rating,
+      pictures: fileArr,
+    });
+    let resp = await ServiceReport.save();
+    return res.status(200).json(resp);
   } catch (err) {
     console.log(err);
     next(err);
