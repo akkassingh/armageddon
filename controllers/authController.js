@@ -21,6 +21,7 @@ const { validateEmail, validatePassword } = require("../utils/validation");
 module.exports.verifyJwt = (token, type) => {
   return new Promise(async (resolve, reject) => {
     try {
+      console.log("--------verifyJwt--------", token, type)
       if (type && type === "sp") {
         const id = jwt.decode(token, process.env.JWT_SECRET).id;
         const user = await ServiceProvider.findOne({ _id: id });
@@ -35,6 +36,7 @@ module.exports.verifyJwt = (token, type) => {
           { _id: id },
           "email username avatar bookmarks bio fullName confirmed website pets"
         );
+        console.log("--------user-------", user)
         if (user) {
           return resolve(user);
         } else {
