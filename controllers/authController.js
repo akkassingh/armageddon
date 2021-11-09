@@ -299,6 +299,7 @@ module.exports.loginAuthentication = async (req, res, next) => {
       const user = await User.findOne({
         $or: [{ username: usernameOrEmail }, { email: usernameOrEmail }],
       });
+      console.log("-----user----", user, user.password);
       if (!user || !user.password) {
         return res.status(401).send({
           error:
@@ -306,6 +307,7 @@ module.exports.loginAuthentication = async (req, res, next) => {
         });
       }
       const comparepwd = await bcrypt.compare(password, user.password);
+      console.log("-----comparepwd----", comparepwd);
       if (!comparepwd) {
         return res.status(401).send({
           error:
@@ -380,10 +382,10 @@ module.exports.register = async (req, res, next) => {
       logger.info("Unique username is", username);
       const otp = Math.floor(Math.random() * (999999 - 100000)) + 100000;
       const hashedotp = await hashPassword(otp.toString(), 10);
-      const hasedPassword = await hashPassword(password, 10);
+      const hashedPassword = await hashPassword(password, 10);
       user = new ServiceProvider({
         email,
-        password: hasedPassword,
+        password: hashedPassword,
         userName: username,
       });
       confirmationToken = new ConfirmationToken({
@@ -433,8 +435,12 @@ module.exports.register = async (req, res, next) => {
       logger.info("Unique username is", username);
       const otp = Math.floor(Math.random() * (999999 - 100000)) + 100000;
       const hashedotp = await hashPassword(otp.toString(), 10);
-      const hasedPassword = await hashPassword(password, 10);
-      user = new User({ email, password: hasedPassword, username });
+      const hashedPassword = await hashPassword(password, 10);
+      user = new User({
+        email: email,
+        password: hashedPassword,
+        username: username,
+      });
       confirmationToken = new ConfirmationToken({
         user: user._id,
         // token: crypto.randomBytes(20).toString('hex'),
@@ -1198,7 +1204,7 @@ module.exports.verifyResetPasswordOTP = async (req, res, next) => {
         });
       }
     } else {
-      token = confirmationToken.resettoken;
+      token = confirmationToken.token;
       const compareotp = await bcrypt.compare(otp, token);
       if (!compareotp) {
         return res.status(401).send({
@@ -1213,6 +1219,8 @@ module.exports.verifyResetPasswordOTP = async (req, res, next) => {
         { _id: user._id },
         { confirmed: true }
       );
+    } else {
+      await User.findByIdAndUpdate({ _id: user._id }, { confirmed: true });
     }
     await ConfirmationToken.deleteOne({ resettoken: token, user: user._id });
     return res.status(200).send({ message: "verification successful" });
