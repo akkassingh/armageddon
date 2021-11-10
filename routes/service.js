@@ -54,4 +54,5 @@ serviceRouter.post("/getAppointmentDetails", requireAuth, getAppointmentDetails)
 serviceRouter.post("/generateReport", upload, requireAuth, generateReport);
 
 
+
 module.exports = serviceRouter;
