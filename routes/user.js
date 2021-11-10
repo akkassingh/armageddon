@@ -16,7 +16,8 @@ const {
   updateProfile,
   retrieveSuggestedUsers,
   isUsernameAvaialble,
-  becomeGuardian
+  becomeGuardian,
+  petanduserdetails
 } = require('../controllers/userController');
 const { requireAuth, optionalAuth } = require('../controllers/authController');
 
@@ -45,4 +46,7 @@ userRouter.post('/:postId/bookmark', requireAuth, bookmarkPost);
 userRouter.post('/:userId/follow', requireAuth, followUser);
 userRouter.get('/isusernameavailable/:username',requireAuth, isUsernameAvaialble);
 userRouter.patch('/addPet', requireAuth,becomeGuardian);
+userRouter.patch('/petanduserdetails', requireAuth,petanduserdetails);
+
+
 module.exports = userRouter;

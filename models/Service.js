@@ -18,22 +18,67 @@ const BackGroundCheckSchema = new Schema({
     type: String,
     required: true,
   },
+  isadharCheck: {
+    type: Boolean,
+    default: false,
+    required: false,
+  },
   pan: {
     type: String,
     required: true,
+  },
+  ispanCheck: {
+    type: Boolean,
+    default: false,
+    required: false,
   },
   picture: {
     type: String,
     required: true,
   },
+  ispictureCheck: {
+    type: Boolean,
+    default: false,
+    required: false,
+  },
   bankStatement: {
     type: String,
     required: true,
   },
+  isbankStatementCheck: {
+    type: Boolean,
+    default: false,
+    required: false,
+  },
   email: String,
+  isemailCheck: {
+    type: Boolean,
+    default: false,
+    required: false,
+  },
   phone: String,
+  isphoneCheck: {
+    type: Boolean,
+    default: false,
+    required: false,
+  },
   dob: String,
+  isdobCheck: {
+    type: Boolean,
+    default: false,
+    required: false,
+  },
   references: [{ name: String, phone: String }],
+  isreferencesCheck: {
+    type: Boolean,
+    default: false,
+    required: false,
+  },
+  isSentforApproval: {
+    type: Boolean,
+    default: false,
+    required: false,
+  }
 });
 
 const BackgroundCheck = mongoose.model(
