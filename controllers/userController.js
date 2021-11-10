@@ -764,3 +764,22 @@ module.exports.becomeGuardian = async (req, res, next) => {
     res.status(400).send({error: err});
   }
 }
+
+
+module.exports.petanduserdetails = async (req, res, next) => {
+  const user = res.locals.user;
+  const {idPet} = req.body;
+  try{
+    const animal = await Animal.findById(idPet);
+    if (!animal) return res.status(404).send({error: 'No such pet exists!'})
+  
+    const user_details = await User.findById(user);
+    if (!user_details) return res.status(404).send({error: 'No such user exists!'})
+  
+    return res.status(200).json(user_details,animal);
+  }
+  catch (err){
+    logger.info(err);
+    res.status(400).send({error: err});
+  }
+}
