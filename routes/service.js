@@ -14,7 +14,11 @@ const {
   addDogWalkingPreferences,
   addServiceProfile,
   getCreatedServicesList,
-  sendReviewsandRatings
+  sendReviewsandRatings,
+  getmyAppointments,
+  changeAppointmentstatus,
+  getAppointmentDetails,
+  generateReport
 } = require("../controllers/serviceController");
 
 const { requireAuth } = require("../controllers/authController");
@@ -32,5 +36,11 @@ serviceRouter.post("/serviceProfile", upload, requireAuth, addServiceProfile);
 
 serviceRouter.post("/getServices", upload, requireAuth, getCreatedServicesList);
 serviceRouter.post("/sendReviewsandRatings", requireAuth, sendReviewsandRatings);
+
+serviceRouter.post("/getmyAppointments", requireAuth, getmyAppointments);
+serviceRouter.post("/changeAppointmentstatus", requireAuth, changeAppointmentstatus);
+serviceRouter.post("/getAppointmentDetails", requireAuth, getAppointmentDetails);
+serviceRouter.post("/generateReport", upload, requireAuth, generateReport);
+
 
 module.exports = serviceRouter;
