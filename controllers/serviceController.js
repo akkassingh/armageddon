@@ -102,6 +102,33 @@ module.exports.addBackgroundCheckToService = async (req, res, next) => {
   }
 };
 
+module.exports.BackgroundCheckStatus = async (req, res, next) => {
+  try {
+    let resp = await BackgroundCheck.findOne({service:req.body.serviceId})
+    if(!resp)
+    return res.status(404).send('NO background check found!');
+
+    return res.status(200).json(resp);
+  } catch (err) {
+    console.log(err);
+    next(err);
+  }
+};
+
+
+module.exports.isSentforApproval = async (req, res, next) => {
+  try {
+    let resp = await BackgroundCheck.findOneAndUpdate({service:req.body.serviceId},
+      {isSentforApproval:true})
+    if(!resp)
+    return res.status(404).send('NO background check found!');
+
+    return res.status(200).send({success:true});
+  } catch (err) {
+    console.log(err);
+    next(err);
+  }
+};
 module.exports.addServiceProfile = async (req, res, next) => {
   try {
     console.log("------inside addServiceProfile route-------");
@@ -124,7 +151,19 @@ module.exports.addServiceProfile = async (req, res, next) => {
       { ServiceProfile: ServiceProfileModel._id, isServiceProfile: true }
     );
     let resp = await ServiceProfileModel.save();
-    return res.status(200).json(resp);
+    return res.status(200).send({success:true});
+  } catch (err) {
+    console.log(err);
+    next(err);
+  }
+};
+
+module.exports.getServiceProfile = async (req, res, next) => {
+  try {
+    let resp = await Service.findById({_id:req.body.serviceId}).populate('ServiceProfile')
+  
+
+    return res.status(200).json(resp.ServiceProfile);
   } catch (err) {
     console.log(err);
     next(err);
@@ -164,7 +203,19 @@ module.exports.addDogWalkingPreferences = async (req, res, next) => {
       }
     );
     let resp = await DogWalkingPreferencesModel.save();
-    return res.status(200).json(resp);
+    return res.status(200).send({success:true});
+  } catch (err) {
+    console.log(err);
+    next(err);
+  }
+};
+
+module.exports.getDogWalkingPreferences = async (req, res, next) => {
+  try {
+    let resp = await Service.findById({_id:req.body.serviceId}).populate('dogWalkingPreferences')
+  
+
+    return res.status(200).json(resp.dogWalkingPreferences);
   } catch (err) {
     console.log(err);
     next(err);
