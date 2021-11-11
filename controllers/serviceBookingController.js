@@ -116,14 +116,16 @@ module.exports.bookService = async (req, res, next) => {
     let getServiceProviders = await Service.find({});
     for (let sp1 of getServiceProviders) {
       let ServiceAppointmentSave = new ServiceAppointment({
-        ServiceProvider: sp1._id,
+        ServiceProvider: sp1.serviceProvider,
         User: res.locals.user._id,
         bookingDetails: ServiceBookingModel._id,
         petDetails: petArr1,
         startTIme: new Date(req.body.startDate).toISOString(),
         bookingStatus: false,
       });
+      let st=await  Service.findOneAndUpdate({ serviceProvider: sp1.serviceProvider,ServiceAppointment:ServiceAppointmentSave._id} )
       let resp = await ServiceAppointmentSave.save();
+      console.log(st)
     }
 
     return res.status(200).json(resp);
