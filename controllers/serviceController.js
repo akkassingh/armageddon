@@ -22,8 +22,13 @@ cloudinary.config({
 
 module.exports.serviceList = async (req, res, next) => {
   try {
-    let servicesList = await ServiceType.find();
-    return res.status(201).json({ services: servicesList });
+    // let servicesList = await ServiceType.find();
+    let serviceList = await Service.find({
+      serviceProvider: res.locals.user._id,
+    });
+    let count=await ServiceAppointment.find({ServiceProvider: res.locals.user._id})
+
+    return res.status(201).json({ services: serviceList[0].serviceType, serviceStatus: serviceList[0].isVerified, appointments:count.length });
   } catch (err) {
     console.log(err);
     next(err);
