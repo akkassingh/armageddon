@@ -268,6 +268,7 @@ module.exports.getCreatedServicesList = async (req, res, next) => {
       finalData.push(count.length);
 
     }
+    
 
     return res.status(200).json(finalData);
   } catch (err) {
