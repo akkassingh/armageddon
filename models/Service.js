@@ -221,6 +221,10 @@ const ServiceSchema = new Schema({
     default: false,
     required: false,
   },
+  ServiceAppointment: {
+    type: Schema.ObjectId,
+    ref: "ServiceAppointment",
+  }
 });
 
 const Service = mongoose.model("Service", ServiceSchema);
