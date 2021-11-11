@@ -87,6 +87,14 @@ module.exports.addBackgroundCheckToService = async (req, res, next) => {
       email: req.body.email,
       phone: req.body.phone,
       dob: req.body.dob,
+      isadharCheck: true,
+      ispanCheck: true,
+      ispictureCheck: true,
+      isbankStatementCheck: true,
+      isemailCheck: true,
+      isphoneCheck: true,
+      isdobCheck: true,
+      isreferencesCheck: true,
       references: JSON.parse(req.body.references),
     });
 
@@ -250,9 +258,15 @@ module.exports.getCreatedServicesList = async (req, res, next) => {
           model: DogWalkingPreferences,
         })
         .populate({ path: "ServiceProfile", model: ServiceProfile })
+        .populate({ path: "ServiceAppointment", model: ServiceAppointment })
         .exec();
-      console.log("---------resp-------", resp);
+      //console.log("---------resp-------", resp);
+      let count=await ServiceAppointment.find({ServiceProvider: res.locals.user._id})
+      // resp.appointmentLength=resp.ServiceAppointment.length
+     
       finalData.push(resp);
+      finalData.push(count.length);
+
     }
 
     return res.status(200).json(finalData);
