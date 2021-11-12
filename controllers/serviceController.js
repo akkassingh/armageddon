@@ -272,7 +272,7 @@ module.exports.getCreatedServicesList = async (req, res, next) => {
       // resp.appointmentLength=resp.ServiceAppointment.length
       // resp['appointmentCount']=count.length;
 
-        let a= {appointmentCount:count.length}
+        // let a= {appointmentCount:count.length}
         //resp.push(a)
       finalData.push(resp);
       //finalData1.push(a);
