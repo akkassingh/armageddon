@@ -261,6 +261,7 @@ const ServiceAppointmentSchema = new Schema({
     required: false,
   },
   rating: Number,
+  serviceType:Number
 });
 
 const ServiceAppointment = mongoose.model(

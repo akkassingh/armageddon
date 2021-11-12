@@ -269,8 +269,8 @@ module.exports.getCreatedServicesList = async (req, res, next) => {
       let count=await ServiceAppointment.find({ServiceProvider: res.locals.user._id})
       // resp.appointmentLength=resp.ServiceAppointment.length
      
-      finalData.push(resp);
-      finalData.push(count.length);
+      finalData.push({list:resp});
+      finalData.push({appointmentCount:count.length});
 
     }
     
