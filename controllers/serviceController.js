@@ -268,7 +268,7 @@ module.exports.getCreatedServicesList = async (req, res, next) => {
         // .populate({ path: "ServiceAppointment", model: ServiceAppointment })
         // .exec();
       //console.log("---------resp-------", resp);
-      let count=await ServiceAppointment.find({ServiceProvider: res.locals.user._id})
+      // let count=await ServiceAppointment.find({ServiceProvider: res.locals.user._id})
       // resp.appointmentLength=resp.ServiceAppointment.length
       // resp['appointmentCount']=count.length;
 
