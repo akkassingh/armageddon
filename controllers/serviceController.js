@@ -255,28 +255,33 @@ module.exports.getCreatedServicesList = async (req, res, next) => {
 
     let finalData = [];
 
+
     for (let s1 of serviceList) {
-      let resp = await Service.findById({ _id: s1._id })
-        .populate({ path: "backgroundCheck", model: BackgroundCheck })
-        .populate({
-          path: "dogWalkingPreferences",
-          model: DogWalkingPreferences,
-        })
-        .populate({ path: "ServiceProfile", model: ServiceProfile })
-        .populate({ path: "ServiceAppointment", model: ServiceAppointment })
-        .exec();
+      var resp ={}
+       resp=await Service.findById({ _id: s1._id })
+        // .populate({ path: "backgroundCheck", model: BackgroundCheck })
+        // .populate({
+        //   path: "dogWalkingPreferences",
+        //   model: DogWalkingPreferences,
+        // })
+        // .populate({ path: "ServiceProfile", model: ServiceProfile })
+        // .populate({ path: "ServiceAppointment", model: ServiceAppointment })
+        // .exec();
       //console.log("---------resp-------", resp);
       let count=await ServiceAppointment.find({ServiceProvider: res.locals.user._id})
       // resp.appointmentLength=resp.ServiceAppointment.length
-     
-      finalData.push({list:resp});
-      finalData.push({appointmentCount:count.length});
+      // resp['appointmentCount']=count.length;
+
+        let a= {appointmentCount:count.length}
+        //resp.push(a)
+      finalData.push(resp);
+      //finalData1.push(a);
 
     }
     
     
 
-    return res.status(200).json(finalData);
+    return res.status(200).send(finalData);
   } catch (err) {
     console.log(err);
     next(err);
