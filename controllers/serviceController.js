@@ -306,7 +306,7 @@ module.exports.getmypastAppointments = async (req, res, next) => {
   try {
     let serviceList = await ServiceAppointment.find({
       ServiceProvider: res.locals.user._id,
-      bookingStatus:{ $gte:2}
+      bookingStatus:{ $gte:2} //recieved=0,accepted(confirmed=1).rejected(cancelled)=2,completed=3
     }).populate('bookingDetails','package run1 run2').populate('petDetails', 'name username');     
     return res.status(200).json({serviceList:serviceList});
   } catch (err) {
@@ -320,7 +320,7 @@ module.exports.changeAppointmentstatus = async (req, res, next) => {
       { _id: req.body.appointmentId },
       { bookingStatus: req.body.bookingStatus},
       { new: true });
-    return res.status(200).json(serviceList);
+    return res.status(200).send({success:true});
   } catch (err) {
     console.log(err);
     next(err);
@@ -371,7 +371,7 @@ module.exports.generateReport = async (req, res, next) => {
       pictures: fileArr,
     });
     let resp = await ServiceReportModel.save();
-    return res.status(200).json(resp);
+    return res.status(200).send({success:true});
   } catch (err) {
     console.log(err);
     next(err);
