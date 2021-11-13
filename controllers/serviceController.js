@@ -289,18 +289,31 @@ module.exports.getCreatedServicesList = async (req, res, next) => {
 };
 
 //add time>starttime
-module.exports.getmyAppointments = async (req, res, next) => {
+module.exports.getmyactiveAppointments = async (req, res, next) => {
   try {
     let serviceList = await ServiceAppointment.find({
       ServiceProvider: res.locals.user._id,
-    }).populate('bookingDetails','package run1 run2').populate('petDetails', 'name');    
-    return res.status(200).json(serviceList);
+      bookingStatus:{ $lte:1}
+    }).populate('bookingDetails','package run1 run2').populate('petDetails', 'name username');     
+    return res.status(200).json({serviceList:serviceList});
   } catch (err) {
     console.log(err);
     next(err);
   }
 };
 
+module.exports.getmypastAppointments = async (req, res, next) => {
+  try {
+    let serviceList = await ServiceAppointment.find({
+      ServiceProvider: res.locals.user._id,
+      bookingStatus:{ $gte:2}
+    }).populate('bookingDetails','package run1 run2').populate('petDetails', 'name username');     
+    return res.status(200).json({serviceList:serviceList});
+  } catch (err) {
+    console.log(err);
+    next(err);
+  }
+};
 module.exports.changeAppointmentstatus = async (req, res, next) => {
   try {
     let serviceList = await ServiceAppointment.findByIdAndUpdate(     
