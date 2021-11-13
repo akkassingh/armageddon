@@ -288,12 +288,12 @@ module.exports.getCreatedServicesList = async (req, res, next) => {
   }
 };
 
-
+//add time>starttime
 module.exports.getmyAppointments = async (req, res, next) => {
   try {
     let serviceList = await ServiceAppointment.find({
       ServiceProvider: res.locals.user._id,
-    }).populate({path:'bookingDetails'}).populate('petDetails', 'name');    
+    }).populate('bookingDetails','package run1 run2').populate('petDetails', 'name');    
     return res.status(200).json(serviceList);
   } catch (err) {
     console.log(err);
