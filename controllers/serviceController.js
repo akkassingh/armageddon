@@ -281,7 +281,7 @@ module.exports.getCreatedServicesList = async (req, res, next) => {
     
     
 
-    return res.status(200).send(finalData);
+    return res.status(200).send({createdServicelist:finalData});
   } catch (err) {
     console.log(err);
     next(err);
@@ -293,7 +293,7 @@ module.exports.getmyAppointments = async (req, res, next) => {
   try {
     let serviceList = await ServiceAppointment.find({
       ServiceProvider: res.locals.user._id,
-    }).populate({path:'bookingDetails'}).populate({path:'petDetails'});    
+    }).populate({path:'bookingDetails'}).populate('petDetails', 'name');    
     return res.status(200).json(serviceList);
   } catch (err) {
     console.log(err);
