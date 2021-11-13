@@ -251,17 +251,23 @@ const ServiceAppointmentSchema = new Schema({
   ],
   startTIme: String,
   bookingStatus: {
-    type: Boolean,
-    default: false,
+    type: Number,
+    default: 0, 
+    //0=recieved,1=accepted,2=rejected(cancelled),3=completed
     required: false,
   },
   serviceStatus: {
-    type: Boolean,
-    default: false,
+    type: Number,
+    default: 1,
     required: false,
   },
   rating: Number,
-  serviceType:Number
+  serviceType:{
+    type: Number,
+    default: 0,
+    required: false,
+  }
+  
 });
 
 const ServiceAppointment = mongoose.model(

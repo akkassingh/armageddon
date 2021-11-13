@@ -53,9 +53,11 @@ const bookingDetailsSchema = new Schema({
       type: Number,
       enum: [7, 30, 1],
     },
+    dayfrequency:Number
   },
   startDate: String,
   dayOff: String,
+
   run1: String,
   run2: String,
   paymentDetails: {

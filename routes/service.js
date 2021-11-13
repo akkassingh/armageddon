@@ -15,14 +15,15 @@ const {
   addServiceProfile,
   getCreatedServicesList,
   sendReviewsandRatings,
-  getmyAppointments,
   changeAppointmentstatus,
   getAppointmentDetails,
   generateReport,
   BackgroundCheckStatus,
   getDogWalkingPreferences,
   isSentforApproval,
-  getServiceProfile
+  getServiceProfile,
+  getmyactiveAppointments,
+  getmypastAppointments
 } = require("../controllers/serviceController");
 
 const { requireAuth } = require("../controllers/authController");
@@ -48,7 +49,9 @@ serviceRouter.post("/isSentforApproval", requireAuth, isSentforApproval);
 serviceRouter.post("/getServiceProfile", requireAuth, getServiceProfile);
 
 
-serviceRouter.post("/getmyAppointments", requireAuth, getmyAppointments);
+serviceRouter.post("/getmyactiveAppointments", requireAuth, getmyactiveAppointments);
+serviceRouter.post("/getmypastAppointments", requireAuth, getmypastAppointments);
+
 serviceRouter.post("/changeAppointmentstatus", requireAuth, changeAppointmentstatus);
 serviceRouter.post("/getAppointmentDetails", requireAuth, getAppointmentDetails);
 serviceRouter.post("/generateReport", upload, requireAuth, generateReport);
