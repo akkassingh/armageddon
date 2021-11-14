@@ -120,6 +120,8 @@ module.exports.bookService = async (req, res, next) => {
       phone: req.body.phone,
       alternatePhone: req.body.alternatePhone,
       package: req.body.package,
+      run1:req.body.run1,
+      run2:req.body.run2,
       runDetails:arr,
       startDate:new Date(req.body.startDate).toDateString(),
       dayOff: new Date(req.body.dayOff).toDateString(),
@@ -137,8 +139,9 @@ module.exports.bookService = async (req, res, next) => {
     for (let p1 of req.body.petDetails) {
       petArr1.push(p1.petId);
     }
-    payload.petDetails = petArr;
 
+
+    payload.petDetails = petArr;
     let ServiceBookingModel = new bookingDetails(payload);
     let resp = await ServiceBookingModel.save();
 

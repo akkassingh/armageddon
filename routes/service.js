@@ -23,7 +23,8 @@ const {
   isSentforApproval,
   getServiceProfile,
   getmyactiveAppointments,
-  getmypastAppointments
+  getmypastAppointments,
+  getscrollAppointmentstatus
 } = require("../controllers/serviceController");
 
 const { requireAuth } = require("../controllers/authController");
@@ -55,5 +56,7 @@ serviceRouter.post("/getmypastAppointments", requireAuth, getmypastAppointments)
 serviceRouter.post("/changeAppointmentstatus", requireAuth, changeAppointmentstatus);
 serviceRouter.post("/getAppointmentDetails", requireAuth, getAppointmentDetails);
 serviceRouter.post("/generateReport", upload, requireAuth, generateReport);
+serviceRouter.post("/getscrollAppointmentstatus", requireAuth, getscrollAppointmentstatus);
+
 
 module.exports = serviceRouter;

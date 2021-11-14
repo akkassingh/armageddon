@@ -294,7 +294,7 @@ module.exports.getmyactiveAppointments = async (req, res, next) => {
     let serviceList = await ServiceAppointment.find({
       ServiceProvider: res.locals.user._id,
       bookingStatus:{ $lte:1}
-    }).populate('bookingDetails','package run1 run2 runDetails').populate('petDetails', 'name username');     
+    }).populate('bookingDetails','package run1 run2').populate('petDetails', 'name username');     
     return res.status(200).json({serviceList:serviceList});
   } catch (err) {
     console.log(err);
@@ -321,6 +321,24 @@ module.exports.changeAppointmentstatus = async (req, res, next) => {
       { bookingStatus: req.body.bookingStatus},
       { new: true });
     return res.status(200).send({success:true});
+  } catch (err) {
+    console.log(err);
+    next(err);
+  }
+};
+
+module.exports.getscrollAppointmentstatus = async (req, res, next) => {
+  try {
+    let resp;
+    let serviceList = await ServiceAppointment.findById(     
+      { _id: req.body.appointmentId }).populate('bookingDetails');
+      const count=serviceList.bookingDetails.runDetails.length;
+      for(let i=0;i<count;i++){
+        if(serviceList.bookingDetails.runDetails[i].runDate==new Date(req.body.date).toDateString()){
+          resp=serviceList.bookingDetails.runDetails[i]
+        }
+      }
+    return res.status(200).send({resp:resp});
   } catch (err) {
     console.log(err);
     next(err);
