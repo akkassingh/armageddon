@@ -80,6 +80,36 @@ module.exports.serviceProvidersList = async (req, res, next) => {
 
 module.exports.bookService = async (req, res, next) => {
   try {
+    let arr=[]
+    let j=0;
+    let start=req.body.startDate;
+    let off=req.body.dayOff;
+    for(let i=0;i<req.body.package.frequency;i++){
+      if(i>0 && i%7==0)
+        j++;
+        const runningDate=86400000*i+start;
+        const checkDate=604800000*j+off
+        const event = new Date(runningDate).toDateString();
+        const eventcheck = new Date(checkDate).toDateString();
+        console.log(eventcheck)
+        if(event!=eventcheck){
+          let ob;
+          if(req.body.package.dayfrequency==2){
+             ob={
+              runTime1:req.body.run1,
+              runTime2:req.body.run2,
+              runDate:event
+            }
+          }
+          else{
+             ob={
+              runTime1:req.body.run1,
+              runDate:event
+            }
+          }
+          arr.push(ob)
+        }
+    }
     let payload = {
       type: "sp",
       numberOfPets: req.body.numberOfPets,
@@ -90,12 +120,11 @@ module.exports.bookService = async (req, res, next) => {
       phone: req.body.phone,
       alternatePhone: req.body.alternatePhone,
       package: req.body.package,
-      startDate: new Date(req.body.startDate).toISOString(),
-      dayOff: req.body.dayOff,
-      run1: req.body.run1,
-      run2: req.body.run2,
+      runDetails:arr,
+      startDate:new Date(req.body.startDate).toDateString(),
+      dayOff: new Date(req.body.dayOff).toDateString(),
     };
-
+    console.log(payload)
     let petArr = [];
     for (let p1 of req.body.petDetails) {
       petArr.push({
@@ -120,12 +149,12 @@ module.exports.bookService = async (req, res, next) => {
         User: res.locals.user._id,
         bookingDetails: ServiceBookingModel._id,
         petDetails: petArr1,
-        startTIme: new Date(req.body.startDate).toISOString(),
+        // startTIme: new Date(req.body.startDate).toISOString(),
         bookingStatus: false,
       });
       let st=await  Service.findOneAndUpdate({ serviceProvider: sp1.serviceProvider,ServiceAppointment:ServiceAppointmentSave._id} )
       let resp = await ServiceAppointmentSave.save();
-      console.log(st)
+      //console.log(st)
     }
 
     return res.status(200).json(resp);
