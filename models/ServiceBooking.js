@@ -57,9 +57,23 @@ const bookingDetailsSchema = new Schema({
   },
   startDate: String,
   dayOff: String,
-
-  run1: String,
-  run2: String,
+  runDetails:[
+   {
+      runTime1:String,
+      runTime2:String,
+      runDate:String,
+      run2Status:Number,
+      run1Status:Number,
+      runReport1: {
+        type: Schema.ObjectId,
+        ref: "ServiceAppointment",
+      },
+      runReport2: {
+        type: Schema.ObjectId,
+        ref: "ServiceAppointment",
+      }
+    }
+  ],
   paymentDetails: {
     transactionId: String,
     Status: {

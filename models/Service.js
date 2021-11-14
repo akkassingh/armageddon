@@ -249,7 +249,7 @@ const ServiceAppointmentSchema = new Schema({
       ref: "Animal",
     }
   ],
-  startTIme: String,
+  startTIme: Number,
   bookingStatus: {
     type: Number,
     default: 0, 
