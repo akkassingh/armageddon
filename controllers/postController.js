@@ -540,9 +540,16 @@ module.exports.retrievMyPosts = async (req, res, next) => {
     ]);
 
     for (let p1 of posts) {
-      let getPostVoteresp = await PostVote.find({ post: p1._id });
-      p1.votes = getPostVoteresp;
-      p1.comments = []
+      let getPostVoteresp = await PostVote.aggregate([
+        {
+          $match: { post: p1._id },
+        },
+        {
+          $count: "totalVotes",
+        },
+      ]);
+      p1.totalVotes = getPostVoteresp[0].totalVotes;
+      p1.totalComments = 0;
     }
 
     // const posts = await Post.aggregate([
