@@ -294,7 +294,7 @@ module.exports.getmyactiveAppointments = async (req, res, next) => {
     let serviceList = await ServiceAppointment.find({
       ServiceProvider: res.locals.user._id,
       bookingStatus:{ $lte:1}
-    }).populate('bookingDetails','package run1 run2').populate('petDetails', 'name username');     
+    }).populate('bookingDetails','package run1 run2 startDate dayOff').populate('petDetails', 'name username');     
     return res.status(200).json({serviceList:serviceList});
   } catch (err) {
     console.log(err);

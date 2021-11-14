@@ -124,7 +124,7 @@ module.exports.bookService = async (req, res, next) => {
       run2:req.body.run2,
       runDetails:arr,
       startDate:new Date(req.body.startDate).toDateString(),
-      dayOff: new Date(req.body.dayOff).toDateString(),
+      dayOff: (new Date(req.body.dayOff).toDateString()).split(' ')[0],
     };
     console.log(payload)
     let petArr = [];
