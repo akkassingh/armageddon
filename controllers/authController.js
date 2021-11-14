@@ -354,7 +354,7 @@ module.exports.loginAuthentication = async (req, res, next) => {
         token: jwt.encode({ id: user._id }, process.env.JWT_SECRET),
       });
     } catch (err) {
-      console.log(err)
+      console.log(err);
       next(err);
     }
   }
@@ -1200,8 +1200,9 @@ module.exports.verifyResetPasswordOTP = async (req, res, next) => {
         .send({ error: "Invalid or expired confirmation attempt" });
     }
     let token;
-    if (type && type == "sp" && path == "login") {
-      token = confirmationToken.token;
+
+    if (confirmationToken.resettoken) {
+      token = confirmationToken.resettoken;
       const compareotp = await bcrypt.compare(otp, token);
       if (!compareotp) {
         return res.status(401).send({
@@ -1209,26 +1210,49 @@ module.exports.verifyResetPasswordOTP = async (req, res, next) => {
             "The credentials you provided are incorrect, please try again.",
         });
       }
+
+      if (type && type == "sp") {
+        await ServiceProvider.findByIdAndUpdate(
+          { _id: user._id },
+          { confirmed: true }
+        );
+      } else {
+        await User.findByIdAndUpdate({ _id: user._id }, { confirmed: true });
+      }
+
+      await ConfirmationToken.deleteOne({ resettoken: token, user: user._id });
     } else {
-      token = confirmationToken.token;
-      const compareotp = await bcrypt.compare(otp, token);
-      if (!compareotp) {
-        return res.status(401).send({
-          error:
-            "The credentials you provided are incorrect, please try again.",
-        });
+      if (type && type == "sp" && path == "login") {
+        token = confirmationToken.token;
+        const compareotp = await bcrypt.compare(otp, token);
+        if (!compareotp) {
+          return res.status(401).send({
+            error:
+              "The credentials you provided are incorrect, please try again.",
+          });
+        }
+      } else {
+        token = confirmationToken.token;
+        const compareotp = await bcrypt.compare(otp, token);
+        if (!compareotp) {
+          return res.status(401).send({
+            error:
+              "The credentials you provided are incorrect, please try again.",
+          });
+        }
       }
+
+      if (type && type == "sp" && path == "login") {
+        await ServiceProvider.findByIdAndUpdate(
+          { _id: user._id },
+          { confirmed: true }
+        );
+      } else {
+        await User.findByIdAndUpdate({ _id: user._id }, { confirmed: true });
+      }
+      await ConfirmationToken.deleteOne({ token: token, user: user._id });
     }
 
-    if (type && type == "sp" && path == "login") {
-      await ServiceProvider.findByIdAndUpdate(
-        { _id: user._id },
-        { confirmed: true }
-      );
-    } else {
-      await User.findByIdAndUpdate({ _id: user._id }, { confirmed: true });
-    }
-    await ConfirmationToken.deleteOne({ resettoken: token, user: user._id });
     return res.status(200).send({ message: "verification successful" });
   } catch (err) {
     next(err);

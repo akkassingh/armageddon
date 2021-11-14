@@ -783,7 +783,33 @@ module.exports.getUserDetails = async (req, res, next) => {
 
     const animal_details = await Animal.find({ "guardians.user": user._id });
 
-    return res.status(200).json({ user_details, animal_details });
+    const followersCount = await Followers.aggregate([
+      {
+        $match: { "user.id": user._id.toString() },
+      },
+      {
+        $count: "totalFollowers",
+      },
+    ]);
+
+    let totalFollowers =
+      followersCount.length == 0 ? 0 : followersCount[0].totalFollowers;
+
+    const followingCount = await Following.aggregate([
+      {
+        $match: { "user.id": user._id.toString() },
+      },
+      {
+        $count: "totalFollowing",
+      },
+    ]);
+
+    let totalFollowings =
+      followingCount.length == 0 ? 0 : followingCount[0].totalFollowing;
+
+    return res
+      .status(200)
+      .json({ user_details, animal_details, totalFollowers, totalFollowings });
   } catch (err) {
     logger.info(err);
     res.status(400).send({ error: err });

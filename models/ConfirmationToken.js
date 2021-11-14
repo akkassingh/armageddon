@@ -1,4 +1,4 @@
-const mongoose = require("mongoose");
+const mongoose = require('mongoose');
 const Schema = mongoose.Schema;
 
 const ConfirmationTokenSchema = new Schema({
@@ -10,7 +10,7 @@ const ConfirmationTokenSchema = new Schema({
 });
 
 const ConfirmationTokenModel = mongoose.model(
-  "ConfirmationToken",
+  'ConfirmationToken',
   ConfirmationTokenSchema
 );
 

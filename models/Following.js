@@ -3,9 +3,11 @@ const Schema = mongoose.Schema;
 
 const FollowingSchema = new Schema({
   user: {
-    required: true,
-    type: String,
-    enum: ["Animal", "Human"],
+    id: {
+      type: String,
+      required: true,
+    },
+    userType: { required: true, type: String, enum: ["Animal", "Human"] },
   },
   followingDetails: [
     {
