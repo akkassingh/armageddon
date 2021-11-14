@@ -8,6 +8,7 @@ const {
   ServiceAppointment,
   ServiceReport
 } = require("../models/Service");
+const {bookingDetails}=require("../models/ServiceBooking")
 const ObjectId = require("mongoose").Types.ObjectId;
 const logger = require("../logger/logger");
 const fs = require("fs");
@@ -329,16 +330,52 @@ module.exports.changeAppointmentstatus = async (req, res, next) => {
 
 module.exports.getscrollAppointmentstatus = async (req, res, next) => {
   try {
-    let resp;
+    let resp=[];
+    let status;
     let serviceList = await ServiceAppointment.findById(     
       { _id: req.body.appointmentId }).populate('bookingDetails');
       const count=serviceList.bookingDetails.runDetails.length;
       for(let i=0;i<count;i++){
         if(serviceList.bookingDetails.runDetails[i].runDate==new Date(req.body.date).toDateString()){
-          resp=serviceList.bookingDetails.runDetails[i]
+          status=serviceList.bookingDetails.runDetails[i].run1Status
+          resp.push({"walkStatus":status})
+          // if(serviceList.bookingDetails.runDetails[i].run2Status){
+            status=serviceList.bookingDetails.runDetails[i].run2Status
+            resp.push({"walkStatus":status})
+         // }
         }
       }
     return res.status(200).send({resp:resp});
+  } catch (err) {
+    console.log(err);
+    next(err);
+  }
+};
+
+module.exports.changeRunstatus = async (req, res, next) => {
+  try {
+    let resp=[];
+    let status;
+    let rep = await ServiceAppointment.findById(     
+      { _id: req.body.appointmentId }).populate('bookingDetails');
+      p=await bookingDetails.findById({_id:rep.bookingDetails._id})
+      const count=p.runDetails.length;
+
+      for(let i=0;i<count;i++){
+        let p1=p.runDetails;
+        if(p.runDetails[i].runDate==new Date(req.body.date).toDateString()){
+          if(req.body.run1Status){
+            p1[i].run1Status=req.body.run1Status;
+            p=await bookingDetails.findByIdAndUpdate({_id:rep.bookingDetails._id},{$set:{runDetails:p1}},{ new: true })
+          }
+          if(req.body.run2Status){
+            p1[i].run2Status=req.body.run2Status;
+            console.log( p1[i].run2Status+'loooooooo')
+            p=await bookingDetails.findByIdAndUpdate({_id:rep.bookingDetails._id},{$set:{runDetails:p1}},{ new: true })
+          }
+        }
+      }
+    return res.status(200).send({success:true});
   } catch (err) {
     console.log(err);
     next(err);
@@ -388,8 +425,52 @@ module.exports.generateReport = async (req, res, next) => {
       rating: req.body.rating,
       pictures: fileArr,
     });
+    let p;
+    let dt=new Date(parseInt(req.body.date))
     let resp = await ServiceReportModel.save();
+    let rep=await ServiceAppointment.findById({_id:req.body.appointmentId}).populate('bookingDetails','runDetails.runDate');
+    for(let i=0;i<rep.bookingDetails.runDetails.length;i++){
+      if(rep.bookingDetails.runDetails[i].runDate==dt.toDateString())
+      if(req.body.runReport1){
+        p=await bookingDetails.findById({_id:rep.bookingDetails._id})
+        let p1=p.runDetails;
+        p1[i].runReport1=ServiceReportModel._id;
+        p=await bookingDetails.findByIdAndUpdate({_id:rep.bookingDetails._id},{$set:{runDetails:p1}},{ new: true })
+       }
+      else if(req.body.runReport2){
+        p=await bookingDetails.findById({_id:rep.bookingDetails._id})
+        let p1=p.runDetails;
+         p1[i].runReport2=ServiceReportModel._id;
+         p=await bookingDetails.findByIdAndUpdate({_id:rep.bookingDetails._id},{$set:{runDetails:p1}},{ new: true })
+       }
+      //  await bookingDetails.findByIdAndUpdate({_id:rep.bookingDetails._id},{runReport2:ServiceReportModel._id})   
+     }
+
+    //console.log(rep.bookingDetails.runDetails);
+
     return res.status(200).send({success:true});
+  } catch (err) {
+    console.log(err);
+    next(err);
+  }
+};
+
+module.exports.getReport = async (req, res, next) => {
+  try {
+    let resp;
+    let dt=new Date(parseInt(req.body.date))
+    let rep=await ServiceAppointment.findById({_id:req.body.appointmentId}).populate('bookingDetails','runDetails');
+    for(let i=0;i<rep.bookingDetails.runDetails.length;i++){
+      if(rep.bookingDetails.runDetails[i].runDate==dt.toDateString()){
+        if(req.body.runReport1){       
+          resp=await ServiceReport.findById({_id:rep.bookingDetails.runDetails[i].runReport1})
+        }
+        else  if(req.body.runReport2){       
+          resp=await ServiceReport.findById({_id:rep.bookingDetails.runDetails[i].runReport2})
+        }
+      }
+     }
+    return res.status(200).send(resp);
   } catch (err) {
     console.log(err);
     next(err);

@@ -64,8 +64,14 @@ const bookingDetailsSchema = new Schema({
       runTime1:String,
       runTime2:String,
       runDate:String,
-      run2Status:Number,
-      run1Status:Number,
+      run2Status:{
+        type: Number,
+        default: 0,
+      },
+      run1Status:{
+        type: Number,
+        default: 0,
+      },
       runReport1: {
         type: Schema.ObjectId,
         ref: "ServiceAppointment",

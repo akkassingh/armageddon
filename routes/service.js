@@ -24,7 +24,9 @@ const {
   getServiceProfile,
   getmyactiveAppointments,
   getmypastAppointments,
-  getscrollAppointmentstatus
+  getscrollAppointmentstatus,
+  getReport,
+  changeRunstatus
 } = require("../controllers/serviceController");
 
 const { requireAuth } = require("../controllers/authController");
@@ -56,7 +58,10 @@ serviceRouter.post("/getmypastAppointments", requireAuth, getmypastAppointments)
 serviceRouter.post("/changeAppointmentstatus", requireAuth, changeAppointmentstatus);
 serviceRouter.post("/getAppointmentDetails", requireAuth, getAppointmentDetails);
 serviceRouter.post("/generateReport", upload, requireAuth, generateReport);
+serviceRouter.post("/getReport", upload, requireAuth, getReport);
+
 serviceRouter.post("/getscrollAppointmentstatus", requireAuth, getscrollAppointmentstatus);
+serviceRouter.post("/changeRunstatus", requireAuth, changeRunstatus);
 
 
 module.exports = serviceRouter;
