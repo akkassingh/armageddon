@@ -2,7 +2,11 @@ const mongoose = require("mongoose");
 const Schema = mongoose.Schema;
 
 const FollowersSchema = new Schema({
-  user: Schema.ObjectId,
+  user: {
+    required: true,
+    id: String,
+    enum: ["Animal", "Human"],
+  },
   followerDetails: [
     {
       followerType: {
