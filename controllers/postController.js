@@ -1,31 +1,31 @@
-const cloudinary = require('cloudinary').v2;
-const linkify = require('linkifyjs');
-const axios = require('axios');
-require('linkifyjs/plugins/hashtag')(linkify);
-const Post = require('../models/Post');
-const PostVote = require('../models/PostVote');
-const Following = require('../models/Following');
-const Followers = require('../models/Followers');
-const Notification = require('../models/Notification');
-const socketHandler = require('../handlers/socketHandler');
-const fs = require('fs');
-const ObjectId = require('mongoose').Types.ObjectId;
+const cloudinary = require("cloudinary").v2;
+const linkify = require("linkifyjs");
+const axios = require("axios");
+require("linkifyjs/plugins/hashtag")(linkify);
+const Post = require("../models/Post");
+const PostVote = require("../models/PostVote");
+const Following = require("../models/Following");
+const Followers = require("../models/Followers");
+const Notification = require("../models/Notification");
+const socketHandler = require("../handlers/socketHandler");
+const fs = require("fs");
+const ObjectId = require("mongoose").Types.ObjectId;
 
 const {
   retrieveComments,
   formatCloudinaryUrl,
   populatePostsPipeline,
-} = require('../utils/controllerUtils');
-const filters = require('../utils/filters');
+} = require("../utils/controllerUtils");
+const filters = require("../utils/filters");
 
 module.exports.createPost = async (req, res, next) => {
   const user = res.locals.user;
-  const { caption, filter: filterName } = req.body;
+  const { caption, filter: filterName, postOwnerId, postOwnerType } = req.body;
   let post = undefined;
   const filterObject = filters.find((filter) => filter.name === filterName);
   const hashtags = [];
   linkify.find(caption).forEach((result) => {
-    if (result.type === 'hashtag') {
+    if (result.type === "hashtag") {
       hashtags.push(result.value.substring(1));
     }
   });
@@ -33,7 +33,7 @@ module.exports.createPost = async (req, res, next) => {
   if (!req.file) {
     return res
       .status(400)
-      .send({ error: 'Please provide the image to upload.' });
+      .send({ error: "Please provide the image to upload." });
   }
 
   cloudinary.config({
@@ -51,12 +51,12 @@ module.exports.createPost = async (req, res, next) => {
     if (moderationResponse.data.error) {
       return res
         .status(500)
-        .send({ error: 'Error moderating image, please try again later.' });
+        .send({ error: "Error moderating image, please try again later." });
     }
 
     if (moderationResponse.data.rating_index > 2) {
       return res.status(403).send({
-        error: 'The content was deemed too explicit to upload.',
+        error: "The content was deemed too explicit to upload.",
       });
     }
 
@@ -72,18 +72,22 @@ module.exports.createPost = async (req, res, next) => {
     post = new Post({
       image: response.secure_url,
       thumbnail: thumbnailUrl,
-      filter: filterObject ? filterObject.filter : '',
+      filter: filterObject ? filterObject.filter : "",
       caption,
       author: user._id,
       hashtags,
+      postOwnerDetails: {
+        postOwnerId: postOwnerId,
+        postOwnerType: postOwnerType,
+      },
     });
     const postVote = new PostVote({
       post: post._id,
     });
     await post.save();
     await postVote.save();
-    res.status(201).send({
-      ...post.toObject(),
+    res.status(201).json({
+      post,
       postVotes: [],
       comments: [],
       author: { avatar: user.avatar, username: user.username },
@@ -125,7 +129,7 @@ module.exports.deletePost = async (req, res, next) => {
     const post = await Post.findOne({ _id: postId, author: user._id });
     if (!post) {
       return res.status(404).send({
-        error: 'Could not find a post with that id associated with the user.',
+        error: "Could not find a post with that id associated with the user.",
       });
     }
     // This uses pre hooks to delete everything associated with this post i.e comments
@@ -133,7 +137,7 @@ module.exports.deletePost = async (req, res, next) => {
       _id: postId,
     });
     if (!postDelete.deletedCount) {
-      return res.status(500).send({ error: 'Could not delete the post.' });
+      return res.status(500).send({ error: "Could not delete the post." });
     }
     res.status(204).send();
   } catch (err) {
@@ -160,39 +164,39 @@ module.exports.retrievePost = async (req, res, next) => {
       { $match: { _id: ObjectId(postId) } },
       {
         $lookup: {
-          from: 'postvotes',
-          localField: '_id',
-          foreignField: 'post',
-          as: 'postVotes',
+          from: "postvotes",
+          localField: "_id",
+          foreignField: "post",
+          as: "postVotes",
         },
       },
       {
         $lookup: {
-          from: 'users',
-          localField: 'author',
-          foreignField: '_id',
-          as: 'author',
+          from: "users",
+          localField: "author",
+          foreignField: "_id",
+          as: "author",
         },
       },
-      { $unwind: '$author' },
-      { $unwind: '$postVotes' },
+      { $unwind: "$author" },
+      { $unwind: "$postVotes" },
       {
         $unset: [
-          'author.password',
-          'author.email',
-          'author.private',
-          'author.bio',
-          'author.githubId',
+          "author.password",
+          "author.email",
+          "author.private",
+          "author.bio",
+          "author.githubId",
         ],
       },
       {
-        $addFields: { postVotes: '$postVotes.votes' },
+        $addFields: { postVotes: "$postVotes.votes" },
       },
     ]);
     if (post.length === 0) {
       return res
         .status(404)
-        .send({ error: 'Could not find a post with that id.' });
+        .send({ error: "Could not find a post with that id." });
     }
     // Retrieve the comments associated with the post aswell as the comment's replies and votes
     const comments = await retrieveComments(postId, 0);
@@ -209,27 +213,19 @@ module.exports.votePost = async (req, res, next) => {
 
   try {
     // Update the vote array if the user has not already liked the post
-    const postLikeUpdate = await PostVote.updateOne(
-      { post: postId, 'votes.author': { $ne: user._id } },
-      {
-        $push: { votes: { author: user._id } },
-      }
-    );
-    if (!postLikeUpdate.nModified) {
-      if (!postLikeUpdate.ok) {
-        return res.status(500).send({ error: 'Could not vote on the post.' });
-      }
-      // Nothing was modified in the previous query meaning that the user has already liked the post
-      // Remove the user's like
-      const postDislikeUpdate = await PostVote.updateOne(
-        { post: postId },
-        { $pull: { votes: { author: user._id } } }
-      );
 
-      if (!postDislikeUpdate.nModified) {
-        return res.status(500).send({ error: 'Could not vote on the post.' });
-      }
+    let check = await PostVote.find({
+      $and: [{ voterId: user._id }, { post: ObjectId(postId) }],
+    });
+    if (check.length > 0) {
+      return res.send({ success: true });
     } else {
+      let postVote = new PostVote({
+        post: ObjectId(postId),
+        voterId: user._id,
+      });
+      await postVote.save();
+
       // Sending a like notification
       const post = await Post.findById(postId);
       if (String(post.author) !== String(user._id)) {
@@ -245,7 +241,7 @@ module.exports.votePost = async (req, res, next) => {
         const notification = new Notification({
           sender: user._id,
           receiver: post.author,
-          notificationType: 'like',
+          notificationType: "like",
           date: Date.now(),
           notificationData: {
             postId,
@@ -263,13 +259,83 @@ module.exports.votePost = async (req, res, next) => {
             avatar: user.avatar,
           },
         });
+        return res.send({ success: true });
+      } else {
+        return res.send({ success: true });
       }
     }
-    return res.send({ success: true });
   } catch (err) {
     next(err);
   }
 };
+
+// module.exports.votePost = async (req, res, next) => {
+//   const { postId } = req.params;
+//   const user = res.locals.user;
+
+//   try {
+//     // Update the vote array if the user has not already liked the post
+//     const postLikeUpdate = await PostVote.updateOne(
+//       { post: ObjectId(postId), voterId: { $ne: user._id } },
+//       {
+//         $push: { voterId: user._id },
+//       }
+//     );
+//     if (!postLikeUpdate.nModified) {
+//       if (!postLikeUpdate.ok) {
+//         return res.status(500).send({ error: "Could not vote on the post." });
+//       }
+//       // Nothing was modified in the previous query meaning that the user has already liked the post
+//       // Remove the user's like
+//       const postDislikeUpdate = await PostVote.updateOne(
+//         { post: ObjectId(postId) },
+//         { $pull: { voterId: user._id } }
+//       );
+
+//       if (!postDislikeUpdate.nModified) {
+//         return res.status(500).send({ error: "Could not vote on the post." });
+//       }
+//     } else {
+//       // Sending a like notification
+//       const post = await Post.findById(postId);
+//       if (String(post.author) !== String(user._id)) {
+//         // Create thumbnail link
+//         const image = formatCloudinaryUrl(
+//           post.image,
+//           {
+//             height: 50,
+//             width: 50,
+//           },
+//           true
+//         );
+//         const notification = new Notification({
+//           sender: user._id,
+//           receiver: post.author,
+//           notificationType: "like",
+//           date: Date.now(),
+//           notificationData: {
+//             postId,
+//             image,
+//             filter: post.filter,
+//           },
+//         });
+
+//         await notification.save();
+//         socketHandler.sendNotification(req, {
+//           ...notification.toObject(),
+//           sender: {
+//             _id: user._id,
+//             username: user.username,
+//             avatar: user.avatar,
+//           },
+//         });
+//       }
+//     }
+//     return res.send({ success: true });
+//   } catch (err) {
+//     next(err);
+//   }
+// };
 
 module.exports.retrievePostFeed = async (req, res, next) => {
   const user = res.locals.user;
@@ -278,7 +344,7 @@ module.exports.retrievePostFeed = async (req, res, next) => {
   try {
     const followingDocument = await Following.findOne({ user: user._id });
     if (!followingDocument) {
-      return res.status(404).send({ error: 'Could not find any posts.' });
+      return res.status(404).send({ error: "Could not find any posts." });
     }
     const following = followingDocument.following.map(
       (following) => following.user
@@ -286,14 +352,14 @@ module.exports.retrievePostFeed = async (req, res, next) => {
 
     // Fields to not include on the user object
     const unwantedUserFields = [
-      'author.password',
-      'author.private',
-      'author.confirmed',
-      'author.bookmarks',
-      'author.email',
-      'author.website',
-      'author.bio',
-      'author.githubId',
+      "author.password",
+      "author.private",
+      "author.confirmed",
+      "author.bookmarks",
+      "author.email",
+      "author.website",
+      "author.bio",
+      "author.githubId",
     ];
 
     const posts = await Post.aggregate([
@@ -307,30 +373,30 @@ module.exports.retrievePostFeed = async (req, res, next) => {
       { $limit: 5 },
       {
         $lookup: {
-          from: 'users',
-          localField: 'author',
-          foreignField: '_id',
-          as: 'author',
+          from: "users",
+          localField: "author",
+          foreignField: "_id",
+          as: "author",
         },
       },
       {
         $lookup: {
-          from: 'postvotes',
-          localField: '_id',
-          foreignField: 'post',
-          as: 'postVotes',
+          from: "postvotes",
+          localField: "_id",
+          foreignField: "post",
+          as: "postVotes",
         },
       },
       {
         $lookup: {
-          from: 'comments',
-          let: { postId: '$_id' },
+          from: "comments",
+          let: { postId: "$_id" },
           pipeline: [
             {
               // Finding comments related to the postId
               $match: {
                 $expr: {
-                  $eq: ['$post', '$$postId'],
+                  $eq: ["$post", "$$postId"],
                 },
               },
             },
@@ -339,26 +405,26 @@ module.exports.retrievePostFeed = async (req, res, next) => {
             // Populating the author field
             {
               $lookup: {
-                from: 'users',
-                localField: 'author',
-                foreignField: '_id',
-                as: 'author',
+                from: "users",
+                localField: "author",
+                foreignField: "_id",
+                as: "author",
               },
             },
             {
               $lookup: {
-                from: 'commentvotes',
-                localField: '_id',
-                foreignField: 'comment',
-                as: 'commentVotes',
+                from: "commentvotes",
+                localField: "_id",
+                foreignField: "comment",
+                as: "commentVotes",
               },
             },
             {
-              $unwind: '$author',
+              $unwind: "$author",
             },
             {
               $unwind: {
-                path: '$commentVotes',
+                path: "$commentVotes",
                 preserveNullAndEmptyArrays: true,
               },
             },
@@ -367,22 +433,22 @@ module.exports.retrievePostFeed = async (req, res, next) => {
             },
             {
               $addFields: {
-                commentVotes: '$commentVotes.votes',
+                commentVotes: "$commentVotes.votes",
               },
             },
           ],
-          as: 'comments',
+          as: "comments",
         },
       },
       {
         $lookup: {
-          from: 'comments',
-          let: { postId: '$_id' },
+          from: "comments",
+          let: { postId: "$_id" },
           pipeline: [
             {
               $match: {
                 $expr: {
-                  $eq: ['$post', '$$postId'],
+                  $eq: ["$post", "$$postId"],
                 },
               },
             },
@@ -395,32 +461,32 @@ module.exports.retrievePostFeed = async (req, res, next) => {
               },
             },
           ],
-          as: 'commentCount',
+          as: "commentCount",
         },
       },
       {
         $unwind: {
-          path: '$commentCount',
+          path: "$commentCount",
           preserveNullAndEmptyArrays: true,
         },
       },
       {
-        $unwind: '$postVotes',
+        $unwind: "$postVotes",
       },
       {
-        $unwind: '$author',
+        $unwind: "$author",
       },
       {
         $addFields: {
-          postVotes: '$postVotes.votes',
+          postVotes: "$postVotes.votes",
           commentData: {
-            comments: '$comments',
-            commentCount: '$commentCount.count',
+            comments: "$comments",
+            commentCount: "$commentCount.count",
           },
         },
       },
       {
-        $unset: [...unwantedUserFields, 'comments', 'commentCount'],
+        $unset: [...unwantedUserFields, "comments", "commentCount"],
       },
     ]);
     return res.send(posts);
@@ -450,6 +516,54 @@ module.exports.retrieveSuggestedPosts = async (req, res, next) => {
     ]);
     return res.send(posts);
   } catch (err) {
+    next(err);
+  }
+};
+
+module.exports.retrievMyPosts = async (req, res, next) => {
+  const { offset = 0 } = req.params;
+
+  try {
+    // const authorId = ObjectId(res.locals.user._id);
+    const authorId = res.locals.user._id.toString();
+    const posts = await Post.aggregate([
+      { $match: { author: authorId } },
+      {
+        $sort: { date: -1 },
+      },
+      {
+        $skip: Number(offset),
+      },
+      {
+        $limit: 20,
+      },
+    ]);
+
+    for (let p1 of posts) {
+      let getPostVoteresp = await PostVote.find({ post: p1._id });
+      p1.votes = getPostVoteresp;
+      p1.comments = []
+    }
+
+    // const posts = await Post.aggregate([
+    //   { $match: { author: authorId } },
+    //   {
+    //     $sort: { date: -1 },
+    //   },
+    //   {
+    //     $skip: Number(offset),
+    //   },
+    //   {
+    //     $limit: 20,
+    //   },
+    //   {
+    //     $sample: { size: 20 },
+    //   },
+    //   ...populatePostsPipeline,
+    // ]);
+    return res.send(posts);
+  } catch (err) {
+    console.log(err);
     next(err);
   }
 };
@@ -487,11 +601,11 @@ module.exports.retrieveHashtagPosts = async (req, res, next) => {
         },
       },
       {
-        $unwind: '$postCount',
+        $unwind: "$postCount",
       },
       {
         $addFields: {
-          postCount: '$postCount.count',
+          postCount: "$postCount.count",
         },
       },
     ]);

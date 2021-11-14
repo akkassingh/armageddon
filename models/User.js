@@ -109,8 +109,8 @@ UserSchema.pre("save", async function (next) {
             400
           )
         );
-      await mongoose.model("Followers").create({ user: this._id });
-      await mongoose.model("Following").create({ user: this._id });
+      // await mongoose.model("Followers").create({ user: this._id });
+      // await mongoose.model("Following").create({ user: this._id });
     } catch (err) {
       return next((err.statusCode = 400));
     }

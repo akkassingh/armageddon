@@ -1,17 +1,17 @@
-const express = require('express');
+const express = require("express");
 const animalRouter = express.Router();
-const multer = require('multer');
+const multer = require("multer");
 
-const {
-    registerPet,
-    addGuardian,
-} = require('../controllers/animalController');
+const upload = multer({
+  dest: "temp/",
+  limits: { fieldSize: 8 * 1024 * 1024, fileSize: 1000000 },
+}).any();
 
-const { 
-    requireAuth,
-} = require('../controllers/authController');
+const { registerPet, addGuardian } = require("../controllers/animalController");
 
-animalRouter.post('/register', requireAuth, registerPet);
-animalRouter.patch('/addGuardian', addGuardian);
+const { requireAuth } = require("../controllers/authController");
+
+animalRouter.post("/register", upload, requireAuth, registerPet);
+animalRouter.patch("/addGuardian", addGuardian);
 
 module.exports = animalRouter;

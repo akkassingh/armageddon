@@ -21,7 +21,7 @@ const { validateEmail, validatePassword } = require("../utils/validation");
 module.exports.verifyJwt = (token, type) => {
   return new Promise(async (resolve, reject) => {
     try {
-      console.log("--------verifyJwt--------", token, type)
+      console.log("--------verifyJwt--------", token, type);
       if (type && type === "sp") {
         const id = jwt.decode(token, process.env.JWT_SECRET).id;
         const user = await ServiceProvider.findOne({ _id: id });
@@ -36,7 +36,7 @@ module.exports.verifyJwt = (token, type) => {
           { _id: id },
           "email username avatar bookmarks bio fullName confirmed website pets"
         );
-        console.log("--------user-------", user)
+        console.log("--------user-------", user);
         if (user) {
           return resolve(user);
         } else {
@@ -301,7 +301,7 @@ module.exports.loginAuthentication = async (req, res, next) => {
       const user = await User.findOne({
         $or: [{ username: usernameOrEmail }, { email: usernameOrEmail }],
       });
-      console.log("-----user----", user, user.password);
+      console.log("-----user----", user);
       if (!user || !user.password) {
         return res.status(401).send({
           error:
@@ -354,6 +354,7 @@ module.exports.loginAuthentication = async (req, res, next) => {
         token: jwt.encode({ id: user._id }, process.env.JWT_SECRET),
       });
     } catch (err) {
+      console.log(err)
       next(err);
     }
   }
@@ -827,6 +828,10 @@ module.exports.googleLoginAuthentication = async (req, res, next) => {
         if (userDocument.avatar) {
           isNewUser = false;
         }
+        await userDocument.findByIdAndUpdate(
+          { _id: userDocument._id },
+          { confirmed: true }
+        );
         return res.send({
           user: {
             _id: userDocument._id,
@@ -836,6 +841,7 @@ module.exports.googleLoginAuthentication = async (req, res, next) => {
             bookmarks: userDocument.bookmarks,
           },
           isNewUser,
+          confirmed: true,
           token: jwt.encode({ id: userDocument._id }, process.env.JWT_SECRET),
         });
       }
@@ -844,50 +850,34 @@ module.exports.googleLoginAuthentication = async (req, res, next) => {
         email: primaryEmail,
       });
 
-      // const existingUser = await User.findOne({
-      //   $or: [{ email: primaryEmail }, { username: googleUser.given_name+googleUser.family_name.toLowerCase() }],
-      // });
-
       logger.info("existingUser is ", JSON.stringify(existingUser));
 
       if (existingUser) {
         logger.info("User Exists!!!!");
         if (existingUser.email === primaryEmail) {
-          // return res.status(400).send({
-          //   error:
-          //     'A user with the same email already exists, please change your email.',
-          // });
           let isNewUser = true;
           if (existingUser.avatar) {
             isNewUser = false;
           }
-          // res.sendStatus(200).json({
-          //   user: {
-          //     email: primaryEmail,
-          //     username: existingUser.username,
-          //   },
-          //   isNewUser,
-          //   token: jwt.encode({ id: existingUser._id }, process.env.JWT_SECRET),
-          // });
+
           res.send({
             user: {
-              email: primaryEmail,
-              username: existingUser.username,
+              _id: userDocument._id,
+              email: userDocument.email,
+              username: userDocument.username,
+              avatar: userDocument.avatar,
+              bookmarks: userDocument.bookmarks,
             },
             isNewUser,
+            confirmed: true,
             token: jwt.encode({ id: existingUser._id }, process.env.JWT_SECRET),
           });
         }
-        // if (existingUser.username === googleUser.given_name+googleUser.family_name.toLowerCase()) {
-        //   const username = await generateUniqueUsername(googleUser.given_name+googleUser.family_name.toLowerCase());
-        //   fbUser.data.login = username;
-        // }
       }
       logger.info("googleUser is ", JSON.stringify(googleUser));
       const user = new ServiceProvider({
         email: primaryEmail,
         fullName: googleUser.email.name,
-        // username: googleUser.login ? googleUser.login : await generateUniqueUsername(googleUser.given_name+googleUser.family_name.toLowerCase());,
         userName: await generateUniqueUsername(googleUser.email.split("@")[0]),
         googleUserId: googleUserId,
         confirmed: true,
@@ -896,11 +886,14 @@ module.exports.googleLoginAuthentication = async (req, res, next) => {
       await user.save();
       return res.send({
         user: {
+          _id: user._id,
           email: user.email,
           username: user.username,
+          avatar: user.avatar,
           bookmarks: user.bookmarks,
         },
         isNewUser: true,
+        confirmed: true,
         token: jwt.encode({ id: user._id }, process.env.JWT_SECRET),
       });
     } else {
@@ -926,6 +919,10 @@ module.exports.googleLoginAuthentication = async (req, res, next) => {
         if (userDocument.avatar) {
           isNewUser = false;
         }
+        await userDocument.findByIdAndUpdate(
+          { _id: userDocument._id },
+          { confirmed: true }
+        );
         return res.send({
           user: {
             _id: userDocument._id,
@@ -935,56 +932,40 @@ module.exports.googleLoginAuthentication = async (req, res, next) => {
             bookmarks: userDocument.bookmarks,
           },
           isNewUser,
+          confirmed: true,
           token: jwt.encode({ id: userDocument._id }, process.env.JWT_SECRET),
         });
       }
 
       const existingUser = await User.findOne({ email: primaryEmail });
-
-      // const existingUser = await User.findOne({
-      //   $or: [{ email: primaryEmail }, { username: googleUser.given_name+googleUser.family_name.toLowerCase() }],
-      // });
-
       logger.info("existingUser is ", JSON.stringify(existingUser));
 
       if (existingUser) {
         logger.info("User Exists!!!!");
         if (existingUser.email === primaryEmail) {
-          // return res.status(400).send({
-          //   error:
-          //     'A user with the same email already exists, please change your email.',
-          // });
           let isNewUser = true;
           if (existingUser.avatar) {
             isNewUser = false;
           }
-          // res.sendStatus(200).json({
-          //   user: {
-          //     email: primaryEmail,
-          //     username: existingUser.username,
-          //   },
-          //   isNewUser,
-          //   token: jwt.encode({ id: existingUser._id }, process.env.JWT_SECRET),
-          // });
+
           res.send({
             user: {
-              email: primaryEmail,
-              username: existingUser.username,
+              _id: userDocument._id,
+              email: userDocument.email,
+              username: userDocument.username,
+              avatar: userDocument.avatar,
+              bookmarks: userDocument.bookmarks,
             },
             isNewUser,
+            confirmed: true,
             token: jwt.encode({ id: existingUser._id }, process.env.JWT_SECRET),
           });
         }
-        // if (existingUser.username === googleUser.given_name+googleUser.family_name.toLowerCase()) {
-        //   const username = await generateUniqueUsername(googleUser.given_name+googleUser.family_name.toLowerCase());
-        //   fbUser.data.login = username;
-        // }
       }
       logger.info("googleUser is ", JSON.stringify(googleUser));
       const user = new User({
         email: primaryEmail,
         fullName: googleUser.email.name,
-        // username: googleUser.login ? googleUser.login : await generateUniqueUsername(googleUser.given_name+googleUser.family_name.toLowerCase());,
         username: await generateUniqueUsername(googleUser.email.split("@")[0]),
         googleUserId: googleUserId,
         confirmed: true,
@@ -993,11 +974,14 @@ module.exports.googleLoginAuthentication = async (req, res, next) => {
       await user.save();
       return res.send({
         user: {
+          _id: user._id,
           email: user.email,
           username: user.username,
+          avatar: user.avatar,
           bookmarks: user.bookmarks,
         },
         isNewUser: true,
+        confirmed: true,
         token: jwt.encode({ id: user._id }, process.env.JWT_SECRET),
       });
     }
@@ -1153,23 +1137,43 @@ module.exports.changePassword = async (req, res, next) => {
 module.exports.resetPasswordOTP = async (req, res, next) => {
   try {
     logger.info("***Reset Password called***");
-    const { email } = req.body;
-    if (email) {
-      const user = await User.findOne({ email });
-      if (!user)
-        return res
-          .status(404)
-          .send({ error: "No user with given username exist" });
-      const token = jwt.encode({ id: user._id }, process.env.JWT_SECRET);
-      const otp = Math.floor(Math.random() * (999999 - 100000)) + 100000;
-      // const token = await ConfirmationToken.findOne({user: user._id});
-      const current_time = Date.now();
-      await sendPasswordResetOTP(email, current_time, otp.toString());
-      res.status(201).json({
-        message: `Password Reset OTP Sent to Email ID of user ${user._id}`,
-        result: "success",
-        token: token,
-      });
+    const { email, type } = req.body;
+    if (type && type === "sp") {
+      if (email) {
+        const user = await ServiceProvider.findOne({ email });
+        if (!user)
+          return res
+            .status(404)
+            .send({ error: "No user with given username exist" });
+        const token = jwt.encode({ id: user._id }, process.env.JWT_SECRET);
+        const otp = Math.floor(Math.random() * (999999 - 100000)) + 100000;
+        // const token = await ConfirmationToken.findOne({user: user._id});
+        const current_time = Date.now();
+        await sendPasswordResetOTP(email, current_time, otp.toString(), type);
+        res.status(201).json({
+          message: `Password Reset OTP Sent to Email ID of user ${user._id}`,
+          result: "success",
+          token: token,
+        });
+      }
+    } else {
+      if (email) {
+        const user = await User.findOne({ email });
+        if (!user)
+          return res
+            .status(404)
+            .send({ error: "No user with given username exist" });
+        const token = jwt.encode({ id: user._id }, process.env.JWT_SECRET);
+        const otp = Math.floor(Math.random() * (999999 - 100000)) + 100000;
+        // const token = await ConfirmationToken.findOne({user: user._id});
+        const current_time = Date.now();
+        await sendPasswordResetOTP(email, current_time, otp.toString());
+        res.status(201).json({
+          message: `Password Reset OTP Sent to Email ID of user ${user._id}`,
+          result: "success",
+          token: token,
+        });
+      }
     }
   } catch (err) {
     logger.info(err);

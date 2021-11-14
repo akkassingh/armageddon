@@ -17,9 +17,13 @@ const {
   retrieveSuggestedUsers,
   isUsernameAvaialble,
   becomeGuardian,
-  petanduserdetails
+  petanduserdetails,
+  getUserDetails
 } = require('../controllers/userController');
 const { requireAuth, optionalAuth } = require('../controllers/authController');
+
+
+userRouter.get('/userDetails', requireAuth, getUserDetails);
 
 userRouter.get('/suggested/:max?', requireAuth, retrieveSuggestedUsers);
 userRouter.get('/:username', optionalAuth, retrieveUser);

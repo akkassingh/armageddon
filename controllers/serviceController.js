@@ -10,10 +10,10 @@ const {
 } = require("../models/Service");
 const ObjectId = require("mongoose").Types.ObjectId;
 const logger = require("../logger/logger");
-const cloudinary = require("cloudinary").v2;
 const fs = require("fs");
 const Animal = require("../models/Animal");
 
+const cloudinary = require("cloudinary").v2;
 cloudinary.config({
   cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
   api_key: process.env.CLOUDINARY_API_KEY,
