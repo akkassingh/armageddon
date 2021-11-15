@@ -110,9 +110,7 @@ module.exports.bookService = async (req, res, next) => {
           arr.push(ob)
         }
         else{
-          let day={"dayOff":event}
-            dayoff.push(day)
-            console.log(dayoff)
+            dayoff.push({"off":event})
 
         }
     }
