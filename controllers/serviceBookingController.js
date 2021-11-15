@@ -80,7 +80,7 @@ module.exports.serviceProvidersList = async (req, res, next) => {
 
 module.exports.bookService = async (req, res, next) => {
   try {
-    let arr=[]
+    let arr=[],dayoff=[]
     let j=0;
     let start=req.body.startDate;
     let off=req.body.dayOff;
@@ -91,7 +91,7 @@ module.exports.bookService = async (req, res, next) => {
         const checkDate=604800000*j+off
         const event = new Date(runningDate).toDateString();
         const eventcheck = new Date(checkDate).toDateString();
-        console.log(eventcheck)
+        // console.log(eventcheck)
         if(event!=eventcheck){
           let ob;
           if(req.body.package.dayfrequency==2){
@@ -109,6 +109,12 @@ module.exports.bookService = async (req, res, next) => {
           }
           arr.push(ob)
         }
+        else{
+          let day={"dayOff":event}
+            dayoff.push(day)
+            console.log(dayoff)
+
+        }
     }
     let payload = {
       type: "sp",
@@ -124,9 +130,10 @@ module.exports.bookService = async (req, res, next) => {
       run2:req.body.run2,
       runDetails:arr,
       startDate:new Date(req.body.startDate).toDateString(),
-      dayOff: (new Date(req.body.dayOff).toDateString()).split(' ')[0],
+      dayOff: dayoff
+      //(new Date(req.body.dayOff).toDateString()).split(' ')[0],
     };
-    console.log(payload)
+    // console.log(payload)
     let petArr = [];
     for (let p1 of req.body.petDetails) {
       petArr.push({
