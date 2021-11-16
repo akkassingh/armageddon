@@ -27,6 +27,7 @@ const {
   postSubCommentVote,
   sendFollowRequest,
   getFollowRequests,
+  acceptFollowRequests,
 } = require("../controllers/postController");
 const filters = require("../utils/filters");
 
@@ -68,5 +69,6 @@ postRouter.post("/subcommentVote", requireAuth, postSubCommentVote);
 //------SEND AND FETCH FOLLOW REQESTS----------------------------------
 postRouter.post("/sendfollowrequest", requireAuth, sendFollowRequest);
 postRouter.post("/getfollowrequests", requireAuth, getFollowRequests);
+postRouter.post("/acceptfollowrequests", requireAuth, acceptFollowRequests);
 
 module.exports = postRouter;

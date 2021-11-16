@@ -557,7 +557,7 @@ module.exports.getFollowRequests = async (req, res, next) => {
     const { to } = req.body;
     const user = res.locals.user;
     let getFollowRequests = await FollowRequest.find({
-      $and: [{ "to.toId": to.toId }, { confirmed: false }],
+      $and: [{ "to.toId": ObjectId(to.toId) }, { confirmed: false }],
     });
     let finalData = [];
     for (let r1 of getFollowRequests) {
@@ -573,6 +573,56 @@ module.exports.getFollowRequests = async (req, res, next) => {
       tempObj = {};
     }
     return res.send(finalData);
+  } catch (err) {
+    next(err);
+  }
+};
+
+module.exports.acceptFollowRequests = async (req, res, next) => {
+  try {
+    const { from, to } = req.body;
+    const user = res.locals.user;
+    let fromId = from.fromId === null ? user._id : from.fromId;
+    let toId = to.toId === null ? user._id : to.toId;
+    let check = await FollowRequest.find({
+      $and: [
+        { "from.fromId": ObjectId(fromId) },
+        { "to.toId": ObjectId(toId) },
+      ],
+    });
+    if (check.length > 0) {
+      await FollowRequest.findByIdAndUpdate(
+        { _id: check[0]._id },
+        { confirmed: true }
+      );
+      let following = new Following({
+        user: {
+          id: ObjectId(fromId),
+          userType: from.fromType,
+        },
+        followingDetails: {
+          followingType: to.toType,
+          followingId: toId,
+        },
+      });
+      await following.save();
+
+      let follower = new Followers({
+        user: {
+          id: toId,
+          userType: to.toType,
+        },
+        followerDetails: {
+          followerType: from.fromType,
+          followerId: fromId,
+        },
+      });
+      await follower.save();
+
+      return res.send({ success: true });
+    } else {
+      return res.send({ success: true });
+    }
   } catch (err) {
     next(err);
   }

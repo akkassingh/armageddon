@@ -785,7 +785,7 @@ module.exports.getUserDetails = async (req, res, next) => {
 
     const followersCount = await Followers.aggregate([
       {
-        $match: { "user.id": user._id.toString() },
+        $match: { "user.id": user._id },
       },
       {
         $count: "totalFollowers",
