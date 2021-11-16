@@ -336,7 +336,7 @@ module.exports.getscrollAppointmentstatus = async (req, res, next) => {
       { _id: req.body.appointmentId }).populate('bookingDetails');
       const count=serviceList.bookingDetails.runDetails.length;
       for(let i=0;i<count;i++){
-        if(serviceList.bookingDetails.runDetails[i].runDate==new Date(req.body.date).toDateString()){
+        if(serviceList.bookingDetails.runDetails[i].runDate==formatDate(new Date(parseInt(req.body.date)))){
           status=serviceList.bookingDetails.runDetails[i].run1Status
           resp.push({"walkStatus":status})
           // if(serviceList.bookingDetails.runDetails[i].run2Status){
@@ -363,7 +363,7 @@ module.exports.changeRunstatus = async (req, res, next) => {
 
       for(let i=0;i<count;i++){
         let p1=p.runDetails;
-        if(p.runDetails[i].runDate==new Date(req.body.date).toDateString()){
+        if(p.runDetails[i].runDate==formatDate(new Date(req.body.date))){
           if(req.body.run1Status){
             p1[i].run1Status=req.body.run1Status;
             p=await bookingDetails.findByIdAndUpdate({_id:rep.bookingDetails._id},{$set:{runDetails:p1}},{ new: true })
@@ -430,7 +430,7 @@ module.exports.generateReport = async (req, res, next) => {
     let resp = await ServiceReportModel.save();
     let rep=await ServiceAppointment.findById({_id:req.body.appointmentId}).populate('bookingDetails','runDetails.runDate');
     for(let i=0;i<rep.bookingDetails.runDetails.length;i++){
-      if(rep.bookingDetails.runDetails[i].runDate==dt.toDateString())
+      if(rep.bookingDetails.runDetails[i].runDate==formatDate(new Date(parseInt(dt))))
       if(req.body.runReport1){
         p=await bookingDetails.findById({_id:rep.bookingDetails._id})
         let p1=p.runDetails;
@@ -461,7 +461,7 @@ module.exports.getReport = async (req, res, next) => {
     let dt=new Date(parseInt(req.body.date))
     let rep=await ServiceAppointment.findById({_id:req.body.appointmentId}).populate('bookingDetails','runDetails');
     for(let i=0;i<rep.bookingDetails.runDetails.length;i++){
-      if(rep.bookingDetails.runDetails[i].runDate==dt.toDateString()){
+      if(rep.bookingDetails.runDetails[i].runDate==formatDate(dt)){
         if(req.body.runReport1){       
           resp=await ServiceReport.findById({_id:rep.bookingDetails.runDetails[i].runReport1})
         }
@@ -470,9 +470,24 @@ module.exports.getReport = async (req, res, next) => {
         }
       }
      }
+     formatDate(new Date(parseInt(req.body.date)))
     return res.status(200).send(resp);
   } catch (err) {
     console.log(err);
     next(err);
   }
 };
+
+function formatDate(date) {
+  var d = new Date(date),
+      month = '' + (d.getMonth() + 1),
+      day = '' + d.getDate(),
+      year = d.getFullYear();
+
+  if (month.length < 2) 
+      month = '0' + month;
+  if (day.length < 2) 
+      day = '0' + day;
+
+  return [year, month, day].join('-');
+}
