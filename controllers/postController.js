@@ -907,8 +907,20 @@ module.exports.retrievMyPosts = async (req, res, next) => {
           $count: "totalVotes",
         },
       ]);
-      p1.totalVotes = getPostVoteresp[0].totalVotes;
-      p1.totalComments = 0;
+      let getTotalCommentsResp = await Comment.aggregate([
+        {
+          $match: { post: p1._id },
+        },
+        {
+          $count: "totalComments",
+        },
+      ]);
+      p1.totalVotes =
+        getPostVoteresp.length == 0 ? 0 : getPostVoteresp[0].totalVotes;
+      p1.totalComments =
+        getTotalCommentsResp.length == 0
+          ? 0
+          : getTotalCommentsResp[0].totalComments;
     }
 
     // const posts = await Post.aggregate([
