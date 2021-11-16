@@ -2,6 +2,8 @@ const cloudinary = require("cloudinary").v2;
 const linkify = require("linkifyjs");
 const axios = require("axios");
 require("linkifyjs/plugins/hashtag")(linkify);
+const Animal = require("../models/Animal");
+const Comment = require("../models/Comment");
 const Post = require("../models/Post");
 const PostVote = require("../models/PostVote");
 const Following = require("../models/Following");
@@ -122,7 +124,7 @@ module.exports.createPost = async (req, res, next) => {
 };
 
 module.exports.deletePost = async (req, res, next) => {
-  const { postId } = req.params;
+  const { postId } = req.body;
   const user = res.locals.user;
 
   try {
@@ -142,17 +144,6 @@ module.exports.deletePost = async (req, res, next) => {
     res.status(204).send();
   } catch (err) {
     next(err);
-  }
-
-  try {
-    const followersDocument = await Followers.find({ user: user._id });
-    const followers = followersDocument[0].followers;
-    socketHandler.deletePost(req, postId, user._id);
-    followers.forEach((follower) =>
-      socketHandler.deletePost(req, postId, follower.user)
-    );
-  } catch (err) {
-    console.log(err);
   }
 };
 
@@ -208,63 +199,178 @@ module.exports.retrievePost = async (req, res, next) => {
 };
 
 module.exports.votePost = async (req, res, next) => {
-  const { postId } = req.params;
+  console.log("------------", req.body);
+  const { postId, voterDetails, vote } = req.body;
   const user = res.locals.user;
 
   try {
-    // Update the vote array if the user has not already liked the post
-
-    let check = await PostVote.find({
-      $and: [{ voterId: user._id }, { post: ObjectId(postId) }],
-    });
-    if (check.length > 0) {
-      return res.send({ success: true });
-    } else {
-      let postVote = new PostVote({
-        post: ObjectId(postId),
-        voterId: user._id,
-      });
-      await postVote.save();
-
-      // Sending a like notification
-      const post = await Post.findById(postId);
-      if (String(post.author) !== String(user._id)) {
-        // Create thumbnail link
-        const image = formatCloudinaryUrl(
-          post.image,
-          {
-            height: 50,
-            width: 50,
-          },
-          true
-        );
-        const notification = new Notification({
-          sender: user._id,
-          receiver: post.author,
-          notificationType: "like",
-          date: Date.now(),
-          notificationData: {
-            postId,
-            image,
-            filter: post.filter,
-          },
+    if (vote === true) {
+      let check;
+      if (voterDetails.voterType === "Animal") {
+        check = await PostVote.find({
+          $and: [
+            { "voterDetails.voterId": ObjectId(voterDetails.voterId) },
+            { post: ObjectId(postId) },
+          ],
         });
+        if (check.length > 0) {
+          return res.send({ success: true });
+        } else {
+          let postVote = new PostVote({
+            post: ObjectId(postId),
+            voterDetails: {
+              voterType: voterDetails.voterType,
+              voterId: ObjectId(voterDetails.voterId),
+            },
+          });
+          await postVote.save();
+          return res.send({ success: true });
 
-        await notification.save();
-        socketHandler.sendNotification(req, {
-          ...notification.toObject(),
-          sender: {
-            _id: user._id,
-            username: user.username,
-            avatar: user.avatar,
-          },
-        });
-        return res.send({ success: true });
+          // Sending a like notification
+          // const post = await Post.findById(postId);
+          // if (String(post.author) !== String(user._id)) {
+          //   // Create thumbnail link
+          //   const image = formatCloudinaryUrl(
+          //     post.image,
+          //     {
+          //       height: 50,
+          //       width: 50,
+          //     },
+          //     true
+          //   );
+          //   const notification = new Notification({
+          //     sender: user._id,
+          //     receiver: post.author,
+          //     notificationType: "like",
+          //     date: Date.now(),
+          //     notificationData: {
+          //       postId,
+          //       image,
+          //       filter: post.filter,
+          //     },
+          //   });
+
+          //   await notification.save();
+          //   socketHandler.sendNotification(req, {
+          //     ...notification.toObject(),
+          //     sender: {
+          //       _id: user._id,
+          //       username: user.username,
+          //       avatar: user.avatar,
+          //     },
+          //   });
+          //   return res.send({ success: true });
+          // } else {
+          //   return res.send({ success: true });
+          // }
+        }
       } else {
-        return res.send({ success: true });
+        check = await PostVote.find({
+          $and: [
+            { "voterDetails.voterId": user._id },
+            { post: ObjectId(postId) },
+          ],
+        });
+        if (check.length > 0) {
+          return res.send({ success: true });
+        } else {
+          let postVote = new PostVote({
+            post: ObjectId(postId),
+            voterDetails: {
+              voterType: voterDetails.voterType,
+              voterId: user._id,
+            },
+          });
+          await postVote.save();
+          return res.send({ success: true });
+        }
+      }
+    } else {
+      let check;
+      if (voterDetails.voterType === "Animal") {
+        check = await PostVote.find({
+          $and: [
+            { "voterDetails.voterId": ObjectId(voterDetails.voterId) },
+            { post: ObjectId(postId) },
+          ],
+        });
+        if (check.length > 0) {
+          let deletePostVote = await PostVote.findByIdAndDelete({
+            _id: check[0]._id,
+          });
+          return res.send({ success: true });
+        } else {
+          return res.send({ success: true });
+        }
+      } else {
+        check = await PostVote.find({
+          $and: [
+            { "voterDetails.voterId": user._id },
+            { post: ObjectId(postId) },
+          ],
+        });
+        if (check.length > 0) {
+          let deletePostVote = await PostVote.findByIdAndDelete({
+            _id: check[0]._id,
+          });
+          return res.send({ success: true });
+        } else {
+          return res.send({ success: true });
+        }
       }
     }
   } catch (err) {
+    next(err);
+  }
+};
+
+module.exports.postComment = async (req, res, next) => {
+  const { message, postId, authorDetails } = req.body;
+  const user = res.locals.user;
+
+  try {
+    let postComment = new Comment({
+      post: ObjectId(postId),
+      message: message,
+      authorDetails: {
+        authorType: authorDetails.authorType,
+        authorId: ObjectId(authorDetails.authorId),
+      },
+    });
+    await postComment.save();
+    return res.send({ success: true });
+  } catch (err) {
+    next(err);
+  }
+};
+
+module.exports.editComment = async (req, res, next) => {
+  const { message, commentId } = req.body;
+  const user = res.locals.user;
+
+  try {
+    let editComment = await Comment.findByIdAndUpdate(
+      { _id: ObjectId(commentId) },
+      { message: message }
+    );
+    return res.send({ success: true });
+  } catch (err) {
+    next(err);
+  }
+};
+
+module.exports.deleteComment = async (req, res, next) => {
+  console.log("----------inside deleteComment---------");
+  const { commentId } = req.body;
+  const user = res.locals.user;
+
+  try {
+    let deleteComment = await Comment.findByIdAndDelete({
+      _id: ObjectId(commentId),
+    });
+    return res.send({ success: true });
+  } catch (err) {
+    console.log("---------", err);
     next(err);
   }
 };

@@ -1,39 +1,49 @@
-const mongoose = require('mongoose');
+const mongoose = require("mongoose");
 const Schema = mongoose.Schema;
 
 const CommentSchema = new Schema({
   date: {
     type: Date,
-    default: Date.now
+    default: Date.now,
   },
   message: String,
-  author: {
-    type: Schema.ObjectId,
-    ref: 'User'
+  authorDetails: {
+    authorType: {
+      type: String,
+      enum: ["Animal", "Human"],
+    },
+    authorId: Schema.ObjectId,
   },
   post: {
     type: Schema.ObjectId,
-    ref: 'Post'
-  }
+    ref: "Post",
+  },
 });
 
-CommentSchema.pre('deleteOne', async function(next) {
-  const commentId = this.getQuery()['_id'];
+CommentSchema.pre("deleteOne", async function (next) {
+  const commentId = this.getQuery()["_id"];
   try {
-    await mongoose.model('CommentVote').deleteOne({ comment: commentId });
+    await mongoose.model("CommentVote").deleteMany({ commentId: commentId });
     await mongoose
-      .model('CommentReply')
+      .model("CommentReply")
       .deleteMany({ parentComment: commentId });
+    let getSubComments = await mongoose
+      .model("CommentReply")
+      .find({ parentComment: commentId });
+    let subCommentIds = getSubComments.map((subCom) => subCom._id);
+    await mongoose.model("CommentReplyVote").deleteMany({
+      comment: { $in: subCommentIds },
+    });
     next();
   } catch (err) {
     next(err);
   }
 });
 
-CommentSchema.pre('save', async function(next) {
+CommentSchema.pre("save", async function (next) {
   if (this.isNew) {
     try {
-      await mongoose.model('CommentVote').create({ comment: this._id });
+      // await mongoose.model("CommentVote").create({ comment: this._id });
       next();
     } catch (err) {
       next(err);
@@ -42,5 +52,5 @@ CommentSchema.pre('save', async function(next) {
   next();
 });
 
-const commentModel = mongoose.model('Comment', CommentSchema);
+const commentModel = mongoose.model("Comment", CommentSchema);
 module.exports = commentModel;

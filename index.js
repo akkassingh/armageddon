@@ -39,7 +39,12 @@ if (process.env.NODE_ENV !== "production") {
 app.use(helmet());
 app.use(helmet.hidePoweredBy());
 app.use(cors());
-app.use(bodyParser.json());
+// app.use(bodyParser.json());
+// app.use(bodyParser.urlencoded({
+//   extended: true
+// }));
+app.use(express.json());
+app.use(express.urlencoded());
 app.use(morgan("tiny", { stream: logger.stream }));
 app.set("trust proxy", 1);
 app.use("/api", apiRouter);

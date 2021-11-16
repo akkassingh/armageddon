@@ -6,7 +6,13 @@ const PostVoteSchema = new Schema({
     type: Schema.ObjectId,
     ref: "Post",
   },
-  voterId: { type: Schema.ObjectId, ref: "User" },
+  voterDetails: {
+    voterType: {
+      type: String,
+      enum: ["Animal", "Human"],
+    },
+    voterId: Schema.ObjectId,
+  },
 });
 
 const postVoteModel = mongoose.model("PostVote", PostVoteSchema);

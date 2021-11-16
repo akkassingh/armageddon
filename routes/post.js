@@ -17,6 +17,9 @@ const {
   retrieveSuggestedPosts,
   retrievMyPosts,
   retrieveHashtagPosts,
+  postComment,
+  editComment,
+  deleteComment,
 } = require("../controllers/postController");
 const filters = require("../utils/filters");
 
@@ -28,7 +31,7 @@ const postLimiter = rateLimit({
 postRouter.post("/", postLimiter, requireAuth, upload, createPost);
 postRouter.get("/myPosts/:offset", requireAuth, retrievMyPosts);
 postRouter.get("/suggested/:offset", requireAuth, retrieveSuggestedPosts);
-postRouter.post("/:postId/vote", requireAuth, votePost);
+postRouter.post("/vote", requireAuth, votePost);
 
 postRouter.get("/filters", (req, res) => {
   res.send({ filters });
@@ -37,6 +40,11 @@ postRouter.get("/:postId", retrievePost);
 postRouter.get("/feed/:offset", requireAuth, retrievePostFeed);
 postRouter.get("/hashtag/:hashtag/:offset", requireAuth, retrieveHashtagPosts);
 
-postRouter.delete("/:postId", requireAuth, deletePost);
+postRouter.delete("/post", requireAuth, deletePost);
+
+//------------COMMENTS-------------------------------------
+postRouter.post("/comment", requireAuth, postComment);
+postRouter.put("/comment", requireAuth, editComment);
+postRouter.delete("/comment", requireAuth, deleteComment);
 
 module.exports = postRouter;
