@@ -1,28 +1,19 @@
-const mongoose = require('mongoose');
+const mongoose = require("mongoose");
 const Schema = mongoose.Schema;
 
 const CommentVoteSchema = new Schema({
-  comment: {
+  commentId: {
     type: Schema.ObjectId,
-    ref: 'Comment'
+    ref: "Comment",
   },
-  // userType: {
-  //   type: String,
-  //   required: true,
-  // },
-  // voter: {
-  //   type: Schema.ObjectId,
-  //   ref: 'userType'
-  // },
-  votes: [
-    {
-      author: {
-        type: Schema.ObjectId,
-        ref: 'User'
-      }
-    }
-  ]
+  voterDetails: {
+    voterType: {
+      type: String,
+      enum: ["Animal", "Human"],
+    },
+    voterId: Schema.ObjectId,
+  },
 });
 
-const commentVoteModel = mongoose.model('CommentVote', CommentVoteSchema);
+const commentVoteModel = mongoose.model("CommentVote", CommentVoteSchema);
 module.exports = commentVoteModel;
