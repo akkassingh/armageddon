@@ -7,6 +7,7 @@ const Comment = require("../models/Comment");
 const CommentReply = require("../models/CommentReply");
 const CommentVote = require("../models/CommentVote");
 const CommentReplyVote = require("../models/CommentReplyVote");
+const FollowRequest = require("../models/FollowRequest");
 const Post = require("../models/Post");
 const PostVote = require("../models/PostVote");
 const Following = require("../models/Following");
@@ -512,6 +513,66 @@ module.exports.postSubCommentVote = async (req, res, next) => {
       }
       return res.send({ success: true });
     }
+  } catch (err) {
+    next(err);
+  }
+};
+
+module.exports.sendFollowRequest = async (req, res, next) => {
+  const { from, to } = req.body;
+  const user = res.locals.user;
+
+  try {
+    let fromId = from.fromId === null ? user._id : from.fromId;
+    let toId = to.toId === null ? user._id : to.toId;
+    let check = await FollowRequest.find({
+      $and: [
+        { "from.fromId": ObjectId(fromId) },
+        { "to.toId": ObjectId(toId) },
+      ],
+    });
+    if (check.length > 0) {
+      return res.send({ success: true });
+    } else {
+      let storeFollowRequest = new FollowRequest({
+        from: {
+          fromType: from.fromType,
+          fromId: fromId,
+        },
+        to: {
+          toType: to.toType,
+          toId: toId,
+        },
+      });
+      await storeFollowRequest.save();
+      return res.send({ success: true });
+    }
+  } catch (err) {
+    next(err);
+  }
+};
+
+module.exports.getFollowRequests = async (req, res, next) => {
+  try {
+    const { to } = req.body;
+    const user = res.locals.user;
+    let getFollowRequests = await FollowRequest.find({
+      $and: [{ "to.toId": to.toId }, { confirmed: false }],
+    });
+    let finalData = [];
+    for (let r1 of getFollowRequests) {
+      let tempObj = { ...r1.toObject() };
+      let userDetails;
+      if (r1.from.fromType == "Animal") {
+        userDetails = await Animal.find({ _id: ObjectId(r1.from.fromId) });
+      } else {
+        userDetails = await User.find({ _id: ObjectId(r1.from.fromId) });
+      }
+      tempObj.details = userDetails[0];
+      finalData.push(tempObj);
+      tempObj = {};
+    }
+    return res.send(finalData);
   } catch (err) {
     next(err);
   }

@@ -24,7 +24,9 @@ const {
   editSubComment,
   deleteSubComment,
   postCommentVote,
-  postSubCommentVote
+  postSubCommentVote,
+  sendFollowRequest,
+  getFollowRequests,
 } = require("../controllers/postController");
 const filters = require("../utils/filters");
 
@@ -52,16 +54,19 @@ postRouter.post("/comment", requireAuth, postComment);
 postRouter.put("/comment", requireAuth, editComment);
 postRouter.delete("/comment", requireAuth, deleteComment);
 
-//----------SUB COMMENTS----------------------------------
+//----------SUB COMMENTS-----------------------------------------------
 postRouter.post("/subcomment", requireAuth, postSubComment);
 postRouter.put("/subcomment", requireAuth, editSubComment);
 postRouter.delete("/subcomment", requireAuth, deleteSubComment);
 
-
-//------COMMENT VOTES---------------------------------------
+//------COMMENT VOTES--------------------------------------------------
 postRouter.post("/commentVote", requireAuth, postCommentVote);
 
-//------SUB COMMENT VOTES---------------------------------------
+//------SUB COMMENT VOTES----------------------------------------------
 postRouter.post("/subcommentVote", requireAuth, postSubCommentVote);
+
+//------SEND AND FETCH FOLLOW REQESTS----------------------------------
+postRouter.post("/sendfollowrequest", requireAuth, sendFollowRequest);
+postRouter.post("/getfollowrequests", requireAuth, getFollowRequests);
 
 module.exports = postRouter;
