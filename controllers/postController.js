@@ -4,6 +4,9 @@ const axios = require("axios");
 require("linkifyjs/plugins/hashtag")(linkify);
 const Animal = require("../models/Animal");
 const Comment = require("../models/Comment");
+const CommentReply = require("../models/CommentReply");
+const CommentVote = require("../models/CommentVote");
+const CommentReplyVote = require("../models/CommentReplyVote");
 const Post = require("../models/Post");
 const PostVote = require("../models/PostVote");
 const Following = require("../models/Following");
@@ -371,6 +374,145 @@ module.exports.deleteComment = async (req, res, next) => {
     return res.send({ success: true });
   } catch (err) {
     console.log("---------", err);
+    next(err);
+  }
+};
+
+module.exports.postSubComment = async (req, res, next) => {
+  const { message, parentCommentId, authorDetails } = req.body;
+  const user = res.locals.user;
+
+  try {
+    let postCommentReply = new CommentReply({
+      parentComment: ObjectId(parentCommentId),
+      message: message,
+      authorDetails: {
+        authorType: authorDetails.authorType,
+        authorId: ObjectId(authorDetails.authorId),
+      },
+    });
+    await postCommentReply.save();
+    return res.send({ success: true });
+  } catch (err) {
+    next(err);
+  }
+};
+
+module.exports.editSubComment = async (req, res, next) => {
+  const { message, subCommentId } = req.body;
+  const user = res.locals.user;
+
+  try {
+    let editSubComment = await CommentReply.findByIdAndUpdate(
+      { _id: ObjectId(subCommentId) },
+      { message: message }
+    );
+    return res.send({ success: true });
+  } catch (err) {
+    next(err);
+  }
+};
+
+module.exports.deleteSubComment = async (req, res, next) => {
+  console.log("----------inside deleteComment---------");
+  const { subCommentId } = req.body;
+  const user = res.locals.user;
+
+  try {
+    let deleteSubComment = await CommentReply.findByIdAndDelete({
+      _id: ObjectId(subCommentId),
+    });
+    return res.send({ success: true });
+  } catch (err) {
+    console.log("---------", err);
+    next(err);
+  }
+};
+
+module.exports.postCommentVote = async (req, res, next) => {
+  const { commentId, voterDetails, flag } = req.body;
+  const user = res.locals.user;
+
+  try {
+    if (flag === true) {
+      let voterId =
+        voterDetails.voterId === null ? user._id : voterDetails.voterId;
+      let getCommentVote = await CommentVote.find({
+        $and: [{ commentId: commentId }, { "voterDetails.voterId": voterId }],
+      });
+      if (getCommentVote.length > 0) {
+        return res.send({ success: true });
+      } else {
+        let storeCommentVote = new CommentVote({
+          commentId: ObjectId(commentId),
+          voterDetails: {
+            voterType: voterDetails.voterType,
+            voterId: voterDetails.voterId === null ? user._id : voterId,
+          },
+        });
+        await storeCommentVote.save();
+        return res.send({ success: true });
+      }
+    } else {
+      let voterId =
+        voterDetails.voterId === null ? user._id : voterDetails.voterId;
+      let getCommentVote = await CommentVote.find({
+        $and: [{ commentId: commentId }, { "voterDetails.voterId": voterId }],
+      });
+      if (getCommentVote.length > 0) {
+        await CommentVote.findByIdAndDelete({ _id: getCommentVote[0]._id });
+      }
+      return res.send({ success: true });
+    }
+  } catch (err) {
+    next(err);
+  }
+};
+
+module.exports.postSubCommentVote = async (req, res, next) => {
+  const { subCommentId, voterDetails, flag } = req.body;
+  const user = res.locals.user;
+
+  try {
+    if (flag === true) {
+      let voterId =
+        voterDetails.voterId === null ? user._id : voterDetails.voterId;
+      let getCommentVote = await CommentReplyVote.find({
+        $and: [
+          { comment: ObjectId(subCommentId) },
+          { "voterDetails.voterId": voterId },
+        ],
+      });
+      if (getCommentVote.length > 0) {
+        return res.send({ success: true });
+      } else {
+        let storeCommentVote = new CommentReplyVote({
+          comment: ObjectId(subCommentId),
+          voterDetails: {
+            voterType: voterDetails.voterType,
+            voterId: voterDetails.voterId === null ? user._id : voterId,
+          },
+        });
+        await storeCommentVote.save();
+        return res.send({ success: true });
+      }
+    } else {
+      let voterId =
+        voterDetails.voterId === null ? user._id : voterDetails.voterId;
+      let getCommentVote = await CommentReplyVote.find({
+        $and: [
+          { comment: ObjectId(subCommentId) },
+          { "voterDetails.voterId": voterId },
+        ],
+      });
+      if (getCommentVote.length > 0) {
+        await CommentReplyVote.findByIdAndDelete({
+          _id: getCommentVote[0]._id,
+        });
+      }
+      return res.send({ success: true });
+    }
+  } catch (err) {
     next(err);
   }
 };
