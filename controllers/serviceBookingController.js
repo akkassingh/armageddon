@@ -89,8 +89,8 @@ module.exports.bookService = async (req, res, next) => {
         j++;
         const runningDate=86400000*i+start;
         const checkDate=604800000*j+off
-        const event = new Date(runningDate).toDateString();
-        const eventcheck = new Date(checkDate).toDateString();
+        const event = formatDate(new Date(parseInt(runningDate)));
+        const eventcheck = formatDate(new Date(parseInt(checkDate)));
         // console.log(eventcheck)
         if(event!=eventcheck){
           let ob;
@@ -127,7 +127,7 @@ module.exports.bookService = async (req, res, next) => {
       run1:req.body.run1,
       run2:req.body.run2,
       runDetails:arr,
-      startDate:new Date(req.body.startDate).toDateString(),
+      startDate:formatDate(new Date(parseInt(req.body.startDate))),
       dayOff: dayoff
       //(new Date(req.body.dayOff).toDateString()).split(' ')[0],
     };
@@ -171,3 +171,19 @@ module.exports.bookService = async (req, res, next) => {
     next(err);
   }
 };
+
+
+
+function formatDate(date) {
+  var d = new Date(date),
+      month = '' + (d.getMonth() + 1),
+      day = '' + d.getDate(),
+      year = d.getFullYear();
+
+  if (month.length < 2) 
+      month = '0' + month;
+  if (day.length < 2) 
+      day = '0' + day;
+
+  return [year, month, day].join('-');
+}
