@@ -386,6 +386,24 @@ module.exports.getAppointmentDetails = async (req, res, next) => {
   try {
     let serviceList = await ServiceAppointment.findById(     
       { _id: req.body.appointmentId }).populate('bookingDetails').populate('petDetails');
+      console.log(serviceList)
+      let count=serviceList.bookingDetails.runDetails.length;
+      if(serviceList.bookingDetails.runDetails[count-1].run1Status){
+        if(serviceList.bookingDetails.runDetails[count-1].runTime2){
+          if(serviceList.bookingDetails.runDetails[count-1].run2Status){
+            if(serviceList.serviceStatus==0){
+              await ServiceAppointment.findByIdAndUpdate(     
+                { _id: req.body.appointmentId },{serviceStatus:1});
+                serviceList.serviceStatus=1;
+            }
+          }
+        }
+        else{
+        await ServiceAppointment.findByIdAndUpdate(     
+          { _id: req.body.appointmentId },{serviceStatus:1});
+          serviceList.serviceStatus=1;
+        }
+      }
     return res.status(200).json(serviceList);
   } catch (err) {
     console.log(err);
@@ -410,9 +428,15 @@ module.exports.generateReport = async (req, res, next) => {
     let fileArr = [];
     for (let fl of req.files) {
       const response = await cloudinary.uploader.upload(fl.path);
-      fileArr.push(response.secure_url);
+
+      fileArr.push({
+        fieldname: fl.fieldname,
+        url: response.secure_url,
+      });
+
       fs.unlinkSync(fl.path);
     }
+    console.log(fileArr)
     let ServiceReportModel = new ServiceReport({
       ServiceProvider: req.body.ServiceProvider,
       User: req.body.mainLine, //populate from appointment
@@ -423,26 +447,31 @@ module.exports.generateReport = async (req, res, next) => {
       pee: req.body.pee,
       poo: req.body.poo,
       rating: req.body.rating,
-      pictures: fileArr,
+      picture: fileArr.find((el) => el.fieldname === "picture").url,
+      map: fileArr.find((el) => el.fieldname === "map").url,
+
     });
     let p;
     let dt=new Date(parseInt(req.body.date))
     let resp = await ServiceReportModel.save();
     let rep=await ServiceAppointment.findById({_id:req.body.appointmentId}).populate('bookingDetails','runDetails.runDate');
     for(let i=0;i<rep.bookingDetails.runDetails.length;i++){
-      if(rep.bookingDetails.runDetails[i].runDate==formatDate(new Date(parseInt(dt))))
-      if(req.body.runReport1){
-        p=await bookingDetails.findById({_id:rep.bookingDetails._id})
-        let p1=p.runDetails;
-        p1[i].runReport1=ServiceReportModel._id;
-        p=await bookingDetails.findByIdAndUpdate({_id:rep.bookingDetails._id},{$set:{runDetails:p1}},{ new: true })
-       }
-      else if(req.body.runReport2){
-        p=await bookingDetails.findById({_id:rep.bookingDetails._id})
-        let p1=p.runDetails;
-         p1[i].runReport2=ServiceReportModel._id;
-         p=await bookingDetails.findByIdAndUpdate({_id:rep.bookingDetails._id},{$set:{runDetails:p1}},{ new: true })
-       }
+      if(rep.bookingDetails.runDetails[i].runDate==formatDate(dt)){
+        if(req.body.runReport1){
+          p=await bookingDetails.findById({_id:rep.bookingDetails._id})
+          let p1=p.runDetails;
+          p1[i].runReport1=ServiceReportModel._id;
+          p=await bookingDetails.findByIdAndUpdate({_id:rep.bookingDetails._id},{$set:{runDetails:p1}},{ new: true })
+        }
+        else if(req.body.runReport2){
+          p=await bookingDetails.findById({_id:rep.bookingDetails._id})
+          let p1=p.runDetails;
+          p1[i].runReport2=ServiceReportModel._id;
+          console.log(p1[i])
+
+          p=await bookingDetails.findByIdAndUpdate({_id:rep.bookingDetails._id},{$set:{runDetails:p1}},{ new: true })
+        }
+      }
       //  await bookingDetails.findByIdAndUpdate({_id:rep.bookingDetails._id},{runReport2:ServiceReportModel._id})   
      }
 

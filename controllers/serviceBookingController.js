@@ -161,7 +161,7 @@ module.exports.bookService = async (req, res, next) => {
         bookingStatus: false,
       });
       let st=await  Service.findOneAndUpdate({ serviceProvider: sp1.serviceProvider,ServiceAppointment:ServiceAppointmentSave._id} )
-      let resp = await ServiceAppointmentSave.save();
+       resp = await ServiceAppointmentSave.save();
       //console.log(st)
     }
 

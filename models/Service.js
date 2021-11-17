@@ -258,7 +258,7 @@ const ServiceAppointmentSchema = new Schema({
   },
   serviceStatus: {
     type: Number,
-    default: 1,
+    default: 0,
     required: false,
   },
   rating: Number,
@@ -303,7 +303,14 @@ const ServiceReportSchema = new Schema({
     required: false,
   },
   rating:Number,
-  pictures: [String]
+  picture: {
+    type: String,
+    required: true,
+  },
+  map: {
+    type: String,
+    required: true,
+  }
   
 });
 

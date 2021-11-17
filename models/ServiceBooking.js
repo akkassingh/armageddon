@@ -45,7 +45,8 @@ const bookingDetailsSchema = new Schema({
     pinCode: String,
   },
   phone: String,
-  alternatePhone: [String],
+  alternatePhone: String,
+  alternateName: String,
   package: {
     description: String,
     amount: String,
