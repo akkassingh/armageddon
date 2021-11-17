@@ -13,6 +13,10 @@ const CommentReplyVoteSchema = new Schema({
     },
     voterId: Schema.ObjectId,
   },
+  date: {
+    type: Date,
+    default: Date.now,
+  },
 });
 
 const commentReplyVoteModel = mongoose.model(

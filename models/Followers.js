@@ -4,20 +4,18 @@ const Schema = mongoose.Schema;
 const FollowersSchema = new Schema({
   user: {
     id: {
-      type: String,
+      type: Schema.ObjectId,
       required: true,
     },
     userType: { required: true, type: String, enum: ["Animal", "Human"] },
   },
-  followerDetails: [
-    {
-      followerType: {
-        type: String,
-        enum: ["Animal", "Human"],
-      },
-      followerId: Schema.ObjectId,
+  followerDetails: {
+    followerType: {
+      type: String,
+      enum: ["Animal", "Human"],
     },
-  ],
+    followerId: Schema.ObjectId,
+  },
 });
 
 const followersModel = mongoose.model("Followers", FollowersSchema);

@@ -1,6 +1,7 @@
 const User = require("../models/User");
 const Animal = require("../models/Animal");
 const Post = require("../models/Post");
+const PostVote = require("../models/PostVote");
 const Followers = require("../models/Followers");
 const Following = require("../models/Following");
 const ConfirmationToken = require("../models/ConfirmationToken");
@@ -644,6 +645,20 @@ module.exports.updateProfile = async (req, res, next) => {
   }
 };
 
+module.exports.updateBioAndAvatar = async (req, res, next) => {
+  const user = res.locals.user;
+  const { bio, avatar } = req.body;
+  try {
+    const userDocument = await User.findOne({ _id: user._id });
+    userDocument.bio = bio;
+    userDocument.avatar = avatar;
+    const updatedUser = await userDocument.save();
+    res.send({ success: true });
+  } catch (err) {
+    next(err);
+  }
+};
+
 module.exports.retrieveSuggestedUsers = async (req, res, next) => {
   const { max } = req.params;
   const user = res.locals.user;
@@ -782,10 +797,66 @@ module.exports.getUserDetails = async (req, res, next) => {
       return res.status(404).send({ error: "No such user exists!" });
 
     const animal_details = await Animal.find({ "guardians.user": user._id });
+    let newAnimalArr = [];
+    if (animal_details.length > 0) {
+      for (let a1 of animal_details) {
+        const tempObj = a1.toObject();
+        const followersCount = await Followers.aggregate([
+          {
+            $match: { "user.id": ObjectId(a1._id) },
+          },
+          {
+            $count: "totalFollowers",
+          },
+        ]);
+
+        let totalFollowers =
+          followersCount.length == 0 ? 0 : followersCount[0].totalFollowers;
+        tempObj.totalFollowers = totalFollowers;
+
+        const followingCount = await Following.aggregate([
+          {
+            $match: { "user.id": ObjectId(a1._id) },
+          },
+          {
+            $count: "totalFollowing",
+          },
+        ]);
+
+        let totalFollowings =
+          followingCount.length == 0 ? 0 : followingCount[0].totalFollowing;
+        tempObj.totalFollowings = totalFollowings;
+
+        const getPosts = await Post.find({
+          "postOwnerDetails.postOwnerId": a1._id,
+        });
+
+        let totalLikes = 0;
+        let totalPosts = 0;
+        if (getPosts.length > 0) {
+          totalPosts = getPosts.length;
+          for (let p1 of getPosts) {
+            const getLikes = await PostVote.aggregate([
+              {
+                $match: { post: ObjectId(p1._id) },
+              },
+              {
+                $count: "totalLikes",
+              },
+            ]);
+            totalLikes +=
+              getLikes.length == 0 ? 0 : Number(getLikes[0].totalLikes);
+          }
+        }
+        tempObj.totalLikes = totalLikes;
+        tempObj.totalPosts = totalPosts;
+        newAnimalArr.push(tempObj);
+      }
+    }
 
     const followersCount = await Followers.aggregate([
       {
-        $match: { "user.id": user._id.toString() },
+        $match: { "user.id": user._id },
       },
       {
         $count: "totalFollowers",
@@ -797,7 +868,7 @@ module.exports.getUserDetails = async (req, res, next) => {
 
     const followingCount = await Following.aggregate([
       {
-        $match: { "user.id": user._id.toString() },
+        $match: { "user.id": user._id },
       },
       {
         $count: "totalFollowing",
@@ -807,9 +878,35 @@ module.exports.getUserDetails = async (req, res, next) => {
     let totalFollowings =
       followingCount.length == 0 ? 0 : followingCount[0].totalFollowing;
 
-    return res
-      .status(200)
-      .json({ user_details, animal_details, totalFollowers, totalFollowings });
+    const getPosts = await Post.find({
+      "postOwnerDetails.postOwnerId": user._id.toString(),
+    });
+
+    let totalLikes = 0;
+    let totalPosts = 0;
+    if (getPosts.length > 0) {
+      totalPosts = getPosts.length;
+      for (let p1 of getPosts) {
+        const getLikes = await PostVote.aggregate([
+          {
+            $match: { post: ObjectId(p1._id) },
+          },
+          {
+            $count: "totalLikes",
+          },
+        ]);
+        totalLikes += getLikes.length == 0 ? 0 : Number(getLikes[0].totalLikes);
+      }
+    }
+
+    return res.status(200).json({
+      user_details,
+      newAnimalArr,
+      totalFollowers,
+      totalFollowings,
+      totalLikes,
+      totalPosts,
+    });
   } catch (err) {
     logger.info(err);
     res.status(400).send({ error: err });

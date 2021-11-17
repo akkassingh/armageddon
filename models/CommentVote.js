@@ -13,6 +13,10 @@ const CommentVoteSchema = new Schema({
     },
     voterId: Schema.ObjectId,
   },
+  date: {
+    type: Date,
+    default: Date.now,
+  },
 });
 
 const commentVoteModel = mongoose.model("CommentVote", CommentVoteSchema);

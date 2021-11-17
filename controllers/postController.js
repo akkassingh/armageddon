@@ -4,6 +4,10 @@ const axios = require("axios");
 require("linkifyjs/plugins/hashtag")(linkify);
 const Animal = require("../models/Animal");
 const Comment = require("../models/Comment");
+const CommentReply = require("../models/CommentReply");
+const CommentVote = require("../models/CommentVote");
+const CommentReplyVote = require("../models/CommentReplyVote");
+const FollowRequest = require("../models/FollowRequest");
 const Post = require("../models/Post");
 const PostVote = require("../models/PostVote");
 const Following = require("../models/Following");
@@ -375,6 +379,255 @@ module.exports.deleteComment = async (req, res, next) => {
   }
 };
 
+module.exports.postSubComment = async (req, res, next) => {
+  const { message, parentCommentId, authorDetails } = req.body;
+  const user = res.locals.user;
+
+  try {
+    let postCommentReply = new CommentReply({
+      parentComment: ObjectId(parentCommentId),
+      message: message,
+      authorDetails: {
+        authorType: authorDetails.authorType,
+        authorId: ObjectId(authorDetails.authorId),
+      },
+    });
+    await postCommentReply.save();
+    return res.send({ success: true });
+  } catch (err) {
+    next(err);
+  }
+};
+
+module.exports.editSubComment = async (req, res, next) => {
+  const { message, subCommentId } = req.body;
+  const user = res.locals.user;
+
+  try {
+    let editSubComment = await CommentReply.findByIdAndUpdate(
+      { _id: ObjectId(subCommentId) },
+      { message: message }
+    );
+    return res.send({ success: true });
+  } catch (err) {
+    next(err);
+  }
+};
+
+module.exports.deleteSubComment = async (req, res, next) => {
+  console.log("----------inside deleteComment---------");
+  const { subCommentId } = req.body;
+  const user = res.locals.user;
+
+  try {
+    let deleteSubComment = await CommentReply.findByIdAndDelete({
+      _id: ObjectId(subCommentId),
+    });
+    return res.send({ success: true });
+  } catch (err) {
+    console.log("---------", err);
+    next(err);
+  }
+};
+
+module.exports.postCommentVote = async (req, res, next) => {
+  const { commentId, voterDetails, flag } = req.body;
+  const user = res.locals.user;
+
+  try {
+    if (flag === true) {
+      let voterId =
+        voterDetails.voterId === null ? user._id : voterDetails.voterId;
+      let getCommentVote = await CommentVote.find({
+        $and: [{ commentId: commentId }, { "voterDetails.voterId": voterId }],
+      });
+      if (getCommentVote.length > 0) {
+        return res.send({ success: true });
+      } else {
+        let storeCommentVote = new CommentVote({
+          commentId: ObjectId(commentId),
+          voterDetails: {
+            voterType: voterDetails.voterType,
+            voterId: voterDetails.voterId === null ? user._id : voterId,
+          },
+        });
+        await storeCommentVote.save();
+        return res.send({ success: true });
+      }
+    } else {
+      let voterId =
+        voterDetails.voterId === null ? user._id : voterDetails.voterId;
+      let getCommentVote = await CommentVote.find({
+        $and: [{ commentId: commentId }, { "voterDetails.voterId": voterId }],
+      });
+      if (getCommentVote.length > 0) {
+        await CommentVote.findByIdAndDelete({ _id: getCommentVote[0]._id });
+      }
+      return res.send({ success: true });
+    }
+  } catch (err) {
+    next(err);
+  }
+};
+
+module.exports.postSubCommentVote = async (req, res, next) => {
+  const { subCommentId, voterDetails, flag } = req.body;
+  const user = res.locals.user;
+
+  try {
+    if (flag === true) {
+      let voterId =
+        voterDetails.voterId === null ? user._id : voterDetails.voterId;
+      let getCommentVote = await CommentReplyVote.find({
+        $and: [
+          { comment: ObjectId(subCommentId) },
+          { "voterDetails.voterId": voterId },
+        ],
+      });
+      if (getCommentVote.length > 0) {
+        return res.send({ success: true });
+      } else {
+        let storeCommentVote = new CommentReplyVote({
+          comment: ObjectId(subCommentId),
+          voterDetails: {
+            voterType: voterDetails.voterType,
+            voterId: voterDetails.voterId === null ? user._id : voterId,
+          },
+        });
+        await storeCommentVote.save();
+        return res.send({ success: true });
+      }
+    } else {
+      let voterId =
+        voterDetails.voterId === null ? user._id : voterDetails.voterId;
+      let getCommentVote = await CommentReplyVote.find({
+        $and: [
+          { comment: ObjectId(subCommentId) },
+          { "voterDetails.voterId": voterId },
+        ],
+      });
+      if (getCommentVote.length > 0) {
+        await CommentReplyVote.findByIdAndDelete({
+          _id: getCommentVote[0]._id,
+        });
+      }
+      return res.send({ success: true });
+    }
+  } catch (err) {
+    next(err);
+  }
+};
+
+module.exports.sendFollowRequest = async (req, res, next) => {
+  const { from, to } = req.body;
+  const user = res.locals.user;
+
+  try {
+    let fromId = from.fromId === null ? user._id : from.fromId;
+    let toId = to.toId === null ? user._id : to.toId;
+    let check = await FollowRequest.find({
+      $and: [
+        { "from.fromId": ObjectId(fromId) },
+        { "to.toId": ObjectId(toId) },
+      ],
+    });
+    if (check.length > 0) {
+      return res.send({ success: true });
+    } else {
+      let storeFollowRequest = new FollowRequest({
+        from: {
+          fromType: from.fromType,
+          fromId: fromId,
+        },
+        to: {
+          toType: to.toType,
+          toId: toId,
+        },
+      });
+      await storeFollowRequest.save();
+      return res.send({ success: true });
+    }
+  } catch (err) {
+    next(err);
+  }
+};
+
+module.exports.getFollowRequests = async (req, res, next) => {
+  try {
+    const { to } = req.body;
+    const user = res.locals.user;
+    let getFollowRequests = await FollowRequest.find({
+      $and: [{ "to.toId": ObjectId(to.toId) }, { confirmed: false }],
+    });
+    let finalData = [];
+    for (let r1 of getFollowRequests) {
+      let tempObj = { ...r1.toObject() };
+      let userDetails;
+      if (r1.from.fromType == "Animal") {
+        userDetails = await Animal.find({ _id: ObjectId(r1.from.fromId) });
+      } else {
+        userDetails = await User.find({ _id: ObjectId(r1.from.fromId) });
+      }
+      tempObj.details = userDetails[0];
+      finalData.push(tempObj);
+      tempObj = {};
+    }
+    return res.send(finalData);
+  } catch (err) {
+    next(err);
+  }
+};
+
+module.exports.acceptFollowRequests = async (req, res, next) => {
+  try {
+    const { from, to } = req.body;
+    const user = res.locals.user;
+    let fromId = from.fromId === null ? user._id : from.fromId;
+    let toId = to.toId === null ? user._id : to.toId;
+    let check = await FollowRequest.find({
+      $and: [
+        { "from.fromId": ObjectId(fromId) },
+        { "to.toId": ObjectId(toId) },
+      ],
+    });
+    if (check.length > 0) {
+      await FollowRequest.findByIdAndUpdate(
+        { _id: check[0]._id },
+        { confirmed: true }
+      );
+      let following = new Following({
+        user: {
+          id: ObjectId(fromId),
+          userType: from.fromType,
+        },
+        followingDetails: {
+          followingType: to.toType,
+          followingId: toId,
+        },
+      });
+      await following.save();
+
+      let follower = new Followers({
+        user: {
+          id: toId,
+          userType: to.toType,
+        },
+        followerDetails: {
+          followerType: from.fromType,
+          followerId: fromId,
+        },
+      });
+      await follower.save();
+
+      return res.send({ success: true });
+    } else {
+      return res.send({ success: true });
+    }
+  } catch (err) {
+    next(err);
+  }
+};
+
 // module.exports.votePost = async (req, res, next) => {
 //   const { postId } = req.params;
 //   const user = res.locals.user;
@@ -654,8 +907,20 @@ module.exports.retrievMyPosts = async (req, res, next) => {
           $count: "totalVotes",
         },
       ]);
-      p1.totalVotes = getPostVoteresp[0].totalVotes;
-      p1.totalComments = 0;
+      let getTotalCommentsResp = await Comment.aggregate([
+        {
+          $match: { post: p1._id },
+        },
+        {
+          $count: "totalComments",
+        },
+      ]);
+      p1.totalVotes =
+        getPostVoteresp.length == 0 ? 0 : getPostVoteresp[0].totalVotes;
+      p1.totalComments =
+        getTotalCommentsResp.length == 0
+          ? 0
+          : getTotalCommentsResp[0].totalComments;
     }
 
     // const posts = await Post.aggregate([
