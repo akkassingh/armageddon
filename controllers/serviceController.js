@@ -404,6 +404,7 @@ module.exports.getAppointmentDetails = async (req, res, next) => {
           serviceList.serviceStatus=1;
         }
       }
+      serviceList.bookingDetails.runDetails=[]
     return res.status(200).json(serviceList);
   } catch (err) {
     console.log(err);
