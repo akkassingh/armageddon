@@ -1,6 +1,7 @@
 const User = require("../models/User");
 const Animal = require("../models/Animal");
 const Post = require("../models/Post");
+const ServiceProvider = require("../models/ServiceProvider");
 const PostVote = require("../models/PostVote");
 const Followers = require("../models/Followers");
 const Following = require("../models/Following");
@@ -475,31 +476,57 @@ module.exports.searchUsers = async (req, res, next) => {
 
 module.exports.confirmUser = async (req, res, next) => {
   logger.info("***CONFIRM USER CALLED TO VERIFY OTP***");
-  const { otp } = req.body;
+  const { otp, type } = req.body;
   const user = res.locals.user;
 
   try {
-    const confirmationToken = await ConfirmationToken.findOne({
-      user: user._id,
-    });
-    if (
-      !confirmationToken ||
-      Date.now() > confirmationToken.timestamp + 900000
-    ) {
-      return res
-        .status(404)
-        .send({ error: "Invalid or expired confirmation link." });
-    }
-    const token = confirmationToken.token;
-    const compareotp = await bcrypt.compare(otp, token);
-    if (!compareotp) {
-      return res.status(401).send({
-        error: "The credentials you provided are incorrect, please try again.",
+    if (type && type == "sp") {
+      const confirmationToken = await ConfirmationToken.findOne({
+        user: user._id,
       });
+      if (
+        !confirmationToken ||
+        Date.now() > confirmationToken.timestamp + 900000
+      ) {
+        return res
+          .status(404)
+          .send({ error: "Invalid or expired confirmation link." });
+      }
+      const token = confirmationToken.token;
+      const compareotp = await bcrypt.compare(otp, token);
+      if (!compareotp) {
+        return res.status(401).send({
+          error:
+            "The credentials you provided are incorrect, please try again.",
+        });
+      }
+      await ConfirmationToken.deleteOne({ token, user: user._id });
+      await ServiceProvider.updateOne({ _id: user._id }, { confirmed: true });
+      return res.status(200).send({ message: "verification successful" });
+    } else {
+      const confirmationToken = await ConfirmationToken.findOne({
+        user: user._id,
+      });
+      if (
+        !confirmationToken ||
+        Date.now() > confirmationToken.timestamp + 900000
+      ) {
+        return res
+          .status(404)
+          .send({ error: "Invalid or expired confirmation link." });
+      }
+      const token = confirmationToken.token;
+      const compareotp = await bcrypt.compare(otp, token);
+      if (!compareotp) {
+        return res.status(401).send({
+          error:
+            "The credentials you provided are incorrect, please try again.",
+        });
+      }
+      await ConfirmationToken.deleteOne({ token, user: user._id });
+      await User.updateOne({ _id: user._id }, { confirmed: true });
+      return res.status(200).send({ message: "verification successful" });
     }
-    await ConfirmationToken.deleteOne({ token, user: user._id });
-    await User.updateOne({ _id: user._id }, { confirmed: true });
-    return res.status(200).send({ message: "verification successful" });
   } catch (err) {
     next(err);
   }
@@ -507,6 +534,7 @@ module.exports.confirmUser = async (req, res, next) => {
 
 module.exports.changeAvatar = async (req, res, next) => {
   const user = res.locals.user;
+  const { type } = req.body;
 
   if (!req.file) {
     return res
@@ -529,16 +557,29 @@ module.exports.changeAvatar = async (req, res, next) => {
     });
     fs.unlinkSync(req.file.path);
 
-    const avatarUpdate = await User.updateOne(
-      { _id: user._id },
-      { avatar: response.secure_url }
-    );
+    if (type && type == "sp") {
+      const avatarUpdate = await ServiceProvider.updateOne(
+        { _id: user._id },
+        { avatar: response.secure_url }
+      );
 
-    if (!avatarUpdate.nModified) {
-      throw new Error("Could not update user avatar.");
+      if (!avatarUpdate.nModified) {
+        throw new Error("Could not update user avatar.");
+      }
+
+      return res.send({ avatar: response.secure_url });
+    } else {
+      const avatarUpdate = await User.updateOne(
+        { _id: user._id },
+        { avatar: response.secure_url }
+      );
+
+      if (!avatarUpdate.nModified) {
+        throw new Error("Could not update user avatar.");
+      }
+
+      return res.send({ avatar: response.secure_url });
     }
-
-    return res.send({ avatar: response.secure_url });
   } catch (err) {
     logger.error(`error while changing Avatar::::::: ${JSON.stringify(err)}`);
     next(err);
@@ -731,15 +772,25 @@ module.exports.retrieveSuggestedUsers = async (req, res, next) => {
 
 module.exports.isUsernameAvaialble = async (req, res, next) => {
   logger.info("****Checking if given username exists or not***");
+  const type = req.body.type ? req.body.type : req.query.type;
   const user = res.locals.user;
   const username = req.params.username;
   let existingUser = null;
   try {
-    existingUser = await User.findOne({ username });
-    if (!existingUser || user.username === username) {
-      res.status(200).send({ isAvailable: true });
+    if (type && type == "sp") {
+      existingUser = await ServiceProvider.findOne({ username });
+      if (!existingUser || user.username === username) {
+        res.status(200).send({ isAvailable: true });
+      } else {
+        res.status(403).send({ isAvailable: false });
+      }
     } else {
-      res.status(403).send({ isAvailable: false });
+      existingUser = await User.findOne({ username });
+      if (!existingUser || user.username === username) {
+        res.status(200).send({ isAvailable: true });
+      } else {
+        res.status(403).send({ isAvailable: false });
+      }
     }
   } catch (err) {
     next(err);
