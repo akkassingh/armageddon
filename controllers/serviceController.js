@@ -445,7 +445,7 @@ module.exports.generateReport = async (req, res, next) => {
       time: req.body.time,
       ServiceAppointment: req.body.appointmentId,
       // pee: req.body.pee,
-      reperate: req.body.reperate,
+      reperate: JSON.parse(req.body.reperate),
       // pet:req.body.petId,
       rating: req.body.rating,
       picture: fileArr.find((el) => el.fieldname === "picture").url,
