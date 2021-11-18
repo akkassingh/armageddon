@@ -1,4 +1,6 @@
 const ServiceType = require("../models/ServiceType");
+const User = require("../models/User");
+const Animal = require("../models/Animal");
 const { petDetails, bookingDetails } = require("../models/ServiceBooking");
 const {
   Service,
@@ -96,14 +98,14 @@ module.exports.bookService = async (req, res, next) => {
           let ob;
           if(req.body.package.dayfrequency==2){
              ob={
-              runTime1:req.body.run1,
-              runTime2:req.body.run2,
+              runTime1:req.body.runDetails[0].runTime,
+              runTime2:req.body.runDetails[1].runTime,
               runDate:event
             }
           }
           else{
              ob={
-              runTime1:req.body.run1,
+              runTime1:req.body.runDetails[0].runTime,
               runDate:event
             }
           }
@@ -122,6 +124,7 @@ module.exports.bookService = async (req, res, next) => {
       petBehaviour: req.body.petBehaviour,
       petRunningLocation: req.body.petRunningLocation,
       phone: req.body.phone,
+      alternateName: req.body.alternateName,
       alternatePhone: req.body.alternatePhone,
       package: req.body.package,
       run1:req.body.run1,
@@ -172,7 +175,20 @@ module.exports.bookService = async (req, res, next) => {
   }
 };
 
+module.exports.getPetDetails = async (req, res, next) => {
+  try {
+    let serviceList = await User.findById({_id:res.locals.user._id}).populate({ path: "pets.pet", select:'name username _id', model: Animal })
+    //.populate('pets.pet',)
+    //,'name username _id ');
 
+    
+
+    return res.status(200).send({pets:serviceList.pets});
+  } catch (err) {
+    console.log(err);
+    next(err);
+  }
+};
 
 function formatDate(date) {
   var d = new Date(date),

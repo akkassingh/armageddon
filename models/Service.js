@@ -298,17 +298,8 @@ const ServiceReportSchema = new Schema({
   time: Number,
   reperate:[
     {
-      pee: {
-        type: Boolean,
-        default: false,
-        required: false,
-        
-      },
-      poo: {
-        type: Boolean,
-        default: false,
-        required: false,
-      },
+      pee: Boolean,
+      poo:Boolean
     }
   ],
   rating:Number,

@@ -11,6 +11,7 @@ const {
   serviceProvidersList,
   bookService,
   generateRazorPayOrderId,
+  getPetDetails
 } = require("../controllers/serviceBookingController");
 
 const { requireAuth } = require("../controllers/authController");
@@ -19,6 +20,7 @@ const { requireAuth } = require("../controllers/authController");
 serviceRouter.get("/serviceProvidersList", requireAuth, serviceProvidersList);
 //bookService
 serviceRouter.post("/serviceBooking", requireAuth, bookService);
+serviceRouter.post("/getPetDetails", requireAuth, getPetDetails);
 
 //generatePaymentIntent
 serviceRouter.post("/generateOrderId", requireAuth, generateRazorPayOrderId);

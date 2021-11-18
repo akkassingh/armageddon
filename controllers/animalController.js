@@ -72,13 +72,19 @@ module.exports.registerPet = async (req, res, next) => {
       thingsDislikes,
       uniqueHabits,
       eatingHabits,
-      location,
+      location
     });
     animal.guardians.push({
       user: user._id,
       confirmed: true,
     });
     let pet = await animal.save();
+    const petObject = {
+      pet: animal._id,
+      confirmed: true,
+    };
+    await User.findByIdAndUpdate({ _id: user._id }, { $push: { pets: petObject } });
+
     return res.status(201).json({
       pet,
       token: jwt.encode({ id: animal._id }, process.env.JWT_SECRET),

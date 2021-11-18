@@ -436,7 +436,7 @@ module.exports.generateReport = async (req, res, next) => {
 
       fs.unlinkSync(fl.path);
     }
-    console.log(fileArr)
+    console.log(req.body.reperate)
     let ServiceReportModel = new ServiceReport({
       ServiceProvider: req.body.ServiceProvider,
       User: req.body.mainLine, //populate from appointment
