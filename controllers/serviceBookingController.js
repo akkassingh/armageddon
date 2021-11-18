@@ -82,6 +82,7 @@ module.exports.serviceProvidersList = async (req, res, next) => {
 
 module.exports.bookService = async (req, res, next) => {
   try {
+    console.log(req.body.runDetails[0].runTime)
     let arr=[],dayoff=[]
     let j=0;
     let start=req.body.startDate;
@@ -127,8 +128,9 @@ module.exports.bookService = async (req, res, next) => {
       alternateName: req.body.alternateName,
       alternatePhone: req.body.alternatePhone,
       package: req.body.package,
-      run1:req.body.run1,
-      run2:req.body.run2,
+      run1:req.body.runDetails[0].runTime,
+      run2:`${req.body.runDetails[1] ? req.body.runDetails[1].runTime : ""}`,
+     // req.body.runDetails[1].runTime,
       runDetails:arr,
       startDate:formatDate(new Date(parseInt(req.body.startDate))),
       dayOff: dayoff
