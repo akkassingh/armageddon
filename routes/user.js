@@ -35,11 +35,11 @@ userRouter.get("/:username/:offset/search", searchUsers);
 userRouter.put("/confirm", requireAuth, confirmUser);
 userRouter.put(
   "/avatar",
-  requireAuth,
   multer({
     dest: "temp/",
     limits: { fieldSize: 8 * 1024 * 1024, fileSize: 1000000 },
   }).single("image"),
+  requireAuth,
   changeAvatar
 );
 userRouter.put("/", requireAuth, updateProfile);
