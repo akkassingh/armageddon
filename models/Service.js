@@ -286,22 +286,31 @@ const ServiceReportSchema = new Schema({
     type: Schema.ObjectId,
     ref: "User",
   },
+  pet: {
+    type: Schema.ObjectId,
+    ref: "Animal",
+  },
   ServiceAppointment: {
     type: Schema.ObjectId,
     ref: "ServiceAppointment",
   },
   distance: Number,
   time: Number,
-  pee: {
-    type: Boolean,
-    default: false,
-    required: false,
-  },
-  poo: {
-    type: Boolean,
-    default: false,
-    required: false,
-  },
+  reperate:[
+    {
+      pee: {
+        type: Boolean,
+        default: false,
+        required: false,
+        
+      },
+      poo: {
+        type: Boolean,
+        default: false,
+        required: false,
+      },
+    }
+  ],
   rating:Number,
   picture: {
     type: String,
