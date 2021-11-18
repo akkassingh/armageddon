@@ -70,7 +70,7 @@ module.exports.verifyJwtAnimal = (token) => {
 
 module.exports.requireAuth = async (req, res, next) => {
   const { authorization } = req.headers;
-  const { type } = req.body;
+  const type  = req.body.type ? req.body.type : req.query.type;
   if (!authorization) return res.status(401).send({ error: "Not authorized." });
   try {
     let user;
@@ -1107,28 +1107,49 @@ module.exports.googleLoginAuthentication = async (req, res, next) => {
 // };
 
 module.exports.changePassword = async (req, res, next) => {
-  const { oldPassword, newPassword } = req.body;
+  const { oldPassword, newPassword, type } = req.body;
   const user = res.locals.user;
   let currentPassword = undefined;
 
   try {
-    const userDocument = await User.findById(user._id);
-    currentPassword = userDocument.password;
+    if (type && type == "sp") {
+      const userDocument = await ServiceProvider.findById(user._id);
+      currentPassword = userDocument.password;
 
-    const result = await bcrypt.compare(oldPassword, currentPassword);
-    if (!result) {
-      return res.status("401").send({
-        error: "Your old password was entered incorrectly, please try again.",
-      });
+      const result = await bcrypt.compare(oldPassword, currentPassword);
+      if (!result) {
+        return res.status("401").send({
+          error: "Your old password was entered incorrectly, please try again.",
+        });
+      }
+
+      const newPasswordError = validatePassword(newPassword);
+      if (newPasswordError)
+        return res.status(400).send({ error: newPasswordError });
+
+      const hashedPassword = await hashPassword(newPassword, 10);
+      userDocument.password = hashedPassword;
+      await userDocument.save();
+      return res.send({ message: "Password has been changed successfully!" });
+    } else {
+      const userDocument = await User.findById(user._id);
+      currentPassword = userDocument.password;
+
+      const result = await bcrypt.compare(oldPassword, currentPassword);
+      if (!result) {
+        return res.status("401").send({
+          error: "Your old password was entered incorrectly, please try again.",
+        });
+      }
+
+      const newPasswordError = validatePassword(newPassword);
+      if (newPasswordError)
+        return res.status(400).send({ error: newPasswordError });
+
+      userDocument.password = newPassword;
+      await userDocument.save();
+      return res.send({ message: "Password has been changed successfully!" });
     }
-
-    const newPasswordError = validatePassword(newPassword);
-    if (newPasswordError)
-      return res.status(400).send({ error: newPasswordError });
-
-    userDocument.password = newPassword;
-    await userDocument.save();
-    return res.send({ message: "Password has been changed successfully!" });
   } catch (err) {
     return next(err);
   }
@@ -1262,106 +1283,120 @@ module.exports.verifyResetPasswordOTP = async (req, res, next) => {
 module.exports.updatePassword = async (req, res, next) => {
   logger.info("***Update Password called***");
   const user = res.locals.user;
-  const { newPassword, otp } = req.body;
+  const { newPassword, otp, type } = req.body;
   const hashednewPassword = await hashPassword(newPassword.toString(), 10);
   try {
-    if (user.passwordRestTime + 900000 < Date.now())
-      return res
-        .status(404)
-        .json({ error: "OTP has been expired. Please try again!" });
-    const newPasswordError = validatePassword(newPassword);
-    if (newPasswordError)
-      return res.status(400).send({ error: newPasswordError });
+    if (type && type == "sp") {
+      if (user.passwordRestTime + 900000 < Date.now())
+        return res
+          .status(404)
+          .json({ error: "OTP has been expired. Please try again!" });
+      const newPasswordError = validatePassword(newPassword);
+      if (newPasswordError)
+        return res.status(400).send({ error: newPasswordError });
 
-    await User.updateOne({ _id: user._id }, { password: hashednewPassword });
-    sendEmail(
-      user.email,
-      "Password Changed",
-      "Your password was changed successfully!"
-    );
-    res.status(201).json({
-      message: "Your password was reset successfully!",
-      result: "success",
-    });
+      await ServiceProvider.updateOne(
+        { _id: user._id },
+        { password: hashednewPassword }
+      );
+      sendEmail(
+        user.email,
+        "Password Changed",
+        "Your password was changed successfully!"
+      );
+      res.status(201).json({
+        message: "Your password was reset successfully!",
+        result: "success",
+      });
+    } else {
+      if (user.passwordRestTime + 900000 < Date.now())
+        return res
+          .status(404)
+          .json({ error: "OTP has been expired. Please try again!" });
+      const newPasswordError = validatePassword(newPassword);
+      if (newPasswordError)
+        return res.status(400).send({ error: newPasswordError });
+
+      await User.updateOne({ _id: user._id }, { password: hashednewPassword });
+      sendEmail(
+        user.email,
+        "Password Changed",
+        "Your password was changed successfully!"
+      );
+      res.status(201).json({
+        message: "Your password was reset successfully!",
+        result: "success",
+      });
+    }
   } catch (err) {
     res.status(400).send({ error: err });
   }
 };
 
 module.exports.resendOTP = async (req, res, next) => {
+  console.log("--------inside resendOTP--------", req.params, req.body);
   const { path } = req.params;
+  const { type } = req.body;
   // 2 cases as of now, login/register will be one and forget pwd will be another one
   // for login/register we will pass 'login' in params and for forget pwd, we will pass 'forgetpwd' in params
   const user = res.locals.user;
   const otp = Math.floor(Math.random() * (999999 - 100000)) + 100000;
   const hashotp = await hashPassword(otp.toString(), 10);
   try {
-    if (path === "login") {
-      // register and login can be handeled together
-      const confirmationToken = await ConfirmationToken.findOne({
-        user: user._id,
-      });
-      if (confirmationToken) {
-        await ConfirmationToken.findOneAndUpdate(
-          { user: user._id },
-          {
+    if (type && type == "sp") {
+      if (path === "login") {
+        // register and login can be handeled together
+        const confirmationToken = await ConfirmationToken.findOne({
+          user: user._id,
+        });
+        if (confirmationToken) {
+          await ConfirmationToken.findOneAndUpdate(
+            { user: user._id },
+            {
+              token: hashotp,
+              timestamp: Date.now(),
+            }
+          );
+        } else {
+          await ConfirmationToken.create({
+            user: user._id,
             token: hashotp,
             timestamp: Date.now(),
-          }
-        );
-      } else {
-        await ConfirmationToken.create({
-          user: user._id,
-          token: hashotp,
-          timestamp: Date.now(),
-        });
+          });
+        }
+        await sendOTPEmail(user.username, user.email, otp);
+        res.status(201).send({ message: "OTP has been sent again!" });
+      } else if (path === "forgetpwd") {
+        await sendPasswordResetOTP(user.email, Date.now(), otp, type);
+        res.status(201).send({ message: "OTP has been sent again!" });
       }
-      await sendOTPEmail(user.username, user.email, otp);
-      res.status(201).send({ message: "OTP has been sent again!" });
-    } else if (path === "forgetpwd") {
-      await sendPasswordResetOTP(user.email, Date.now(), otp);
-      res.status(201).send({ message: "OTP has been sent again!" });
-    }
-  } catch (err) {
-    console.log(err);
-    logger.err("err is ", err);
-    next(err);
-  }
-};
-
-module.exports.resendOTP = async (req, res, next) => {
-  const { path } = req.params;
-  // 2 cases as of now, login/register will be one and forget pwd will be another one
-  // for login/register we will pass 'login' in params and for forget pwd, we will pass 'forgetpwd' in params
-  const user = res.locals.user;
-  const otp = Math.floor(Math.random() * (999999 - 100000)) + 100000;
-  const hashotp = await hashPassword(otp.toString(), 10);
-  try {
-    if (path === "login") {
-      // register and login can be handeled together
-      const confirmationToken = await ConfirmationToken.findOne({
-        user: user._id,
-      });
-      if (confirmationToken) {
-        await ConfirmationToken.findOneAndUpdate(
-          { user: user._id },
-          {
+    } else {
+      if (path === "login") {
+        // register and login can be handeled together
+        const confirmationToken = await ConfirmationToken.findOne({
+          user: user._id,
+        });
+        if (confirmationToken) {
+          await ConfirmationToken.findOneAndUpdate(
+            { user: user._id },
+            {
+              token: hashotp,
+              timestamp: Date.now(),
+            }
+          );
+        } else {
+          await ConfirmationToken.create({
+            user: user._id,
             token: hashotp,
             timestamp: Date.now(),
-          }
-        );
-      } else {
-        await ConfirmationToken.create({
-          user: user._id,
-          token: hashotp,
-          timestamp: Date.now(),
-        });
+          });
+        }
+        await sendOTPEmail(user.username, user.email, otp);
+        res.status(201).send({ message: "OTP has been sent again!" });
+      } else if (path === "forgetpwd") {
+        await sendPasswordResetOTP(user.email, Date.now(), otp);
+        res.status(201).send({ message: "OTP has been sent again!" });
       }
-      await sendOTPEmail(user.username, user.email, otp);
-      res.status(201).send({ message: "OTP has been sent again!" });
-    } else if (path === "forgetpwd") {
-      await sendPasswordResetOTP(user.email, Date.now(), otp);
-      res.status(201).send({ message: "OTP has been sent again!" });
     }
   } catch (err) {
     console.log(err);
