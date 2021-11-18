@@ -607,6 +607,7 @@ module.exports.updateProfile = async (req, res, next) => {
   const user = res.locals.user;
   const { fullName, username, website, bio, email } = req.body;
   let confirmationToken = undefined;
+  // console.log(req.body.bio+'looo')
   let updatedFields = {};
   try {
     const userDocument = await User.findOne({ _id: user._id });
@@ -644,7 +645,10 @@ module.exports.updateProfile = async (req, res, next) => {
         updatedFields.website = website;
       }
     }
-
+    if(req.body.bio==""){
+      userDocument.bio = "";
+      updatedFields.bio = "";   
+     }
     if (bio) {
       const bioError = validateBio(bio);
       if (bioError) return res.status(400).send({ error: bioError });
@@ -657,7 +661,7 @@ module.exports.updateProfile = async (req, res, next) => {
       if (emailError) return res.status(400).send({ error: emailError });
       // Make sure the email to update to is not the current one
       if (email !== user.email) {
-        const existingUser = await User.findOne({ email });
+        const existingUser = await User.findOne({ email});
         if (existingUser)
           return res
             .status(400)
@@ -673,6 +677,7 @@ module.exports.updateProfile = async (req, res, next) => {
       }
     }
     const updatedUser = await userDocument.save();
+    // console.log(userDocument)
     res.send(updatedFields);
     if (email && email !== user.email) {
       sendConfirmationEmail(

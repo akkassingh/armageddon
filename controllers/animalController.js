@@ -236,3 +236,17 @@ module.exports.confirmRelation = async (req, res, next) => {
     next(err);
   }
 };
+
+module.exports.getPetDetails = async (req, res, next) => {
+  try {
+    const animal = await Animal.findById(req.body.petId);
+    if (!animal)
+      return res.status(404).send({ error: "No such pet exists!" });
+
+    return res.status(201).send({pet:animal});
+  } catch (err) {
+    logger.info(err);
+    console.log(err);
+    next(err);
+  }
+};
