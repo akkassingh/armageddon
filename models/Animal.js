@@ -92,6 +92,7 @@ const AnimalSchema = new Schema({
     maxlength: 130,
   },
   location: String,
+  registeredWithKennelClub:Boolean
 });
 
 AnimalSchema.pre("save", async function (next) {

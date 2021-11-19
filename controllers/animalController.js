@@ -40,6 +40,7 @@ module.exports.registerPet = async (req, res, next) => {
     uniqueHabits,
     eatingHabits,
     location,
+    registeredWithKennelClub
   } = req.body;
   try {
     let fileArr = [];
@@ -72,7 +73,8 @@ module.exports.registerPet = async (req, res, next) => {
       thingsDislikes,
       uniqueHabits,
       eatingHabits,
-      location
+      location,
+      registeredWithKennelClub
     });
     animal.guardians.push({
       user: user._id,
