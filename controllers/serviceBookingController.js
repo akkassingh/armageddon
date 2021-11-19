@@ -8,7 +8,7 @@ const {
   DogWalkingPreferences,
   ReviewsandRatings,
   ServiceProfile,
-  ServiceAppointment,
+  ServiceAppointment
 } = require("../models/Service");
 
 const { ServiceProvider } = require("../models/ServiceProvider");
@@ -133,7 +133,8 @@ module.exports.bookService = async (req, res, next) => {
      // req.body.runDetails[1].runTime,
       runDetails:arr,
       startDate:formatDate(new Date(parseInt(req.body.startDate))),
-      dayOff: dayoff
+      dayOff: dayoff,
+      User: res.locals.user._id
       //(new Date(req.body.dayOff).toDateString()).split(' ')[0],
     };
     // console.log(payload)
@@ -166,11 +167,11 @@ module.exports.bookService = async (req, res, next) => {
         bookingStatus: false,
       });
       let st=await  Service.findOneAndUpdate({ serviceProvider: sp1.serviceProvider,ServiceAppointment:ServiceAppointmentSave._id} )
-       resp = await ServiceAppointmentSave.save();
+      resp = await ServiceAppointmentSave.save();
       //console.log(st)
     }
 
-    return res.status(200).json(resp);
+    return res.status(200).send({success:true});
   } catch (err) {
     console.log(err);
     next(err);
@@ -192,6 +193,68 @@ module.exports.getPetDetails = async (req, res, next) => {
   }
 };
 
+module.exports.getmybookedAppointments = async (req, res, next) => {
+  try {
+    let serviceList1=[]
+    let serviceList = await bookingDetails.find({
+      User: res.locals.user._id,
+      status:{ $lte:0} //recieved=0,accepted(confirmed=1).rejected(cancelled)=2,completed=3
+    });
+    for(let i=0;i<serviceList.length;i++){
+      let obj= await ServiceAppointment.findOne({
+        bookingDetails: serviceList[i]._id,
+        bookingStatus:0
+      }).populate('bookingDetails','package run1 run2 startDate dayOff').populate('petDetails', 'name username'); 
+      serviceList1.push(obj);
+    }   
+  
+    return res.status(200).json({serviceList:serviceList1});
+  } catch (err) {
+    console.log(err);
+    next(err);
+  }
+};
+
+module.exports.getmyactiveAppointments = async (req, res, next) => {
+  try {
+    let serviceList = await ServiceAppointment.find({
+      User: res.locals.user._id,
+      bookingStatus:1
+    }).populate('bookingDetails','package run1 run2 startDate dayOff').populate('petDetails', 'name username');     
+    return res.status(200).json({serviceList:serviceList});
+  } catch (err) {
+    console.log(err);
+    next(err);
+  }
+};
+
+
+module.exports.getmypastAppointments = async (req, res, next) => {
+  try {
+    let serviceList = await ServiceAppointment.find({
+      User: res.locals.user._id,
+      bookingStatus:{ $gte:3} //recieved=0,accepted(confirmed=1).rejected(cancelled)=2,completed=3
+    }).populate('bookingDetails','package run1 run2').populate('petDetails', 'name username');     
+    return res.status(200).json({serviceList:serviceList});
+  } catch (err) {
+    console.log(err);
+    next(err);
+  }
+};
+
+module.exports.getAppointmentDetails = async (req, res, next) => {
+  try {
+    let serviceList = await ServiceAppointment.findOne(     
+      { bookingDetails: req.body.bookingDetailsId }).populate('bookingDetails').populate('petDetails');
+      console.log(serviceList)
+
+      serviceList.bookingDetails.runDetails=[]
+    return res.status(200).json(serviceList);
+  } catch (err) {
+    console.log(err);
+    next(err);
+  }
+};
 function formatDate(date) {
   var d = new Date(date),
       month = '' + (d.getMonth() + 1),

@@ -321,6 +321,10 @@ module.exports.changeAppointmentstatus = async (req, res, next) => {
       { _id: req.body.appointmentId },
       { bookingStatus: req.body.bookingStatus},
       { new: true });
+    if(req.body.bookingStatus==1){
+      await ServiceAppointment.deleteMany({ _id: { $nin: [ObjectId(req.body.appointmentId)] } })
+      await bookingDetails.findByIdAndUpdate({_id:serviceList.bookingDetails},{status:1})
+    }
     return res.status(200).send({success:true});
   } catch (err) {
     console.log(err);

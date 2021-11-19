@@ -96,6 +96,14 @@ const bookingDetailsSchema = new Schema({
     default: "Dog Runner will be assigned shortly",
     enum: ["Dog Runner will be assigned shortly", "Completed"],
   },
+  User: {
+    type: Schema.ObjectId,
+    ref: "User",
+  },
+  status:{
+    type: Number,
+    default: 0,
+  }
 });
 
 const bookingDetails = mongoose.model("bookingDetails", bookingDetailsSchema);
