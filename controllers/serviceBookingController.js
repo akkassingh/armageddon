@@ -255,6 +255,48 @@ module.exports.getAppointmentDetails = async (req, res, next) => {
     next(err);
   }
 };
+
+module.exports.getscrollAppointmentstatus = async (req, res, next) => {
+  try {
+    let resp=[];
+    let status;
+    let serviceList = await ServiceAppointment.findOne(     
+      { bookingDetails: req.body.bookingDetailsId }).populate('bookingDetails');
+      const count=serviceList.bookingDetails.runDetails.length;
+      for(let i=0;i<count;i++){
+        if(serviceList.bookingDetails.runDetails[i].runDate==formatDate(new Date(parseInt(req.body.date)))){
+          status=serviceList.bookingDetails.runDetails[i].run1Status
+          resp.push({"walkStatus":status})
+          // if(serviceList.bookingDetails.runDetails[i].run2Status){
+            status=serviceList.bookingDetails.runDetails[i].run2Status
+            resp.push({"walkStatus":status})
+         // }
+        }
+      }
+    return res.status(200).send({resp:resp});
+  } catch (err) {
+    console.log(err);
+    next(err);
+  }
+};
+
+module.exports.changeAppointmentstatus = async (req, res, next) => {
+  try {
+    let serviceList = await ServiceAppointment.updateMany(     
+      { bookingDetails: req.body.bookingDetailsId },
+      { bookingStatus: req.body.bookingStatus},
+      { new: true });
+    // if(req.body.bookingStatus==1){
+    //   await ServiceAppointment.deleteMany({ _id: { $nin: [ObjectId(req.body.appointmentId)] } })
+    //   await bookingDetails.findByIdAndUpdate({_id:serviceList.bookingDetails},{status:1})
+    // }
+    //if booking status =3 =>servicestatus=2
+    return res.status(200).send({success:true});
+  } catch (err) {
+    console.log(err);
+    next(err);
+  }
+};
 function formatDate(date) {
   var d = new Date(date),
       month = '' + (d.getMonth() + 1),

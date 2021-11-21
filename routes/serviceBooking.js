@@ -15,7 +15,9 @@ const {
   getmybookedAppointments,
   getmyactiveAppointments,
   getmypastAppointments,
-  getAppointmentDetails
+  getAppointmentDetails,
+  getscrollAppointmentstatus,
+  changeAppointmentstatus
 } = require("../controllers/serviceBookingController");
 
 const { requireAuth } = require("../controllers/authController");
@@ -31,6 +33,8 @@ serviceRouter.post("/getmybookedAppointments", requireAuth, getmybookedAppointme
 serviceRouter.post("/getmyactiveAppointments", requireAuth, getmyactiveAppointments);
 serviceRouter.post("/getmypastAppointments", requireAuth, getmypastAppointments);
 serviceRouter.post("/getAppointmentDetails", requireAuth, getAppointmentDetails);
+serviceRouter.post("/getscrollAppointmentstatus", requireAuth, getscrollAppointmentstatus);
+serviceRouter.post("/changeAppointmentstatus", requireAuth, changeAppointmentstatus);
 
 //generatePaymentIntent
 serviceRouter.post("/generateOrderId", requireAuth, generateRazorPayOrderId);
