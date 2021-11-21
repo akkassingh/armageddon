@@ -8,7 +8,8 @@ const {
   DogWalkingPreferences,
   ReviewsandRatings,
   ServiceProfile,
-  ServiceAppointment
+  ServiceAppointment,
+  ServiceReport
 } = require("../models/Service");
 
 const { ServiceProvider } = require("../models/ServiceProvider");
@@ -304,23 +305,65 @@ module.exports.changeAppointmentstatus = async (req, res, next) => {
   }
 };
 
-module.exports.giveRatings = async (req, res, next) => {
+module.exports.giveRatingstoeachWalk=async (req, res, next) => {
   try {
-    let serviceList = await ServiceAppointment.findOneAndUpdate(     
-      { bookingDetails: req.body.bookingDetailsId },
-      {rating:req.body.rating},
-      { new: true });
-    // if(req.body.bookingStatus==1){
-    //   await ServiceAppointment.deleteMany({ _id: { $nin: [ObjectId(req.body.appointmentId)] } })
-    //   await bookingDetails.findByIdAndUpdate({_id:serviceList.bookingDetails},{status:1})
-    // }
-    //if booking status =3 =>servicestatus=2
+    // let serviceList = await ServiceAppointment.findOneAndUpdate(     
+    //   { bookingDetails: req.body.bookingDetailsId },
+    //   {rating:req.body.rating},
+    //   { new: true });
+    let dt=new Date(parseInt(req.body.date))
+    let rep=await bookingDetails.findById({_id:req.body.bookingDetailsId});
+    for(let i=0;i<rep.runDetails.length;i++){
+      if(rep.runDetails[i].runDate==formatDate(dt)){
+          p=await ServiceAppointment.findOneAndUpdate({bookingDetails:req.body.bookingDetailsId},{$set:{rating:req.body.rating}},{ new: true })
+      }
+    }
     return res.status(200).send({success:true});
   } catch (err) {
     console.log(err);
     next(err);
   }
 };
+
+module.exports.getReport = async (req, res, next) => {
+  try {
+    let resp;
+    let dt=new Date(parseInt(req.body.date))
+    let rep=await bookingDetails.findById({_id:req.body.bookingDetailsId});
+    for(let i=0;i<rep.runDetails.length;i++){
+      if(rep.runDetails[i].runDate==formatDate(dt)){
+        if(req.body.runReport1){       
+          resp=await ServiceReport.findById({_id:rep.runDetails[i].runReport1})
+        }
+        else  if(req.body.runReport2){       
+          resp=await ServiceReport.findById({_id:rep.runDetails[i].runReport2})
+        }
+      }
+     }
+     formatDate(new Date(parseInt(req.body.date)))
+    return res.status(200).send(resp);
+  } catch (err) {
+    console.log(err);
+    next(err);
+  }
+};
+
+
+module.exports.giveTestimony = async (req, res, next) => {
+  try {
+    let serviceList = await ServiceAppointment.findOneAndUpdate(     
+      { bookingDetails: req.body.bookingDetailsId },
+      {rating:req.body.rating,
+      review:req.body.review
+      });
+    return res.status(200).send({success:true});
+  } catch (err) {
+    console.log(err);
+    next(err);
+  }
+};
+
+
 function formatDate(date) {
   var d = new Date(date),
       month = '' + (d.getMonth() + 1),

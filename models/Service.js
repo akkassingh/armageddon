@@ -262,6 +262,7 @@ const ServiceAppointmentSchema = new Schema({
     required: false,
   },
   rating: Number,
+  review:String,
   serviceType:{
     type: Number,
     default: 0,
