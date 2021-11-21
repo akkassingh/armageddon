@@ -290,6 +290,30 @@ module.exports.changeAppointmentstatus = async (req, res, next) => {
     //   await ServiceAppointment.deleteMany({ _id: { $nin: [ObjectId(req.body.appointmentId)] } })
     //   await bookingDetails.findByIdAndUpdate({_id:serviceList.bookingDetails},{status:1})
     // }
+    if(req.body.bookingStatus==3){
+      await ServiceAppointment.findOneAndUpdate(     
+        { bookingDetails: req.body.bookingDetailsId },
+        { serviceStatus: 2},
+        { new: true });
+    }
+    //if booking status =3 =>servicestatus=2
+    return res.status(200).send({success:true});
+  } catch (err) {
+    console.log(err);
+    next(err);
+  }
+};
+
+module.exports.giveRatings = async (req, res, next) => {
+  try {
+    let serviceList = await ServiceAppointment.findOneAndUpdate(     
+      { bookingDetails: req.body.bookingDetailsId },
+      {rating:req.body.rating},
+      { new: true });
+    // if(req.body.bookingStatus==1){
+    //   await ServiceAppointment.deleteMany({ _id: { $nin: [ObjectId(req.body.appointmentId)] } })
+    //   await bookingDetails.findByIdAndUpdate({_id:serviceList.bookingDetails},{status:1})
+    // }
     //if booking status =3 =>servicestatus=2
     return res.status(200).send({success:true});
   } catch (err) {

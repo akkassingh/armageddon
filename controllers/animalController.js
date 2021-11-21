@@ -97,6 +97,51 @@ module.exports.registerPet = async (req, res, next) => {
   }
 };
 
+
+module.exports.editPet = async (req, res, next) => {
+  const user = res.locals.user;
+  const {
+    servicePet,
+    spayed,
+    friendlinessWithHumans,
+    friendlinessWithAnimals,
+    favouriteThings,
+    thingsDislikes,
+    uniqueHabits,
+    eatingHabits,
+  } = req.body;
+  try {
+    let pet=await Animal.findById({_id:req.body.petId});
+    if(req.body.friendlinessWithAnimals!==null )
+    console.log(pet.friendlinessWithAnimals)
+    pet.servicePet=servicePet!==null ? servicePet : pet.servicePet
+    pet.spayed=spayed!==null ? spayed : pet.spayed
+    pet.friendlinessWithHumans=friendlinessWithHumans!==null ? friendlinessWithHumans : pet.friendlinessWithHumans
+    pet.friendlinessWithAnimals= req.body.friendlinessWithAnimals!==null ? friendlinessWithAnimals : pet.friendlinessWithAnimals
+    pet.favouriteThings=favouriteThings!==null ? favouriteThings : pet.favouriteThings
+    pet.thingsDislikes=thingsDislikes!==null ? thingsDislikes : pet.thingsDislikes
+    pet.uniqueHabits=uniqueHabits!==null ? uniqueHabits : pet.uniqueHabits
+    pet.eatingHabits=eatingHabits!==null ? eatingHabits : pet.eatingHabits
+
+    await Animal.updateOne({_id:pet._id},{
+      servicePet:pet.servicePet,
+      spayed:pet.spayed,
+      friendlinessWithHumans: pet.friendlinessWithHumans,
+      friendlinessWithAnimals:pet.friendlinessWithAnimals,
+      favouriteThings:pet.favouriteThings,
+      thingsDislikes:pet.thingsDislikes,
+      uniqueHabits:pet.uniqueHabits,
+      eatingHabits:pet.eatingHabits,
+    })
+    return res.status(201).json({
+      pet
+    });
+  } catch (err) {
+    console.log(err);
+    next(err);
+  }
+};
+
 module.exports.addGuardian = async (req, res, next) => {
   const animal = res.locals.animal;
   const { idUser } = req.body;

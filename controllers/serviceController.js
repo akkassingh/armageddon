@@ -421,7 +421,7 @@ module.exports.endService = async (req, res, next) => {
   try {
     let serviceList = await ServiceAppointment.findByIdAndUpdate(     
       { _id: req.body.appointmentId },
-      {serviceStatus:true});
+      {serviceStatus:1});
     return res.status(200).json(serviceList);
   } catch (err) {
     console.log(err);
@@ -443,6 +443,9 @@ module.exports.generateReport = async (req, res, next) => {
       fs.unlinkSync(fl.path);
     }
     console.log(req.body.reperate)
+    if(!req.body.rating){
+
+    }
     let ServiceReportModel = new ServiceReport({
       ServiceProvider: req.body.ServiceProvider,
       User: req.body.mainLine, //populate from appointment
