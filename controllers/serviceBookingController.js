@@ -206,6 +206,7 @@ module.exports.getmybookedAppointments = async (req, res, next) => {
         bookingDetails: serviceList[i]._id,
         bookingStatus:0
       }).populate('bookingDetails','package run1 run2 startDate dayOff').populate('petDetails', 'name username'); 
+      if(obj!=null)
       serviceList1.push(obj);
     }   
   
