@@ -354,7 +354,8 @@ module.exports.giveTestimony = async (req, res, next) => {
     let serviceList = await ServiceAppointment.findOneAndUpdate(     
       { bookingDetails: req.body.bookingDetailsId },
       {rating:req.body.rating,
-      review:req.body.review
+      review:req.body.review,
+      israted:true
       });
     return res.status(200).send({success:true});
   } catch (err) {
