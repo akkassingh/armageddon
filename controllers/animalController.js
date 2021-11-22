@@ -40,7 +40,7 @@ module.exports.registerPet = async (req, res, next) => {
     uniqueHabits,
     eatingHabits,
     location,
-    registeredWithKennelClub
+    registeredWithKennelClub,
   } = req.body;
   try {
     let fileArr = [];
@@ -74,7 +74,7 @@ module.exports.registerPet = async (req, res, next) => {
       uniqueHabits,
       eatingHabits,
       location,
-      registeredWithKennelClub
+      registeredWithKennelClub,
     });
     animal.guardians.push({
       user: user._id,
@@ -85,7 +85,10 @@ module.exports.registerPet = async (req, res, next) => {
       pet: animal._id,
       confirmed: true,
     };
-    await User.findByIdAndUpdate({ _id: user._id }, { $push: { pets: petObject } });
+    await User.findByIdAndUpdate(
+      { _id: user._id },
+      { $push: { pets: petObject } }
+    );
 
     return res.status(201).json({
       pet,
@@ -97,48 +100,126 @@ module.exports.registerPet = async (req, res, next) => {
   }
 };
 
-
 module.exports.editPet = async (req, res, next) => {
   const user = res.locals.user;
   const {
-    // servicePet,
-    // spayed,
+    animalId,
+    name,
+    username,
+    category,
+    bio,
+    animalType,
+    gender,
+    breed,
+    age,
+    mating,
+    adoption,
+    playBuddies,
+    playFrom,
+    playTo,
+    servicePet,
+    spayed,
     friendlinessWithHumans,
     friendlinessWithAnimals,
     favouriteThings,
     thingsDislikes,
     uniqueHabits,
     eatingHabits,
+    location,
+    registeredWithKennelClub,
   } = req.body;
   try {
-    let pet=await Animal.findById({_id:req.body.petId});
-    // if(req.body.friendlinessWithAnimals!==null )
-    // console.log(pet.friendlinessWithAnimals)
-    // pet.servicePet=servicePet!==null ? servicePet : pet.servicePet
-    // pet.spayed=spayed!==null ? spayed : pet.spayed
-    pet.friendlinessWithHumans=friendlinessWithHumans!==null ? friendlinessWithHumans : pet.friendlinessWithHumans
-    pet.friendlinessWithAnimals= req.body.friendlinessWithAnimals!==null ? friendlinessWithAnimals : pet.friendlinessWithAnimals
-    pet.favouriteThings=favouriteThings!==null ? favouriteThings : pet.favouriteThings
-    pet.thingsDislikes=thingsDislikes!==null ? thingsDislikes : pet.thingsDislikes
-    pet.uniqueHabits=uniqueHabits!==null ? uniqueHabits : pet.uniqueHabits
-    pet.eatingHabits=eatingHabits!==null ? eatingHabits : pet.eatingHabits
+    let fileArr = [];
+    for (let fl of req.files) {
+      const response = await cloudinary.uploader.upload(fl.path);
+      fileArr.push(response.secure_url);
+      fs.unlinkSync(fl.path);
+    }
 
-    await Animal.updateOne({_id:pet._id},{
-      friendlinessWithHumans: pet.friendlinessWithHumans,
-      friendlinessWithAnimals:pet.friendlinessWithAnimals,
-      favouriteThings:pet.favouriteThings,
-      thingsDislikes:pet.thingsDislikes,
-      uniqueHabits:pet.uniqueHabits,
-      eatingHabits:pet.eatingHabits,
-    })
-    return res.status(201).json({
-      pet
+    let animalObj = {
+      name,
+      avatar: fileArr.length > 0 ? fileArr[0] : req.body.avatar,
+      category,
+      bio,
+      animalType,
+      gender,
+      breed,
+      age,
+      mating,
+      adoption,
+      playBuddies,
+      playFrom,
+      playTo,
+      servicePet,
+      spayed,
+      friendlinessWithHumans,
+      friendlinessWithAnimals,
+      favouriteThings,
+      thingsDislikes,
+      uniqueHabits,
+      eatingHabits,
+      location,
+      registeredWithKennelClub,
+      guardians: {
+        user: user._id,
+        confirmed: true,
+      },
+    };
+    const animal = await Animal.findByIdAndUpdate(
+      { _id: ObjectId(animalId) },
+      animalObj
+    );
+
+    return res.status(200).json({
+      success: true,
     });
   } catch (err) {
     console.log(err);
     next(err);
   }
 };
+
+// module.exports.editPet = async (req, res, next) => {
+//   const user = res.locals.user;
+//   const {
+//     // servicePet,
+//     // spayed,
+//     friendlinessWithHumans,
+//     friendlinessWithAnimals,
+//     favouriteThings,
+//     thingsDislikes,
+//     uniqueHabits,
+//     eatingHabits,
+//   } = req.body;
+//   try {
+//     let pet=await Animal.findById({_id:req.body.petId});
+//     // if(req.body.friendlinessWithAnimals!==null )
+//     // console.log(pet.friendlinessWithAnimals)
+//     // pet.servicePet=servicePet!==null ? servicePet : pet.servicePet
+//     // pet.spayed=spayed!==null ? spayed : pet.spayed
+//     pet.friendlinessWithHumans=friendlinessWithHumans!==null ? friendlinessWithHumans : pet.friendlinessWithHumans
+//     pet.friendlinessWithAnimals= req.body.friendlinessWithAnimals!==null ? friendlinessWithAnimals : pet.friendlinessWithAnimals
+//     pet.favouriteThings=favouriteThings!==null ? favouriteThings : pet.favouriteThings
+//     pet.thingsDislikes=thingsDislikes!==null ? thingsDislikes : pet.thingsDislikes
+//     pet.uniqueHabits=uniqueHabits!==null ? uniqueHabits : pet.uniqueHabits
+//     pet.eatingHabits=eatingHabits!==null ? eatingHabits : pet.eatingHabits
+
+//     await Animal.updateOne({_id:pet._id},{
+//       friendlinessWithHumans: pet.friendlinessWithHumans,
+//       friendlinessWithAnimals:pet.friendlinessWithAnimals,
+//       favouriteThings:pet.favouriteThings,
+//       thingsDislikes:pet.thingsDislikes,
+//       uniqueHabits:pet.uniqueHabits,
+//       eatingHabits:pet.eatingHabits,
+//     })
+//     return res.status(201).json({
+//       pet
+//     });
+//   } catch (err) {
+//     console.log(err);
+//     next(err);
+//   }
+// };
 
 module.exports.addGuardian = async (req, res, next) => {
   const animal = res.locals.animal;
@@ -285,10 +366,9 @@ module.exports.confirmRelation = async (req, res, next) => {
 module.exports.getPetDetails = async (req, res, next) => {
   try {
     const animal = await Animal.findById(req.body.petId);
-    if (!animal)
-      return res.status(404).send({ error: "No such pet exists!" });
+    if (!animal) return res.status(404).send({ error: "No such pet exists!" });
 
-    return res.status(201).send({pet:animal});
+    return res.status(201).send({ pet: animal });
   } catch (err) {
     logger.info(err);
     console.log(err);
