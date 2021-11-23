@@ -12,6 +12,7 @@ const {
   addGuardian,
   getPetDetails,
   editPet,
+  editPetHabits
 } = require("../controllers/animalController");
 
 const { requireAuth } = require("../controllers/authController");
@@ -20,5 +21,6 @@ animalRouter.post("/register", upload, requireAuth, registerPet);
 animalRouter.patch("/addGuardian", addGuardian);
 animalRouter.post("/getPetDetails", requireAuth, getPetDetails);
 animalRouter.put("/editPet", upload, requireAuth, editPet);
+animalRouter.post("/editPetHabits", requireAuth, editPetHabits);
 
 module.exports = animalRouter;
