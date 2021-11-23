@@ -13,7 +13,7 @@ const ObjectId = require("mongoose").Types.ObjectId;
 const logger = require("../logger/logger");
 const fs = require("fs");
 const Animal = require("../models/Animal");
-
+const ServiceProvider=require("../models/ServiceProvider")
 const cloudinary = require("cloudinary").v2;
 cloudinary.config({
   cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
@@ -30,6 +30,20 @@ module.exports.serviceList = async (req, res, next) => {
     let count=await ServiceAppointment.find({ServiceProvider: res.locals.user._id})
 
     return res.status(201).json({ services: serviceList[0].serviceType, serviceStatus: serviceList[0].isVerified, appointments:count.length });
+  } catch (err) {
+    console.log(err);
+    next(err);
+  }
+};
+
+module.exports.getServiceProviderProfile = async (req, res, next) => {
+  try {
+    // let servicesList = await ServiceType.find();
+    let serviceList = await ServiceProvider.findById({
+      _id: res.locals.user._id},'fullName userName bio website avatar');
+    // let count=await ServiceAppointment.find({ServiceProvider: res.locals.user._id})
+
+    return res.status(201).json({ services: serviceList});
   } catch (err) {
     console.log(err);
     next(err);

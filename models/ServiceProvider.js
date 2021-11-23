@@ -84,6 +84,14 @@ const ServiceProviderSchema = new Schema({
     type: Boolean,
     default: false,
   },
+  bio: {
+    type: String,
+    maxlength: 130,
+  },                    //not needed
+  website: {
+    type: String,
+    maxlength: 65,       //not needed
+  },
   confirmed: {
     type: Boolean,
     default: false,
