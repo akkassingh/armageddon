@@ -608,85 +608,167 @@ module.exports.updateProfile = async (req, res, next) => {
   const { fullName, username, website, bio, email } = req.body;
   let confirmationToken = undefined;
   // console.log(req.body.bio+'looo')
+  let type=req.body.type;
   let updatedFields = {};
   try {
+    if(type && type == "sp"){
+      const userDocument = await ServiceProvider.findOne({ _id: user._id });
+
+      if (fullName) {
+        const fullNameError = validateFullName(fullName);
+        if (fullNameError) return res.status(400).send({ error: fullNameError });
+        userDocument.fullName = fullName;
+        updatedFields.fullName = fullName;
+      }
+  
+      if (username) {
+        const usernameError = validateUsername(username);
+        if (usernameError) return res.status(400).send({ error: usernameError });
+        // Make sure the username to update to is not the current one
+        if (username !== user.username) {
+          const existingUser = await ServiceProvider.findOne({ username });
+          if (existingUser)
+            return res
+              .status(400)
+              .send({ error: "Please choose another username." });
+          userDocument.username = username;
+          updatedFields.username = username;
+        }
+      }
+  
+      if (website) {
+        const websiteError = validateWebsite(website);
+        if (websiteError) return res.status(400).send({ error: websiteError });
+        if (!website.includes("http://") && !website.includes("https://")) {
+          userDocument.website = "https://" + website;
+          updatedFields.website = "https://" + website;
+        } else {
+          userDocument.website = website;
+          updatedFields.website = website;
+        }
+      }
+      if(req.body.bio==""){
+        userDocument.bio = "";
+        updatedFields.bio = "";   
+       }
+      if (bio) {
+        const bioError = validateBio(bio);
+        if (bioError) return res.status(400).send({ error: bioError });
+        userDocument.bio = bio;
+        updatedFields.bio = bio;
+      }
+  
+      if (email) {
+        const emailError = validateEmail(email);
+        if (emailError) return res.status(400).send({ error: emailError });
+        // Make sure the email to update to is not the current one
+        if (email !== user.email) {
+          const existingUser = await ServiceProvider.findOne({ email});
+          if (existingUser)
+            return res
+              .status(400)
+              .send({ error: "Please choose another email." });
+          confirmationToken = new ConfirmationToken({
+            user: user._id,
+            token: crypto.randomBytes(20).toString("hex"),
+          });
+          await confirmationToken.save();
+          userDocument.email = email;
+          userDocument.confirmed = false;
+          updatedFields = { ...updatedFields, email, confirmed: false };
+        }
+      }
+      const updatedUser = await userDocument.save();
+      // console.log(userDocument)
+      res.send(updatedFields);
+      if (email && email !== user.email) {
+        sendConfirmationEmail(
+          updatedUser.username,
+          updatedUser.email,
+          confirmationToken.token
+        );
+      }
+    }
+    else {    
     const userDocument = await User.findOne({ _id: user._id });
 
-    if (fullName) {
-      const fullNameError = validateFullName(fullName);
-      if (fullNameError) return res.status(400).send({ error: fullNameError });
-      userDocument.fullName = fullName;
-      updatedFields.fullName = fullName;
-    }
+      if (fullName) {
+        const fullNameError = validateFullName(fullName);
+        if (fullNameError) return res.status(400).send({ error: fullNameError });
+        userDocument.fullName = fullName;
+        updatedFields.fullName = fullName;
+      }
 
-    if (username) {
-      const usernameError = validateUsername(username);
-      if (usernameError) return res.status(400).send({ error: usernameError });
-      // Make sure the username to update to is not the current one
-      if (username !== user.username) {
-        const existingUser = await User.findOne({ username });
-        if (existingUser)
-          return res
-            .status(400)
-            .send({ error: "Please choose another username." });
-        userDocument.username = username;
-        updatedFields.username = username;
+      if (username) {
+        const usernameError = validateUsername(username);
+        if (usernameError) return res.status(400).send({ error: usernameError });
+        // Make sure the username to update to is not the current one
+        if (username !== user.username) {
+          const existingUser = await User.findOne({ username });
+          if (existingUser)
+            return res
+              .status(400)
+              .send({ error: "Please choose another username." });
+          userDocument.username = username;
+          updatedFields.username = username;
+        }
+      }
+
+      if (website) {
+        const websiteError = validateWebsite(website);
+        if (websiteError) return res.status(400).send({ error: websiteError });
+        if (!website.includes("http://") && !website.includes("https://")) {
+          userDocument.website = "https://" + website;
+          updatedFields.website = "https://" + website;
+        } else {
+          userDocument.website = website;
+          updatedFields.website = website;
+        }
+      }
+      if(req.body.bio==""){
+        userDocument.bio = "";
+        updatedFields.bio = "";   
+      }
+      if (bio) {
+        const bioError = validateBio(bio);
+        if (bioError) return res.status(400).send({ error: bioError });
+        userDocument.bio = bio;
+        updatedFields.bio = bio;
+      }
+
+      if (email) {
+        const emailError = validateEmail(email);
+        if (emailError) return res.status(400).send({ error: emailError });
+        // Make sure the email to update to is not the current one
+        if (email !== user.email) {
+          const existingUser = await User.findOne({ email});
+          if (existingUser)
+            return res
+              .status(400)
+              .send({ error: "Please choose another email." });
+          confirmationToken = new ConfirmationToken({
+            user: user._id,
+            token: crypto.randomBytes(20).toString("hex"),
+          });
+          await confirmationToken.save();
+          userDocument.email = email;
+          userDocument.confirmed = false;
+          updatedFields = { ...updatedFields, email, confirmed: false };
+        }
+      }
+      const updatedUser = await userDocument.save();
+      // console.log(userDocument)
+      res.send(updatedFields);
+      if (email && email !== user.email) {
+        sendConfirmationEmail(
+          updatedUser.username,
+          updatedUser.email,
+          confirmationToken.token
+        );
       }
     }
-
-    if (website) {
-      const websiteError = validateWebsite(website);
-      if (websiteError) return res.status(400).send({ error: websiteError });
-      if (!website.includes("http://") && !website.includes("https://")) {
-        userDocument.website = "https://" + website;
-        updatedFields.website = "https://" + website;
-      } else {
-        userDocument.website = website;
-        updatedFields.website = website;
-      }
-    }
-    if(req.body.bio==""){
-      userDocument.bio = "";
-      updatedFields.bio = "";   
-     }
-    if (bio) {
-      const bioError = validateBio(bio);
-      if (bioError) return res.status(400).send({ error: bioError });
-      userDocument.bio = bio;
-      updatedFields.bio = bio;
-    }
-
-    if (email) {
-      const emailError = validateEmail(email);
-      if (emailError) return res.status(400).send({ error: emailError });
-      // Make sure the email to update to is not the current one
-      if (email !== user.email) {
-        const existingUser = await User.findOne({ email});
-        if (existingUser)
-          return res
-            .status(400)
-            .send({ error: "Please choose another email." });
-        confirmationToken = new ConfirmationToken({
-          user: user._id,
-          token: crypto.randomBytes(20).toString("hex"),
-        });
-        await confirmationToken.save();
-        userDocument.email = email;
-        userDocument.confirmed = false;
-        updatedFields = { ...updatedFields, email, confirmed: false };
-      }
-    }
-    const updatedUser = await userDocument.save();
-    // console.log(userDocument)
-    res.send(updatedFields);
-    if (email && email !== user.email) {
-      sendConfirmationEmail(
-        updatedUser.username,
-        updatedUser.email,
-        confirmationToken.token
-      );
-    }
-  } catch (err) {
+  } 
+  catch (err) {
     next(err);
   }
 };
