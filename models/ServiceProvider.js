@@ -23,7 +23,7 @@ const ServiceProviderSchema = new Schema({
     // unique: [true, "A user with this email already exists"],
     length: 20,
   },
-  userName: {
+  username: {
     type: String,
     // required: true,
     lowercase: true,
@@ -103,7 +103,7 @@ ServiceProviderSchema.pre("save", async function (next) {
   if (this.isNew) {
     try {
       const document = await ServiceProvider.findOne({
-        $or: [{ email: this.email }, { username: this.userName }],
+        $or: [{ email: this.email }, { username: this.username }],
       });
       if (document) {
         console.log(document);
