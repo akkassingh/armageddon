@@ -181,7 +181,7 @@ module.exports.loginAuthentication = async (req, res, next) => {
 
     try {
       const user = await ServiceProvider.findOne({
-        $or: [{ userName: usernameOrEmail }, { email: usernameOrEmail }],
+        $or: [{ username: usernameOrEmail }, { email: usernameOrEmail }],
       });
       if (!user || !user.password) {
         return res.status(401).send({
@@ -389,7 +389,7 @@ module.exports.register = async (req, res, next) => {
       user = new ServiceProvider({
         email,
         password: hashedPassword,
-        userName: username,
+        username: username,
       });
       confirmationToken = new ConfirmationToken({
         user: user._id,
