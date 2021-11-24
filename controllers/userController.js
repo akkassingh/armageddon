@@ -631,8 +631,8 @@ module.exports.updateProfile = async (req, res, next) => {
             return res
               .status(400)
               .send({ error: "Please choose another username." });
-          userDocument.userName = username;
-          updatedFields.userName = username;
+          userDocument.username = username;
+          updatedFields.username = username;
         }
       }
   

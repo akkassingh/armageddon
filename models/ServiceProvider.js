@@ -23,7 +23,7 @@ const ServiceProviderSchema = new Schema({
     // unique: [true, "A user with this email already exists"],
     length: 20,
   },
-  userName: {
+  username: {
     type: String,
     // required: true,
     lowercase: true,
