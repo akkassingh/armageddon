@@ -1,28 +1,22 @@
-const mongoose = require('mongoose');
+const mongoose = require("mongoose");
 const Schema = mongoose.Schema;
 
 const FollowingSchema = new Schema({
   user: {
-    type: Schema.ObjectId,
-    ref: 'User'
+    id: {
+      type: Schema.ObjectId,
+      required: true,
+    },
+    userType: { required: true, type: String, enum: ["Animal", "Human"] },
   },
-  // userType: {
-  //   type: String,
-  //   required: true,
-  // },
-  // following: {
-  //   type: Schema.ObjectId,
-  //   ref: 'userType',
-  // }
-  following: [
-    {
-      user: {
-        type: Schema.ObjectId,
-        ref: 'User'
-      }
-    }
-  ]
+  followingDetails: {
+    followingType: {
+      type: String,
+      enum: ["Animal", "Human"],
+    },
+    followingId: Schema.ObjectId,
+  },
 });
 
-const followingModel = mongoose.model('Following', FollowingSchema);
+const followingModel = mongoose.model("Following", FollowingSchema);
 module.exports = followingModel;

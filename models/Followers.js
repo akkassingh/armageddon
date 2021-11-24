@@ -1,28 +1,22 @@
-const mongoose = require('mongoose');
+const mongoose = require("mongoose");
 const Schema = mongoose.Schema;
 
 const FollowersSchema = new Schema({
   user: {
-    type: Schema.ObjectId,
-    ref: 'User'
+    id: {
+      type: Schema.ObjectId,
+      required: true,
+    },
+    userType: { required: true, type: String, enum: ["Animal", "Human"] },
   },
-  // userType: {
-  //   type: String,
-  //   required: true,
-  // },
-  // follower: {
-  //   type: Schema.ObjectId,
-  //   ref: 'userType',
-  // },
-  followers: [
-    {
-      user: {
-        type: Schema.ObjectId,
-        ref: 'User'
-      }
-    }
-  ]
+  followerDetails: {
+    followerType: {
+      type: String,
+      enum: ["Animal", "Human"],
+    },
+    followerId: Schema.ObjectId,
+  },
 });
 
-const followersModel = mongoose.model('Followers', FollowersSchema);
+const followersModel = mongoose.model("Followers", FollowersSchema);
 module.exports = followersModel;

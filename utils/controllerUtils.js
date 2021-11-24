@@ -1,26 +1,26 @@
-const Comment = require('../models/Comment');
-const Notification = require('../models/Notification');
-const User = require('../models/User');
-const ObjectId = require('mongoose').Types.ObjectId;
-const nodemailer = require('nodemailer');
-const handlebars = require('handlebars');
-const linkify = require('linkifyjs');
-require('linkifyjs/plugins/mention')(linkify);
-const fs = require('fs');
-const ConfirmationToken = require('../models/ConfirmationToken')
-const bcrypt = require('bcrypt');
+const Comment = require("../models/Comment");
+const Notification = require("../models/Notification");
+const User = require("../models/User");
+const ServiceProvider = require("../models/ServiceProvider");
+const ObjectId = require("mongoose").Types.ObjectId;
+const nodemailer = require("nodemailer");
+const handlebars = require("handlebars");
+const linkify = require("linkifyjs");
+require("linkifyjs/plugins/mention")(linkify);
+const fs = require("fs");
+const ConfirmationToken = require("../models/ConfirmationToken");
+const bcrypt = require("bcrypt");
 
-const socketHandler = require('../handlers/socketHandler');
+const socketHandler = require("../handlers/socketHandler");
 
-module.exports.hashPassword = async(password,saltRounds) => {
-  try{
+module.exports.hashPassword = async (password, saltRounds) => {
+  try {
     const hashedPassword = await bcrypt.hash(password, saltRounds);
     return hashedPassword;
-  }
-  catch (err) {
+  } catch (err) {
     return null;
   }
-}
+};
 /**
  * Retrieves a post's comments with a specified offset
  * @function retrieveComments
@@ -47,43 +47,43 @@ module.exports.retrieveComments = async (postId, offset, exclude = 0) => {
             { $limit: 10 },
             {
               $lookup: {
-                from: 'commentreplies',
-                localField: '_id',
-                foreignField: 'parentComment',
-                as: 'commentReplies',
+                from: "commentreplies",
+                localField: "_id",
+                foreignField: "parentComment",
+                as: "commentReplies",
               },
             },
             {
               $lookup: {
-                from: 'commentvotes',
-                localField: '_id',
-                foreignField: 'comment',
-                as: 'commentVotes',
+                from: "commentvotes",
+                localField: "_id",
+                foreignField: "comment",
+                as: "commentVotes",
               },
             },
-            { $unwind: '$commentVotes' },
+            { $unwind: "$commentVotes" },
             {
               $lookup: {
-                from: 'users',
-                localField: 'author',
-                foreignField: '_id',
-                as: 'author',
+                from: "users",
+                localField: "author",
+                foreignField: "_id",
+                as: "author",
               },
             },
-            { $unwind: '$author' },
+            { $unwind: "$author" },
             {
               $addFields: {
-                commentReplies: { $size: '$commentReplies' },
-                commentVotes: '$commentVotes.votes',
+                commentReplies: { $size: "$commentReplies" },
+                commentVotes: "$commentVotes.votes",
               },
             },
             {
               $unset: [
-                'author.password',
-                'author.email',
-                'author.private',
-                'author.bio',
-                'author.bookmarks',
+                "author.password",
+                "author.email",
+                "author.private",
+                "author.bio",
+                "author.bookmarks",
               ],
             },
           ],
@@ -96,11 +96,11 @@ module.exports.retrieveComments = async (postId, offset, exclude = 0) => {
         },
       },
       {
-        $unwind: '$commentCount',
+        $unwind: "$commentCount",
       },
       {
         $addFields: {
-          commentCount: '$commentCount.count',
+          commentCount: "$commentCount.count",
         },
       },
     ]);
@@ -116,8 +116,6 @@ module.exports.retrieveComments = async (postId, offset, exclude = 0) => {
  * @param {string} subject The subject of the email
  * @param {html} template Html to include in the email
  */
-
-
 
 module.exports.sendEmail = async (to, subject, template) => {
   const transporter = nodemailer.createTransport({
@@ -136,12 +134,9 @@ module.exports.sendEmail = async (to, subject, template) => {
       subject,
       html: template,
     });
-  }
-
-  catch (err) {
+  } catch (err) {
     console.log(err);
   }
-  
 };
 
 /**
@@ -157,83 +152,126 @@ module.exports.sendConfirmationEmail = async (
   confirmationToken
 ) => {
   //  if (process.env.NODE_ENV === 'production') {
-    try {
-      const source = fs.readFileSync(
-        'templates/confirmationEmail.html',
-        'utf8'
-      );
-      template = handlebars.compile(source);
-      const html = template({
-        username: username,
-        confirmationUrl: `${process.env.HOME_URL}/confirm/${confirmationToken}`,
-        url: process.env.HOME_URL,
-      });
-      await this.sendEmail(email, 'Confirm your Tamely account', html);
-    } catch (err) {
-      console.log(err);
-    }
+  try {
+    const source = fs.readFileSync("templates/confirmationEmail.html", "utf8");
+    template = handlebars.compile(source);
+    const html = template({
+      username: username,
+      confirmationUrl: `${process.env.HOME_URL}/confirm/${confirmationToken}`,
+      url: process.env.HOME_URL,
+    });
+    await this.sendEmail(email, "Confirm your Tamely account", html);
+  } catch (err) {
+    console.log(err);
+  }
   // }
 };
 
-module.exports.sendOTPEmail = async(username,email,otp) => {
+module.exports.sendOTPEmail = async (username, email, otp) => {
   try {
-    const source = fs.readFileSync(
-      'templates/verifyEmailOtp.html',
-      'utf8'
-    );
+    const source = fs.readFileSync("templates/verifyEmailOtp.html", "utf8");
     template = handlebars.compile(source);
     const html = template({
       username: username,
       url: process.env.HOME_URL,
       otp: otp,
     });
-    await this.sendEmail(email, 'Confirm your Tamely account', html);
-  }
-  catch (err) {
+    await this.sendEmail(email, "Confirm your Tamely account", html);
+  } catch (err) {
     throw new Error(err.message);
   }
-}
+};
 
-module.exports.sendPasswordResetOTP = async (email,current_time,otp) => {
+module.exports.sendPasswordResetOTP = async (
+  email,
+  current_time,
+  otp,
+  type
+) => {
   let user = null;
-    // if (process.env.NODE_ENV === 'production') {
-    try {
-      user = await User.findOne({email})
-      if (!user) throw Error('No user with given email id exists')
+  // if (process.env.NODE_ENV === 'production') {
+  try {
+    if (type && type === "sp") {
+      user = await ServiceProvider.findOne({ email });
+      if (!user) throw Error("No user with given email id exists");
       const source = fs.readFileSync(
-        'templates/passwordResetEmail.html',
-        'utf8'
+        "templates/passwordResetEmail.html",
+        "utf8"
       );
       template = handlebars.compile(source);
       const html = template({
         username: user.username,
         otp: otp,
       });
-      const hashedotp = await this.hashPassword(otp,10);
-      const confirmationTokenDocument = await ConfirmationToken.findOne({user: user._id});
-      if (!confirmationTokenDocument){
+      const hashedotp = await this.hashPassword(otp, 10);
+      const confirmationTokenDocument = await ConfirmationToken.findOne({
+        user: user._id,
+      });
+      if (!confirmationTokenDocument) {
         const confirmationToken = new ConfirmationToken({
           user: user._id,
           resettoken: hashedotp,
           timestampreset: current_time,
         });
         confirmationToken.save();
+      } else {
+        await ConfirmationToken.findOneAndUpdate(
+          { user: user._id },
+          {
+            resettoken: hashedotp,
+            timestampreset: current_time,
+          }
+        );
       }
-      else{
-        await ConfirmationToken.findOneAndUpdate({user: user._id},{
+      await this.sendEmail(
+        user.email,
+        "Reset Your Tamely Account Password",
+        html
+      );
+    } else {
+      user = await User.findOne({ email });
+      if (!user) throw Error("No user with given email id exists");
+      const source = fs.readFileSync(
+        "templates/passwordResetEmail.html",
+        "utf8"
+      );
+      template = handlebars.compile(source);
+      const html = template({
+        username: user.username,
+        otp: otp,
+      });
+      const hashedotp = await this.hashPassword(otp, 10);
+      const confirmationTokenDocument = await ConfirmationToken.findOne({
+        user: user._id,
+      });
+      if (!confirmationTokenDocument) {
+        const confirmationToken = new ConfirmationToken({
+          user: user._id,
           resettoken: hashedotp,
           timestampreset: current_time,
         });
+        confirmationToken.save();
+      } else {
+        await ConfirmationToken.findOneAndUpdate(
+          { user: user._id },
+          {
+            resettoken: hashedotp,
+            timestampreset: current_time,
+          }
+        );
       }
       // await User.findOneAndUpdate({ email: email},{passwordResetTime: current_time});
-      await this.sendEmail(user.email, "Reset Your Tamely Account Password", html);
-    } catch (err) {
-      console.log(err);
+      await this.sendEmail(
+        user.email,
+        "Reset Your Tamely Account Password",
+        html
+      );
     }
+  } catch (err) {
+    console.log(err);
+  }
   // }
-}
-
-
+};
 
 /**
  * Formats a cloudinary thumbnail url with a specified size
@@ -243,10 +281,10 @@ module.exports.sendPasswordResetOTP = async (email,current_time,otp) => {
  * @return {string} Formatted url
  */
 module.exports.formatCloudinaryUrl = (url, size, thumb) => {
-  const splitUrl = url.split('upload/');
+  const splitUrl = url.split("upload/");
   splitUrl[0] += `upload/${
-    size.y && size.z ? `x_${size.x},y_${size.y},` : ''
-  }w_${size.width},h_${size.height}${thumb && ',c_thumb'}/`;
+    size.y && size.z ? `x_${size.x},y_${size.y},` : ""
+  }w_${size.width},h_${size.height}${thumb && ",c_thumb"}/`;
   const formattedUrl = splitUrl[0] + splitUrl[1];
   return formattedUrl;
 };
@@ -276,7 +314,7 @@ module.exports.sendCommentNotification = async (
       const notification = new Notification({
         sender: sender._id,
         receiver,
-        notificationType: 'comment',
+        notificationType: "comment",
         date: Date.now(),
         notificationData: {
           postId,
@@ -315,7 +353,7 @@ module.exports.sendMentionNotification = (req, message, image, post, user) => {
   linkify.find(message).forEach(async (item) => {
     // Making sure a mention notification is not sent to the sender or the poster
     if (
-      item.type === 'mention' &&
+      item.type === "mention" &&
       item.value !== `@${user.username}` &&
       item.value !== `@${post.author.username}` &&
       // Making sure a mentioned user only gets one notification regardless
@@ -325,13 +363,13 @@ module.exports.sendMentionNotification = (req, message, image, post, user) => {
       mentionedUsers.add(item.value);
       // Finding the receiving user's id
       const receiverDocument = await User.findOne({
-        username: item.value.split('@')[1],
+        username: item.value.split("@")[1],
       });
       if (receiverDocument) {
         const notification = new Notification({
           sender: user._id,
           receiver: receiverDocument._id,
-          notificationType: 'mention',
+          notificationType: "mention",
           date: Date.now(),
           notificationData: {
             postId: post._id,
@@ -379,60 +417,60 @@ module.exports.generateUniqueUsername = async (baseUsername) => {
 module.exports.populatePostsPipeline = [
   {
     $lookup: {
-      from: 'users',
-      localField: 'author',
-      foreignField: '_id',
-      as: 'author',
+      from: "users",
+      localField: "author",
+      foreignField: "_id",
+      as: "author",
     },
   },
   {
     $lookup: {
-      from: 'comments',
-      localField: '_id',
-      foreignField: 'post',
-      as: 'comments',
+      from: "comments",
+      localField: "_id",
+      foreignField: "post",
+      as: "comments",
     },
   },
   {
     $lookup: {
-      from: 'commentreplies',
-      localField: 'comments._id',
-      foreignField: 'parentComment',
-      as: 'commentReplies',
+      from: "commentreplies",
+      localField: "comments._id",
+      foreignField: "parentComment",
+      as: "commentReplies",
     },
   },
   {
     $lookup: {
-      from: 'postvotes',
-      localField: '_id',
-      foreignField: 'post',
-      as: 'postVotes',
+      from: "postvotes",
+      localField: "_id",
+      foreignField: "post",
+      as: "postVotes",
     },
   },
   {
-    $unwind: '$postVotes',
+    $unwind: "$postVotes",
   },
   {
-    $unwind: '$author',
+    $unwind: "$author",
   },
   {
     $addFields: {
-      comments: { $size: '$comments' },
-      commentReplies: { $size: '$commentReplies' },
-      postVotes: { $size: '$postVotes.votes' },
+      comments: { $size: "$comments" },
+      commentReplies: { $size: "$commentReplies" },
+      postVotes: { $size: "$postVotes.votes" },
     },
   },
   {
-    $addFields: { comments: { $add: ['$comments', '$commentReplies'] } },
+    $addFields: { comments: { $add: ["$comments", "$commentReplies"] } },
   },
   {
     $unset: [
-      'commentReplies',
-      'author.private',
-      'author.confirmed',
-      'author.githubId',
-      'author.bookmarks',
-      'author.password',
+      "commentReplies",
+      "author.private",
+      "author.confirmed",
+      "author.githubId",
+      "author.bookmarks",
+      "author.password",
     ],
   },
 ];

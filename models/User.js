@@ -1,9 +1,9 @@
-const mongoose = require('mongoose');
-const validator = require('validator');
-const bcrypt = require('bcrypt');
+const mongoose = require("mongoose");
+const validator = require("validator");
+const bcrypt = require("bcrypt");
 const Schema = mongoose.Schema;
 
-const RequestError = require('../errorTypes/RequestError');
+const RequestError = require("../errorTypes/RequestError");
 
 const UserSchema = new Schema({
   email: {
@@ -13,7 +13,7 @@ const UserSchema = new Schema({
     lowercase: true,
     validate: (value) => {
       if (!validator.isEmail(value)) {
-        throw new Error('Invalid email address.');
+        throw new Error("Invalid email address.");
       }
     },
   },
@@ -45,13 +45,13 @@ const UserSchema = new Schema({
     {
       post: {
         type: Schema.ObjectId,
-        ref: 'Post',
+        ref: "Post",
       },
     },
   ],
   githubId: Number,
-  faceBookUserId: Number,
-  googleUserId: Number,
+  faceBookUserId: String,
+  googleUserId: String,
   private: {
     type: Boolean,
     default: false,
@@ -61,38 +61,42 @@ const UserSchema = new Schema({
     default: false,
   },
   passwordResetTime: {
-    type: Number
+    type: Number,
   },
-  pets: [{
-    pet: {
+  pets: [
+    {
+      pet: {
         type: Schema.ObjectId,
-        ref: 'User',
-    },
-    confirmed: {
+        ref: "User",
+      },
+      confirmed: {
         type: Boolean,
         default: false,
+      },
     },
-}],
+  ],
 });
 
-UserSchema.pre('save', function (next) {
-  const saltRounds = 10;
-  // Check if the password has been modified
-  if (this.modifiedPaths().includes('password')) {
-    bcrypt.genSalt(saltRounds, (err, salt) => {
-      if (err) return next(err);
-      bcrypt.hash(this.password, salt, (err, hash) => {
-        if (err) return next(err);
-        this.password = hash;
-        next();
-      });
-    });
-  } else {
-    next();
-  }
-});
+// UserSchema.pre('save', function (next) {
+//   const saltRounds = 10;
+//   // Check if the password has been modified
+//   if (this.modifiedPaths().includes('password')) {
+//     bcrypt.genSalt(saltRounds, (err, salt) => {
+//       if (err) return next(err);
+//       bcrypt.hash(this.password, salt, (err, hash) => {
+//         if (err) return next(err);
+//         this.password = hash;
+//         next();
+//       });
+//     });
+//   } else {
+//     next();
+//   }
+// });
 
-UserSchema.pre('save', async function (next) {
+//------------------------------
+
+UserSchema.pre("save", async function (next) {
   if (this.isNew) {
     try {
       const document = await User.findOne({
@@ -101,17 +105,17 @@ UserSchema.pre('save', async function (next) {
       if (document)
         return next(
           new RequestError(
-            'A user with that email or username already exists.',
+            "A user with that email or username already exists.",
             400
           )
         );
-      await mongoose.model('Followers').create({ user: this._id });
-      await mongoose.model('Following').create({ user: this._id });
+      // await mongoose.model("Followers").create({ user: this._id });
+      // await mongoose.model("Following").create({ user: this._id });
     } catch (err) {
       return next((err.statusCode = 400));
     }
   }
 });
 
-const User = mongoose.model('User', UserSchema);
+const User = mongoose.model("User", UserSchema);
 module.exports = User;

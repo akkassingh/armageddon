@@ -1,17 +1,19 @@
-const User = require('../models/User');
-const Animal = require('../models/Animal');
-const Post = require('../models/Post');
-const Followers = require('../models/Followers');
-const Following = require('../models/Following');
-const ConfirmationToken = require('../models/ConfirmationToken');
-const Notification = require('../models/Notification');
-const socketHandler = require('../handlers/socketHandler');
-const ObjectId = require('mongoose').Types.ObjectId;
-const cloudinary = require('cloudinary').v2;
-const fs = require('fs');
-const crypto = require('crypto');
-const logger = require('../logger/logger');
-const bcrypt = require('bcrypt');
+const User = require("../models/User");
+const Animal = require("../models/Animal");
+const Post = require("../models/Post");
+const ServiceProvider = require("../models/ServiceProvider");
+const PostVote = require("../models/PostVote");
+const Followers = require("../models/Followers");
+const Following = require("../models/Following");
+const ConfirmationToken = require("../models/ConfirmationToken");
+const Notification = require("../models/Notification");
+const socketHandler = require("../handlers/socketHandler");
+const ObjectId = require("mongoose").Types.ObjectId;
+const cloudinary = require("cloudinary").v2;
+const fs = require("fs");
+const crypto = require("crypto");
+const logger = require("../logger/logger");
+const bcrypt = require("bcrypt");
 
 const {
   validateEmail,
@@ -19,8 +21,8 @@ const {
   validateUsername,
   validateBio,
   validateWebsite,
-} = require('../utils/validation');
-const { sendConfirmationEmail } = require('../utils/controllerUtils');
+} = require("../utils/validation");
+const { sendConfirmationEmail } = require("../utils/controllerUtils");
 
 module.exports.retrieveUser = async (req, res, next) => {
   const { username } = req.params;
@@ -28,12 +30,12 @@ module.exports.retrieveUser = async (req, res, next) => {
   try {
     const user = await User.findOne(
       { username },
-      'username fullName avatar bio bookmarks fullName _id website'
+      "username fullName avatar bio bookmarks fullName _id website"
     );
     if (!user) {
       return res
         .status(404)
-        .send({ error: 'Could not find a user with that username.' });
+        .send({ error: "Could not find a user with that username." });
     }
 
     const posts = await Post.aggregate([
@@ -45,33 +47,33 @@ module.exports.retrieveUser = async (req, res, next) => {
             { $limit: 12 },
             {
               $lookup: {
-                from: 'postvotes',
-                localField: '_id',
-                foreignField: 'post',
-                as: 'postvotes',
+                from: "postvotes",
+                localField: "_id",
+                foreignField: "post",
+                as: "postvotes",
               },
             },
             {
               $lookup: {
-                from: 'comments',
-                localField: '_id',
-                foreignField: 'post',
-                as: 'comments',
+                from: "comments",
+                localField: "_id",
+                foreignField: "post",
+                as: "comments",
               },
             },
             {
               $lookup: {
-                from: 'commentreplies',
-                localField: 'comments._id',
-                foreignField: 'parentComment',
-                as: 'commentReplies',
+                from: "commentreplies",
+                localField: "comments._id",
+                foreignField: "parentComment",
+                as: "commentReplies",
               },
             },
             {
-              $unwind: '$postvotes',
+              $unwind: "$postvotes",
             },
             {
-              $addFields: { image: '$thumbnail' },
+              $addFields: { image: "$thumbnail" },
             },
             {
               $project: {
@@ -79,28 +81,28 @@ module.exports.retrieveUser = async (req, res, next) => {
                 followers: true,
                 following: true,
                 comments: {
-                  $sum: [{ $size: '$comments' }, { $size: '$commentReplies' }],
+                  $sum: [{ $size: "$comments" }, { $size: "$commentReplies" }],
                 },
                 image: true,
                 thumbnail: true,
                 filter: true,
                 caption: true,
                 author: true,
-                postVotes: { $size: '$postvotes.votes' },
+                postVotes: { $size: "$postvotes.votes" },
               },
             },
           ],
           postCount: [
             { $match: { author: ObjectId(user._id) } },
-            { $count: 'postCount' },
+            { $count: "postCount" },
           ],
         },
       },
-      { $unwind: '$postCount' },
+      { $unwind: "$postCount" },
       {
         $project: {
           data: true,
-          postCount: '$postCount.postCount',
+          postCount: "$postCount.postCount",
         },
       },
     ]);
@@ -140,44 +142,44 @@ module.exports.retrievePosts = async (req, res, next) => {
       { $limit: 12 },
       {
         $lookup: {
-          from: 'users',
-          localField: 'author',
-          foreignField: '_id',
-          as: 'user',
+          from: "users",
+          localField: "author",
+          foreignField: "_id",
+          as: "user",
         },
       },
-      { $match: { 'user.username': username } },
+      { $match: { "user.username": username } },
       {
         $lookup: {
-          from: 'comments',
-          localField: '_id',
-          foreignField: 'post',
-          as: 'comments',
+          from: "comments",
+          localField: "_id",
+          foreignField: "post",
+          as: "comments",
         },
       },
       {
         $lookup: {
-          from: 'postvotes',
-          localField: '_id',
-          foreignField: 'post',
-          as: 'postVotes',
+          from: "postvotes",
+          localField: "_id",
+          foreignField: "post",
+          as: "postVotes",
         },
       },
-      { $unwind: '$postVotes' },
+      { $unwind: "$postVotes" },
       {
         $project: {
           image: true,
           caption: true,
           date: true,
-          'user.username': true,
-          'user.avatar': true,
-          comments: { $size: '$comments' },
-          postVotes: { $size: '$postVotes.votes' },
+          "user.username": true,
+          "user.avatar": true,
+          comments: { $size: "$comments" },
+          postVotes: { $size: "$postVotes.votes" },
         },
       },
     ]);
     if (posts.length === 0) {
-      return res.status(404).send({ error: 'Could not find any posts.' });
+      return res.status(404).send({ error: "Could not find any posts." });
     }
     return res.send(posts);
   } catch (err) {
@@ -194,19 +196,19 @@ module.exports.bookmarkPost = async (req, res, next) => {
     if (!post) {
       return res
         .status(404)
-        .send({ error: 'Could not find a post with that id.' });
+        .send({ error: "Could not find a post with that id." });
     }
 
     const userBookmarkUpdate = await User.updateOne(
       {
         _id: user._id,
-        'bookmarks.post': { $ne: postId },
+        "bookmarks.post": { $ne: postId },
       },
       { $push: { bookmarks: { post: postId } } }
     );
     if (!userBookmarkUpdate.nModified) {
       if (!userBookmarkUpdate.ok) {
-        return res.status(500).send({ error: 'Could not bookmark the post.' });
+        return res.status(500).send({ error: "Could not bookmark the post." });
       }
       // The above query did not modify anything meaning that the user has already bookmarked the post
       // Remove the bookmark instead
@@ -215,11 +217,11 @@ module.exports.bookmarkPost = async (req, res, next) => {
         { $pull: { bookmarks: { post: postId } } }
       );
       if (!userRemoveBookmarkUpdate.nModified) {
-        return res.status(500).send({ error: 'Could not bookmark the post.' });
+        return res.status(500).send({ error: "Could not bookmark the post." });
       }
-      return res.send({ success: true, operation: 'remove' });
+      return res.send({ success: true, operation: "remove" });
     }
-    return res.send({ success: true, operation: 'add' });
+    return res.send({ success: true, operation: "add" });
   } catch (err) {
     next(err);
   }
@@ -234,16 +236,16 @@ module.exports.followUser = async (req, res, next) => {
     if (!userToFollow) {
       return res
         .status(400)
-        .send({ error: 'Could not find a user with that id.' });
+        .send({ error: "Could not find a user with that id." });
     }
 
     const followerUpdate = await Followers.updateOne(
-      { user: userId, 'followers.user': { $ne: user._id } },
+      { user: userId, "followers.user": { $ne: user._id } },
       { $push: { followers: { user: user._id } } }
     );
 
     const followingUpdate = await Following.updateOne(
-      { user: user._id, 'following.user': { $ne: userId } },
+      { user: user._id, "following.user": { $ne: userId } },
       { $push: { following: { user: userId } } }
     );
 
@@ -251,7 +253,7 @@ module.exports.followUser = async (req, res, next) => {
       if (!followerUpdate.ok || !followingUpdate.ok) {
         return res
           .status(500)
-          .send({ error: 'Could not follow user please try again later.' });
+          .send({ error: "Could not follow user please try again later." });
       }
       // Nothing was modified in the above query meaning that the user is already following
       // Unfollow instead
@@ -269,27 +271,27 @@ module.exports.followUser = async (req, res, next) => {
       if (!followerUnfollowUpdate.ok || !followingUnfollowUpdate.ok) {
         return res
           .status(500)
-          .send({ error: 'Could not follow user please try again later.' });
+          .send({ error: "Could not follow user please try again later." });
       }
-      return res.send({ success: true, operation: 'unfollow' });
+      return res.send({ success: true, operation: "unfollow" });
     }
 
     const notification = new Notification({
-      notificationType: 'follow',
+      notificationType: "follow",
       sender: user._id,
       receiver: userId,
       date: Date.now(),
     });
 
-    const sender = await User.findById(user._id, 'username avatar');
+    const sender = await User.findById(user._id, "username avatar");
     const isFollowing = await Following.findOne({
       user: userId,
-      'following.user': user._id,
+      "following.user": user._id,
     });
 
     await notification.save();
     socketHandler.sendNotification(req, {
-      notificationType: 'follow',
+      notificationType: "follow",
       sender: {
         _id: sender._id,
         username: sender.username,
@@ -300,7 +302,7 @@ module.exports.followUser = async (req, res, next) => {
       isFollowing: !!isFollowing,
     });
 
-    res.send({ success: true, operation: 'follow' });
+    res.send({ success: true, operation: "follow" });
   } catch (err) {
     next(err);
   }
@@ -323,16 +325,16 @@ const retrieveRelatedUsers = async (user, userId, offset, followers) => {
     },
     {
       $lookup: {
-        from: 'users',
+        from: "users",
         let: followers
-          ? { userId: '$followers.user' }
-          : { userId: '$following.user' },
+          ? { userId: "$followers.user" }
+          : { userId: "$following.user" },
         pipeline: [
           {
             $match: {
               // Using the $in operator instead of the $eq
               // operator because we can't coerce the types
-              $expr: { $in: ['$_id', '$$userId'] },
+              $expr: { $in: ["$_id", "$$userId"] },
             },
           },
           {
@@ -342,23 +344,23 @@ const retrieveRelatedUsers = async (user, userId, offset, followers) => {
             $limit: 10,
           },
         ],
-        as: 'users',
+        as: "users",
       },
     },
     {
       $lookup: {
-        from: 'followers',
-        localField: 'users._id',
-        foreignField: 'user',
-        as: 'userFollowers',
+        from: "followers",
+        localField: "users._id",
+        foreignField: "user",
+        as: "userFollowers",
       },
     },
     {
       $project: {
-        'users._id': true,
-        'users.username': true,
-        'users.avatar': true,
-        'users.fullName': true,
+        "users._id": true,
+        "users.username": true,
+        "users.avatar": true,
+        "users.fullName": true,
         userFollowers: true,
       },
     },
@@ -417,30 +419,30 @@ module.exports.searchUsers = async (req, res, next) => {
   if (!username) {
     return res
       .status(400)
-      .send({ error: 'Please provide a user to search for.' });
+      .send({ error: "Please provide a user to search for." });
   }
 
   try {
     const users = await User.aggregate([
       {
         $match: {
-          username: { $regex: new RegExp(username), $options: 'i' },
+          username: { $regex: new RegExp(username), $options: "i" },
         },
       },
       {
         $lookup: {
-          from: 'followers',
-          localField: '_id',
-          foreignField: 'user',
-          as: 'followers',
+          from: "followers",
+          localField: "_id",
+          foreignField: "user",
+          as: "followers",
         },
       },
       {
-        $unwind: '$followers',
+        $unwind: "$followers",
       },
       {
         $addFields: {
-          followersCount: { $size: '$followers.followers' },
+          followersCount: { $size: "$followers.followers" },
         },
       },
       {
@@ -464,7 +466,7 @@ module.exports.searchUsers = async (req, res, next) => {
     if (users.length === 0) {
       return res
         .status(404)
-        .send({ error: 'Could not find any users matching the criteria.' });
+        .send({ error: "Could not find any users matching the criteria." });
     }
     return res.send(users);
   } catch (err) {
@@ -473,41 +475,71 @@ module.exports.searchUsers = async (req, res, next) => {
 };
 
 module.exports.confirmUser = async (req, res, next) => {
-  logger.info('***CONFIRM USER CALLED TO VERIFY OTP***');
-  const { otp } = req.body;
+  logger.info("***CONFIRM USER CALLED TO VERIFY OTP***");
+  const { otp, type } = req.body;
   const user = res.locals.user;
 
   try {
-    const confirmationToken = await ConfirmationToken.findOne({user: user._id});
-    if (!confirmationToken || Date.now() > confirmationToken.timestamp + 900000) {
-      return res
-        .status(404)
-        .send({ error: 'Invalid or expired confirmation link.' });
-    }
-    const token = confirmationToken.token
-    const compareotp = await bcrypt.compare(otp,token);
-    if (!compareotp){
-      return res.status(401).send({
-        error:
-        'The credentials you provided are incorrect, please try again.',
+    if (type && type == "sp") {
+      const confirmationToken = await ConfirmationToken.findOne({
+        user: user._id,
+      });
+      if (
+        !confirmationToken ||
+        Date.now() > confirmationToken.timestamp + 900000
+      ) {
+        return res
+          .status(404)
+          .send({ error: "Invalid or expired confirmation link." });
+      }
+      const token = confirmationToken.token;
+      const compareotp = await bcrypt.compare(otp, token);
+      if (!compareotp) {
+        return res.status(401).send({
+          error:
+            "The credentials you provided are incorrect, please try again.",
         });
-    }
+      }
+      await ConfirmationToken.deleteOne({ token, user: user._id });
+      await ServiceProvider.updateOne({ _id: user._id }, { confirmed: true });
+      return res.status(200).send({ message: "verification successful" });
+    } else {
+      const confirmationToken = await ConfirmationToken.findOne({
+        user: user._id,
+      });
+      if (
+        !confirmationToken ||
+        Date.now() > confirmationToken.timestamp + 900000
+      ) {
+        return res
+          .status(404)
+          .send({ error: "Invalid or expired confirmation link." });
+      }
+      const token = confirmationToken.token;
+      const compareotp = await bcrypt.compare(otp, token);
+      if (!compareotp) {
+        return res.status(401).send({
+          error:
+            "The credentials you provided are incorrect, please try again.",
+        });
+      }
       await ConfirmationToken.deleteOne({ token, user: user._id });
       await User.updateOne({ _id: user._id }, { confirmed: true });
-      return res.status(200).send({message:'verification successful'});    
-  } 
-  catch (err) {
+      return res.status(200).send({ message: "verification successful" });
+    }
+  } catch (err) {
     next(err);
   }
 };
 
 module.exports.changeAvatar = async (req, res, next) => {
   const user = res.locals.user;
+  const { type } = req.body;
 
   if (!req.file) {
     return res
       .status(400)
-      .send({ error: 'Please provide the image to upload.' });
+      .send({ error: "Please provide the image to upload." });
   }
 
   cloudinary.config({
@@ -520,21 +552,34 @@ module.exports.changeAvatar = async (req, res, next) => {
     const response = await cloudinary.uploader.upload(req.file.path, {
       width: 200,
       height: 200,
-      gravity: 'face',
-      crop: 'thumb',
+      gravity: "face",
+      crop: "thumb",
     });
     fs.unlinkSync(req.file.path);
 
-    const avatarUpdate = await User.updateOne(
-      { _id: user._id },
-      { avatar: response.secure_url }
-    );
+    if (type && type == "sp") {
+      const avatarUpdate = await ServiceProvider.updateOne(
+        { _id: user._id },
+        { avatar: response.secure_url }
+      );
 
-    if (!avatarUpdate.nModified) {
-      throw new Error('Could not update user avatar.');
+      if (!avatarUpdate.nModified) {
+        throw new Error("Could not update user avatar.");
+      }
+
+      return res.send({ avatar: response.secure_url });
+    } else {
+      const avatarUpdate = await User.updateOne(
+        { _id: user._id },
+        { avatar: response.secure_url }
+      );
+
+      if (!avatarUpdate.nModified) {
+        throw new Error("Could not update user avatar.");
+      }
+
+      return res.send({ avatar: response.secure_url });
     }
-
-    return res.send({ avatar: response.secure_url });
   } catch (err) {
     logger.error(`error while changing Avatar::::::: ${JSON.stringify(err)}`);
     next(err);
@@ -547,7 +592,7 @@ module.exports.removeAvatar = async (req, res, next) => {
   try {
     const avatarUpdate = await User.updateOne(
       { _id: user._id },
-      { $unset: { avatar: '' } }
+      { $unset: { avatar: "" } }
     );
     if (!avatarUpdate.nModified) {
       next(err);
@@ -562,80 +607,181 @@ module.exports.updateProfile = async (req, res, next) => {
   const user = res.locals.user;
   const { fullName, username, website, bio, email } = req.body;
   let confirmationToken = undefined;
+  // console.log(req.body.bio+'looo')
+  let type=req.body.type;
   let updatedFields = {};
   try {
+    if(type && type == "sp"){
+      const userDocument = await ServiceProvider.findOne({ _id: user._id });
+
+      if (fullName) {
+        const fullNameError = validateFullName(fullName);
+        if (fullNameError) return res.status(400).send({ error: fullNameError });
+        userDocument.fullName = fullName;
+        updatedFields.fullName = fullName;
+      }
+  
+      if (username) {
+        const usernameError = validateUsername(username);
+        if (usernameError) return res.status(400).send({ error: usernameError });
+        // Make sure the username to update to is not the current one
+        if (username !== user.username) {
+          const existingUser = await ServiceProvider.findOne({ username });
+          if (existingUser)
+            return res
+              .status(400)
+              .send({ error: "Please choose another username." });
+          userDocument.userName = username;
+          updatedFields.userName = username;
+        }
+      }
+  
+      if (website) {
+        const websiteError = validateWebsite(website);
+        if (websiteError) return res.status(400).send({ error: websiteError });
+        if (!website.includes("http://") && !website.includes("https://")) {
+          userDocument.website = "https://" + website;
+          updatedFields.website = "https://" + website;
+        } else {
+          userDocument.website = website;
+          updatedFields.website = website;
+        }
+      }
+      if(req.body.bio==""){
+        userDocument.bio = "";
+        updatedFields.bio = "";   
+       }
+      if (bio) {
+        const bioError = validateBio(bio);
+        if (bioError) return res.status(400).send({ error: bioError });
+        userDocument.bio = bio;
+        updatedFields.bio = bio;
+      }
+  
+      if (email) {
+        const emailError = validateEmail(email);
+        if (emailError) return res.status(400).send({ error: emailError });
+        // Make sure the email to update to is not the current one
+        if (email !== user.email) {
+          const existingUser = await ServiceProvider.findOne({ email});
+          if (existingUser)
+            return res
+              .status(400)
+              .send({ error: "Please choose another email." });
+          confirmationToken = new ConfirmationToken({
+            user: user._id,
+            token: crypto.randomBytes(20).toString("hex"),
+          });
+          await confirmationToken.save();
+          userDocument.email = email;
+          userDocument.confirmed = false;
+          updatedFields = { ...updatedFields, email, confirmed: false };
+        }
+      }
+      const updatedUser = await userDocument.save();
+      // console.log(userDocument)
+      res.send(updatedFields);
+      if (email && email !== user.email) {
+        sendConfirmationEmail(
+          updatedUser.username,
+          updatedUser.email,
+          confirmationToken.token
+        );
+      }
+    }
+    else {    
     const userDocument = await User.findOne({ _id: user._id });
 
-    if (fullName) {
-      const fullNameError = validateFullName(fullName);
-      if (fullNameError) return res.status(400).send({ error: fullNameError });
-      userDocument.fullName = fullName;
-      updatedFields.fullName = fullName;
-    }
+      if (fullName) {
+        const fullNameError = validateFullName(fullName);
+        if (fullNameError) return res.status(400).send({ error: fullNameError });
+        userDocument.fullName = fullName;
+        updatedFields.fullName = fullName;
+      }
 
-    if (username) {
-      const usernameError = validateUsername(username);
-      if (usernameError) return res.status(400).send({ error: usernameError });
-      // Make sure the username to update to is not the current one
-      if (username !== user.username) {
-        const existingUser = await User.findOne({ username });
-        if (existingUser)
-          return res
-            .status(400)
-            .send({ error: 'Please choose another username.' });
-        userDocument.username = username;
-        updatedFields.username = username;
+      if (username) {
+        const usernameError = validateUsername(username);
+        if (usernameError) return res.status(400).send({ error: usernameError });
+        // Make sure the username to update to is not the current one
+        if (username !== user.username) {
+          const existingUser = await User.findOne({ username });
+          if (existingUser)
+            return res
+              .status(400)
+              .send({ error: "Please choose another username." });
+          userDocument.username = username;
+          updatedFields.username = username;
+        }
+      }
+
+      if (website) {
+        const websiteError = validateWebsite(website);
+        if (websiteError) return res.status(400).send({ error: websiteError });
+        if (!website.includes("http://") && !website.includes("https://")) {
+          userDocument.website = "https://" + website;
+          updatedFields.website = "https://" + website;
+        } else {
+          userDocument.website = website;
+          updatedFields.website = website;
+        }
+      }
+      if(req.body.bio==""){
+        userDocument.bio = "";
+        updatedFields.bio = "";   
+      }
+      if (bio) {
+        const bioError = validateBio(bio);
+        if (bioError) return res.status(400).send({ error: bioError });
+        userDocument.bio = bio;
+        updatedFields.bio = bio;
+      }
+
+      if (email) {
+        const emailError = validateEmail(email);
+        if (emailError) return res.status(400).send({ error: emailError });
+        // Make sure the email to update to is not the current one
+        if (email !== user.email) {
+          const existingUser = await User.findOne({ email});
+          if (existingUser)
+            return res
+              .status(400)
+              .send({ error: "Please choose another email." });
+          confirmationToken = new ConfirmationToken({
+            user: user._id,
+            token: crypto.randomBytes(20).toString("hex"),
+          });
+          await confirmationToken.save();
+          userDocument.email = email;
+          userDocument.confirmed = false;
+          updatedFields = { ...updatedFields, email, confirmed: false };
+        }
+      }
+      const updatedUser = await userDocument.save();
+      // console.log(userDocument)
+      res.send(updatedFields);
+      if (email && email !== user.email) {
+        sendConfirmationEmail(
+          updatedUser.username,
+          updatedUser.email,
+          confirmationToken.token
+        );
       }
     }
+  } 
+  catch (err) {
+    next(err);
+  }
+};
 
-    if (website) {
-      const websiteError = validateWebsite(website);
-      if (websiteError) return res.status(400).send({ error: websiteError });
-      if (!website.includes('http://') && !website.includes('https://')) {
-        userDocument.website = 'https://' + website;
-        updatedFields.website = 'https://' + website;
-      } else {
-        userDocument.website = website;
-        updatedFields.website = website;
-      }
-    }
-
-    if (bio) {
-      const bioError = validateBio(bio);
-      if (bioError) return res.status(400).send({ error: bioError });
-      userDocument.bio = bio;
-      updatedFields.bio = bio;
-    }
-
-    if (email) {
-      const emailError = validateEmail(email);
-      if (emailError) return res.status(400).send({ error: emailError });
-      // Make sure the email to update to is not the current one
-      if (email !== user.email) {
-        const existingUser = await User.findOne({ email });
-        if (existingUser)
-          return res
-            .status(400)
-            .send({ error: 'Please choose another email.' });
-        confirmationToken = new ConfirmationToken({
-          user: user._id,
-          token: crypto.randomBytes(20).toString('hex'),
-        });
-        await confirmationToken.save();
-        userDocument.email = email;
-        userDocument.confirmed = false;
-        updatedFields = { ...updatedFields, email, confirmed: false };
-      }
-    }
+module.exports.updateBioAndAvatar = async (req, res, next) => {
+  const user = res.locals.user;
+  const { bio, avatar } = req.body;
+  try {
+    const userDocument = await User.findOne({ _id: user._id });
+    userDocument.bio = bio;
+    userDocument.avatar = avatar;
     const updatedUser = await userDocument.save();
-    res.send(updatedFields);
-    if (email && email !== user.email) {
-      sendConfirmationEmail(
-        updatedUser.username,
-        updatedUser.email,
-        confirmationToken.token
-      );
-    }
+    res.send({ success: true });
   } catch (err) {
     next(err);
   }
@@ -651,21 +797,21 @@ module.exports.retrieveSuggestedUsers = async (req, res, next) => {
       },
       {
         $lookup: {
-          from: 'followers',
-          localField: '_id',
-          foreignField: 'user',
-          as: 'followers',
+          from: "followers",
+          localField: "_id",
+          foreignField: "user",
+          as: "followers",
         },
       },
       {
         $lookup: {
-          from: 'posts',
-          let: { userId: '$_id' },
+          from: "posts",
+          let: { userId: "$_id" },
           pipeline: [
             {
               $match: {
                 $expr: {
-                  $eq: ['$author', '$$userId'],
+                  $eq: ["$author", "$$userId"],
                 },
               },
             },
@@ -676,11 +822,11 @@ module.exports.retrieveSuggestedUsers = async (req, res, next) => {
               $limit: 3,
             },
           ],
-          as: 'posts',
+          as: "posts",
         },
       },
       {
-        $unwind: '$followers',
+        $unwind: "$followers",
       },
       {
         $project: {
@@ -688,7 +834,7 @@ module.exports.retrieveSuggestedUsers = async (req, res, next) => {
           fullName: true,
           email: true,
           avatar: true,
-          isFollowing: { $in: [user._id, '$followers.followers.user'] },
+          isFollowing: { $in: [user._id, "$followers.followers.user"] },
           posts: true,
         },
       },
@@ -702,7 +848,7 @@ module.exports.retrieveSuggestedUsers = async (req, res, next) => {
         $sort: { posts: -1 },
       },
       {
-        $unset: ['isFollowing'],
+        $unset: ["isFollowing"],
       },
     ]);
     res.send(users);
@@ -712,39 +858,50 @@ module.exports.retrieveSuggestedUsers = async (req, res, next) => {
 };
 
 module.exports.isUsernameAvaialble = async (req, res, next) => {
-  logger.info('****Checking if given username exists or not***')
+  logger.info("****Checking if given username exists or not***");
+  const type = req.body.type ? req.body.type : req.query.type;
   const user = res.locals.user;
   const username = req.params.username;
   let existingUser = null;
-  try{
-    existingUser = await User.findOne({username});
-    if (!existingUser || user.username === username) {
-      res.status(200).send({"isAvailable":true});  
+  try {
+    if (type && type == "sp") {
+      existingUser = await ServiceProvider.findOne({ username });
+      if (!existingUser || user.username === username) {
+        res.status(200).send({ isAvailable: true });
+      } else {
+        res.status(403).send({ isAvailable: false });
+      }
+    } else {
+      existingUser = await User.findOne({ username });
+      if (!existingUser || user.username === username) {
+        res.status(200).send({ isAvailable: true });
+      } else {
+        res.status(403).send({ isAvailable: false });
+      }
     }
-    else{
-      res.status(403).send({"isAvailable":false})
-    }
-  }
-  catch (err) {
+  } catch (err) {
     next(err);
   }
-}
+};
 
 module.exports.becomeGuardian = async (req, res, next) => {
   const user = res.locals.user;
-  const {idPet} = req.body;
-  try{
+  const { idPet } = req.body;
+  try {
     const animal = await Animal.findById(idPet);
-    if (!animal) return res.status(404).send({error: 'No such pet exists!'})
-    const found = user.pets.findIndex(function(ele,index) {
+    if (!animal) return res.status(404).send({ error: "No such pet exists!" });
+    const found = user.pets.findIndex(function (ele, index) {
       if (ele.user == idUser) return true;
-    })
-    if (found!=-1) {
+    });
+    if (found != -1) {
       if (user.pets[found].confirmed) {
-        return res.status(403).send({error: `You are already guardian of ${animal.name}`})
-      }
-      else{
-        return res.status(403).send({error: `You have already requested to become guardian of ${animal.name}!`})
+        return res
+          .status(403)
+          .send({ error: `You are already guardian of ${animal.name}` });
+      } else {
+        return res.status(403).send({
+          error: `You have already requested to become guardian of ${animal.name}!`,
+        });
       }
     }
     const petObject = {
@@ -754,13 +911,160 @@ module.exports.becomeGuardian = async (req, res, next) => {
     const userObject = {
       user: user._id,
       confirmed: false,
-    }
-    await User.updateOne({_id: user._id}, {$push: {pets: petObject}});
-    await Animal.updateOne({_id: animal._id}, {$push: {guardians: userObject}});
-    return res.status(201).send({message: `Request has been sent to ${animal.name} successfully!`})
-  }
-  catch (err){
+    };
+    await User.updateOne({ _id: user._id }, { $push: { pets: petObject } });
+    await Animal.updateOne(
+      { _id: animal._id },
+      { $push: { guardians: userObject } }
+    );
+    return res.status(201).send({
+      message: `Request has been sent to ${animal.name} successfully!`,
+    });
+  } catch (err) {
     logger.info(err);
-    res.status(400).send({error: err});
+    res.status(400).send({ error: err });
   }
-}
+};
+
+module.exports.getUserDetails = async (req, res, next) => {
+  const user = res.locals.user;
+  const { idPet } = req.body;
+  try {
+    const user_details = await User.findById(user._id);
+    if (!user_details)
+      return res.status(404).send({ error: "No such user exists!" });
+
+    const animal_details = await Animal.find({ "guardians.user": user._id });
+    let newAnimalArr = [];
+    if (animal_details.length > 0) {
+      for (let a1 of animal_details) {
+        const tempObj = a1.toObject();
+        const followersCount = await Followers.aggregate([
+          {
+            $match: { "user.id": ObjectId(a1._id) },
+          },
+          {
+            $count: "totalFollowers",
+          },
+        ]);
+
+        let totalFollowers =
+          followersCount.length == 0 ? 0 : followersCount[0].totalFollowers;
+        tempObj.totalFollowers = totalFollowers;
+
+        const followingCount = await Following.aggregate([
+          {
+            $match: { "user.id": ObjectId(a1._id) },
+          },
+          {
+            $count: "totalFollowing",
+          },
+        ]);
+
+        let totalFollowings =
+          followingCount.length == 0 ? 0 : followingCount[0].totalFollowing;
+        tempObj.totalFollowings = totalFollowings;
+
+        const getPosts = await Post.find({
+          "postOwnerDetails.postOwnerId": a1._id,
+        });
+
+        let totalLikes = 0;
+        let totalPosts = 0;
+        if (getPosts.length > 0) {
+          totalPosts = getPosts.length;
+          for (let p1 of getPosts) {
+            const getLikes = await PostVote.aggregate([
+              {
+                $match: { post: ObjectId(p1._id) },
+              },
+              {
+                $count: "totalLikes",
+              },
+            ]);
+            totalLikes +=
+              getLikes.length == 0 ? 0 : Number(getLikes[0].totalLikes);
+          }
+        }
+        tempObj.totalLikes = totalLikes;
+        tempObj.totalPosts = totalPosts;
+        newAnimalArr.push(tempObj);
+      }
+    }
+
+    const followersCount = await Followers.aggregate([
+      {
+        $match: { "user.id": user._id },
+      },
+      {
+        $count: "totalFollowers",
+      },
+    ]);
+
+    let totalFollowers =
+      followersCount.length == 0 ? 0 : followersCount[0].totalFollowers;
+
+    const followingCount = await Following.aggregate([
+      {
+        $match: { "user.id": user._id },
+      },
+      {
+        $count: "totalFollowing",
+      },
+    ]);
+
+    let totalFollowings =
+      followingCount.length == 0 ? 0 : followingCount[0].totalFollowing;
+
+    const getPosts = await Post.find({
+      "postOwnerDetails.postOwnerId": user._id.toString(),
+    });
+
+    let totalLikes = 0;
+    let totalPosts = 0;
+    if (getPosts.length > 0) {
+      totalPosts = getPosts.length;
+      for (let p1 of getPosts) {
+        const getLikes = await PostVote.aggregate([
+          {
+            $match: { post: ObjectId(p1._id) },
+          },
+          {
+            $count: "totalLikes",
+          },
+        ]);
+        totalLikes += getLikes.length == 0 ? 0 : Number(getLikes[0].totalLikes);
+      }
+    }
+
+    return res.status(200).json({
+      user_details,
+      newAnimalArr,
+      totalFollowers,
+      totalFollowings,
+      totalLikes,
+      totalPosts,
+    });
+  } catch (err) {
+    logger.info(err);
+    res.status(400).send({ error: err });
+  }
+};
+
+module.exports.petanduserdetails = async (req, res, next) => {
+  const user = res.locals.user;
+  const { idPet } = req.body;
+  try {
+    const animal = await Animal.findById(idPet);
+    if (!animal) return res.status(404).send({ error: "No such pet exists!" });
+
+    const user_details = await User.findById(user);
+    if (!user_details)
+      return res.status(404).send({ error: "No such user exists!" });
+
+    return res.status(200).json(user_details, animal);
+  } catch (err) {
+    logger.info(err);
+    res.status(400).send({ error: err });
+  }
+};
