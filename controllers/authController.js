@@ -667,7 +667,7 @@ module.exports.facebookLoginAuthentication = async (req, res, next) => {
         email: primaryEmail,
         fullName: fbUser.data.name,
         // username: fbUser.data.login ? fbUser.data.login : fbUser.data.first_name+fbUser.data.last_name.toLowerCase(),
-        userName: await generateUniqueUsername(
+        username: await generateUniqueUsername(
           fbUser.data.first_name + fbUser.data.last_name.toLowerCase()
         ),
         confirmed: true,
@@ -878,7 +878,7 @@ module.exports.googleLoginAuthentication = async (req, res, next) => {
       const user = new ServiceProvider({
         email: primaryEmail,
         fullName: googleUser.email.name,
-        userName: await generateUniqueUsername(googleUser.email.split("@")[0]),
+        username: await generateUniqueUsername(googleUser.email.split("@")[0]),
         googleUserId: googleUserId,
         confirmed: true,
       });
@@ -1404,3 +1404,6 @@ module.exports.resendOTP = async (req, res, next) => {
     next(err);
   }
 };
+
+
+
