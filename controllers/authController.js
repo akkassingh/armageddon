@@ -819,6 +819,7 @@ module.exports.googleLoginAuthentication = async (req, res, next) => {
       );
       logger.info("googleUser is ", JSON.stringify(googleUserResponse.data));
       googleUser = googleUserResponse.data;
+      console.log(googleUser);
       const primaryEmail = googleUser.email;
       const googleUserId = googleUser.id;
       const userDocument = await ServiceProvider.findOne({ googleUserId });
@@ -828,7 +829,7 @@ module.exports.googleLoginAuthentication = async (req, res, next) => {
         if (userDocument.avatar) {
           isNewUser = false;
         }
-        await userDocument.findByIdAndUpdate(
+        await ServiceProvider.findByIdAndUpdate(
           { _id: userDocument._id },
           { confirmed: true }
         );
@@ -851,22 +852,19 @@ module.exports.googleLoginAuthentication = async (req, res, next) => {
       });
 
       logger.info("existingUser is ", JSON.stringify(existingUser));
-
+      
       if (existingUser) {
         logger.info("User Exists!!!!");
         if (existingUser.email === primaryEmail) {
           let isNewUser = true;
           if (existingUser.avatar) {
             isNewUser = false;
-          }
-
-          res.send({
+          }          
+          res.status(200).send({
             user: {
-              _id: userDocument._id,
-              email: userDocument.email,
-              username: userDocument.username,
-              avatar: userDocument.avatar,
-              bookmarks: userDocument.bookmarks,
+              _id: existingUser._id,
+              email: existingUser.email,
+              username: existingUser.username,
             },
             isNewUser,
             confirmed: true,
@@ -884,13 +882,11 @@ module.exports.googleLoginAuthentication = async (req, res, next) => {
       });
 
       await user.save();
-      return res.send({
+      return res.status(201).send({
         user: {
           _id: user._id,
           email: user.email,
           username: user.username,
-          avatar: user.avatar,
-          bookmarks: user.bookmarks,
         },
         isNewUser: true,
         confirmed: true,
@@ -919,11 +915,11 @@ module.exports.googleLoginAuthentication = async (req, res, next) => {
         if (userDocument.avatar) {
           isNewUser = false;
         }
-        await userDocument.findByIdAndUpdate(
+        await User.findByIdAndUpdate(
           { _id: userDocument._id },
           { confirmed: true }
         );
-        return res.send({
+        return res.status(200).send({
           user: {
             _id: userDocument._id,
             email: userDocument.email,
@@ -948,13 +944,13 @@ module.exports.googleLoginAuthentication = async (req, res, next) => {
             isNewUser = false;
           }
 
-          res.send({
+          res.status(200).send({
             user: {
-              _id: userDocument._id,
-              email: userDocument.email,
-              username: userDocument.username,
-              avatar: userDocument.avatar,
-              bookmarks: userDocument.bookmarks,
+              _id: existingUser._id,
+              email: existingUser.email,
+              username: existingUser.username,
+              avatar: existingUser.avatar,
+              bookmarks: existingUser.bookmarks,
             },
             isNewUser,
             confirmed: true,
@@ -972,7 +968,7 @@ module.exports.googleLoginAuthentication = async (req, res, next) => {
       });
 
       await user.save();
-      return res.send({
+      return res.status(201).send({
         user: {
           _id: user._id,
           email: user.email,
