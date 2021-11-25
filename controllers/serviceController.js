@@ -418,6 +418,7 @@ module.exports.getAppointmentDetails = async (req, res, next) => {
           }
         }
         else{
+          
         await ServiceAppointment.findByIdAndUpdate(     
           { _id: req.body.appointmentId },{serviceStatus:1});
           serviceList.serviceStatus=1;
