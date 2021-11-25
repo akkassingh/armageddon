@@ -40,7 +40,7 @@ module.exports.getServiceProviderProfile = async (req, res, next) => {
   try {
     // let servicesList = await ServiceType.find();
     let serviceList = await ServiceProvider.findById({
-      _id: res.locals.user._id},'fullName userName bio website avatar');
+      _id: res.locals.user._id},'fullName username bio website avatar');
     // let count=await ServiceAppointment.find({ServiceProvider: res.locals.user._id})
 
     return res.status(201).json({ services: serviceList});
@@ -309,7 +309,7 @@ module.exports.getmyactiveAppointments = async (req, res, next) => {
     let serviceList = await ServiceAppointment.find({
       ServiceProvider: res.locals.user._id,
       bookingStatus:{ $lte:1}
-    }).populate('bookingDetails','package run1 run2 startDate dayOff').populate('petDetails', 'name username');     
+    }).populate('bookingDetails','package run1 run2 startDate dayOff').populate('petDetails', 'name username').populate('User','fullName username avatar');     
     return res.status(200).json({serviceList:serviceList});
   } catch (err) {
     console.log(err);
@@ -322,7 +322,7 @@ module.exports.getmypastAppointments = async (req, res, next) => {
     let serviceList = await ServiceAppointment.find({
       ServiceProvider: res.locals.user._id,
       bookingStatus:{ $gte:2} //recieved=0,accepted(confirmed=1).rejected(cancelled)=2,completed=3
-    }).populate('bookingDetails','package run1 run2').populate('petDetails', 'name username');     
+    }).populate('bookingDetails','package run1 run2').populate('petDetails', 'name username').populate('User','fullName username avatar');     ;     
     return res.status(200).json({serviceList:serviceList});
   } catch (err) {
     console.log(err);
@@ -404,7 +404,7 @@ module.exports.changeRunstatus = async (req, res, next) => {
 module.exports.getAppointmentDetails = async (req, res, next) => {
   try {
     let serviceList = await ServiceAppointment.findById(     
-      { _id: req.body.appointmentId }).populate('bookingDetails').populate('petDetails');
+      { _id: req.body.appointmentId }).populate('bookingDetails').populate('petDetails').populate('User','fullName username avatar');     
       console.log(serviceList)
       let count=serviceList.bookingDetails.runDetails.length;
       if(serviceList.bookingDetails.runDetails[count-1].run1Status){

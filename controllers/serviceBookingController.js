@@ -222,7 +222,7 @@ module.exports.getmyactiveAppointments = async (req, res, next) => {
     let serviceList = await ServiceAppointment.find({
       User: res.locals.user._id,
       bookingStatus:1
-    }).populate('bookingDetails','package run1 run2 startDate dayOff').populate('petDetails', 'name username');     
+    }).populate('bookingDetails','package run1 run2 startDate dayOff').populate('petDetails', 'name username').populate('ServiceProvider','fullName username avatar');     
     return res.status(200).json({serviceList:serviceList});
   } catch (err) {
     console.log(err);
@@ -236,7 +236,7 @@ module.exports.getmypastAppointments = async (req, res, next) => {
     let serviceList = await ServiceAppointment.find({
       User: res.locals.user._id,
       bookingStatus:{ $gte:3} //recieved=0,accepted(confirmed=1).rejected(cancelled)=2,completed=3
-    }).populate('bookingDetails','package run1 run2').populate('petDetails', 'name username');     
+    }).populate('bookingDetails','package run1 run2').populate('petDetails', 'name username').populate('ServiceProvider','fullName username avatar');          
     return res.status(200).json({serviceList:serviceList});
   } catch (err) {
     console.log(err);
@@ -247,7 +247,7 @@ module.exports.getmypastAppointments = async (req, res, next) => {
 module.exports.getAppointmentDetails = async (req, res, next) => {
   try {
     let serviceList = await ServiceAppointment.findOne(     
-      { bookingDetails: req.body.bookingDetailsId }).populate('bookingDetails').populate('petDetails');
+      { bookingDetails: req.body.bookingDetailsId }).populate('bookingDetails').populate('petDetails').populate('ServiceProvider','fullName username avatar');     
       console.log(serviceList)
 
       serviceList.bookingDetails.runDetails=[]
