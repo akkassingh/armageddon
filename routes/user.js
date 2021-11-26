@@ -54,7 +54,7 @@ userRouter.get(
   requireAuth,
   isUsernameAvaialble
 );
-userRouter.patch("/addPet", requireAuth, becomeGuardian);
+userRouter.post("/addPet", requireAuth, becomeGuardian);
 userRouter.patch("/petanduserdetails", requireAuth, petanduserdetails);
 
 module.exports = userRouter;

@@ -125,6 +125,7 @@ module.exports.bookService = async (req, res, next) => {
       specialInstructions: req.body.specialInstructions,
       petBehaviour: req.body.petBehaviour,
       petRunningLocation: req.body.petRunningLocation,
+      // location: { type: 'Point', coordinates:[req.body.longitude, req.body.latitude] },
       phone: req.body.phone,
       alternateName: req.body.alternateName,
       alternatePhone: req.body.alternatePhone,

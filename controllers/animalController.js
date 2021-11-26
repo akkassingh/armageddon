@@ -182,6 +182,7 @@ module.exports.editPet = async (req, res, next) => {
 
 module.exports.editPetHabits = async (req, res, next) => {
   const user = res.locals.user;
+
   const {
     // servicePet,
     // spayed,
@@ -265,7 +266,10 @@ module.exports.editPetHabits = async (req, res, next) => {
 // };
 
 module.exports.addGuardian = async (req, res, next) => {
+  // console.log(res.locals.user)
+
   const animal = res.locals.animal;
+  console.log(res.locals.animal)
   const { idUser } = req.body;
   try {
     const user = await User.findById(idUser);
@@ -287,11 +291,11 @@ module.exports.addGuardian = async (req, res, next) => {
     }
     const userObject = {
       user: user._id,
-      confirmed: false,
+      confirmed: true,
     };
     const petObject = {
       pet: animal._id,
-      confirmed: false,
+      confirmed: true,
     };
     await User.updateOne({ _id: user._id }, { $push: { pets: petObject } });
     await Animal.updateOne(
