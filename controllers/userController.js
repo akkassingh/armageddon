@@ -1074,7 +1074,7 @@ module.exports.showPeopleToFollow = async (req, res, next) => {
   const {counter} = req.body;
   try {
     const result = await User.find({_id: { $ne: user._id }}, {username: 1, fullName: 1, avatar: 1}).limit(20).skip(20*counter);
-    return res.status(200).send(result);
+    return res.status(200).send({"profiles":result});
   }
   catch (err){
     console.log(err);
