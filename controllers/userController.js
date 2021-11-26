@@ -1068,3 +1068,17 @@ module.exports.petanduserdetails = async (req, res, next) => {
     res.status(400).send({ error: err });
   }
 };
+
+module.exports.showPeopleToFollow = async (req, res, next) => {
+  const user = res.locals.user;
+  const {counter} = req.body;
+  try {
+    const result = await User.find({_id: { $ne: user._id }}, {username: 1, fullName: 1, avatar: 1}).limit(20).skip(20*counter);
+    return res.status(200).send(result);
+  }
+  catch (err){
+    console.log(err);
+    return res.status(400).send({error: err});
+  }
+  
+}
