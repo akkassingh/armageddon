@@ -283,10 +283,9 @@ module.exports.addGuardian = async (req, res, next) => {
         return res.status(403).send({
           error: `${user.fullName} is already guardian of ${animal.name}!`,
         });
-      } else {
-        return res.status(403).send({
-          error: `Request already sent to ${user.fullName} to become guardian of ${animal.name}`,
-        });
+      } 
+      else {
+        animal.guardians[found].confirmed=true;
       }
     }
     const userObject = {
@@ -300,7 +299,7 @@ module.exports.addGuardian = async (req, res, next) => {
     await User.updateOne({ _id: user._id }, { $push: { pets: petObject } });
     await Animal.updateOne(
       { _id: animal._id },
-      { $push: { guardians: userObject } }
+      { guardians: animal.guardians }
     );
     return res.status(201).send({
       message: `Hurray! Now, ${user.fullName} is the guardian of ${animal.name}!`,

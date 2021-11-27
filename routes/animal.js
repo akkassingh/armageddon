@@ -15,10 +15,10 @@ const {
   editPetHabits
 } = require("../controllers/animalController");
 
-const { requireAuth } = require("../controllers/authController");
+const { requireAuth, requireAuthAnimal } = require("../controllers/authController");
 
 animalRouter.post("/register", upload, requireAuth, registerPet);
-animalRouter.post("/addGuardian", requireAuth, addGuardian);
+animalRouter.post("/addGuardian", requireAuthAnimal, addGuardian);
 animalRouter.post("/getPetDetails", requireAuth, getPetDetails);
 animalRouter.put("/editPet", upload, requireAuth, editPet);
 animalRouter.post("/editPetHabits", requireAuth, editPetHabits);
