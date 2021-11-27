@@ -173,7 +173,7 @@ module.exports.bookService = async (req, res, next) => {
       //console.log(st)
     }
 
-    return res.status(200).send({success:true});
+    return res.status(200).send({bookingId:ServiceBookingModel._id});
   } catch (err) {
     console.log(err);
     next(err);
