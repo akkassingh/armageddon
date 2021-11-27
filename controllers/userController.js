@@ -891,7 +891,7 @@ module.exports.becomeGuardian = async (req, res, next) => {
     const animal = await Animal.findById(idPet);
     if (!animal) return res.status(404).send({ error: "No such pet exists!" });
     const found = user.pets.findIndex(function (ele, index) {
-      if (ele.user == idUser) return true;
+      if (ele.pet == idPet) return true;
     });
     if (found != -1) {
       if (user.pets[found].confirmed) {
