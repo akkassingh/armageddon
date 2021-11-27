@@ -20,11 +20,12 @@ const {
   petanduserdetails,
   getUserDetails,
   updateBioAndAvatar,
+  showPeopleToFollow
 } = require("../controllers/userController");
 const { requireAuth, optionalAuth } = require("../controllers/authController");
 
 userRouter.get("/userDetails", requireAuth, getUserDetails);
-
+userRouter.get('/showPeopleToFollow',requireAuth, showPeopleToFollow);
 userRouter.get("/suggested/:max?", requireAuth, retrieveSuggestedUsers);
 userRouter.get("/:username", optionalAuth, retrieveUser);
 userRouter.get("/:username/posts/:offset", retrievePosts);

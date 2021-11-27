@@ -838,11 +838,9 @@ module.exports.googleLoginAuthentication = async (req, res, next) => {
             _id: userDocument._id,
             email: userDocument.email,
             username: userDocument.username,
-            avatar: userDocument.avatar,
-            bookmarks: userDocument.bookmarks,
+            confirmed: true,
           },
           isNewUser,
-          confirmed: true,
           token: jwt.encode({ id: userDocument._id }, process.env.JWT_SECRET),
         });
       }
@@ -856,6 +854,10 @@ module.exports.googleLoginAuthentication = async (req, res, next) => {
       if (existingUser) {
         logger.info("User Exists!!!!");
         if (existingUser.email === primaryEmail) {
+          await User.findByIdAndUpdate(
+            { _id: existingUser._id },
+            { confirmed: true }
+          );
           let isNewUser = true;
           if (existingUser.avatar) {
             isNewUser = false;
@@ -865,9 +867,9 @@ module.exports.googleLoginAuthentication = async (req, res, next) => {
               _id: existingUser._id,
               email: existingUser.email,
               username: existingUser.username,
+              confirmed: true,
             },
             isNewUser,
-            confirmed: true,
             token: jwt.encode({ id: existingUser._id }, process.env.JWT_SECRET),
           });
         }
@@ -887,9 +889,9 @@ module.exports.googleLoginAuthentication = async (req, res, next) => {
           _id: user._id,
           email: user.email,
           username: user.username,
+          confirmed: true,
         },
         isNewUser: true,
-        confirmed: true,
         token: jwt.encode({ id: user._id }, process.env.JWT_SECRET),
       });
     } else {
@@ -926,9 +928,9 @@ module.exports.googleLoginAuthentication = async (req, res, next) => {
             username: userDocument.username,
             avatar: userDocument.avatar,
             bookmarks: userDocument.bookmarks,
+            confirmed: true,
           },
-          isNewUser,
-          confirmed: true,
+          isNewUser,        
           token: jwt.encode({ id: userDocument._id }, process.env.JWT_SECRET),
         });
       }
@@ -939,6 +941,10 @@ module.exports.googleLoginAuthentication = async (req, res, next) => {
       if (existingUser) {
         logger.info("User Exists!!!!");
         if (existingUser.email === primaryEmail) {
+          await User.findByIdAndUpdate(
+            { _id: existingUser._id },
+            { confirmed: true }
+          );
           let isNewUser = true;
           if (existingUser.avatar) {
             isNewUser = false;
@@ -951,9 +957,9 @@ module.exports.googleLoginAuthentication = async (req, res, next) => {
               username: existingUser.username,
               avatar: existingUser.avatar,
               bookmarks: existingUser.bookmarks,
+              confirmed: true,
             },
-            isNewUser,
-            confirmed: true,
+            isNewUser,           
             token: jwt.encode({ id: existingUser._id }, process.env.JWT_SECRET),
           });
         }
@@ -975,9 +981,9 @@ module.exports.googleLoginAuthentication = async (req, res, next) => {
           username: user.username,
           avatar: user.avatar,
           bookmarks: user.bookmarks,
+          confirmed: true,
         },
-        isNewUser: true,
-        confirmed: true,
+        isNewUser: true,   
         token: jwt.encode({ id: user._id }, process.env.JWT_SECRET),
       });
     }
