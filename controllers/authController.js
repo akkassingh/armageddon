@@ -57,8 +57,8 @@ module.exports.verifyJwtAnimal = (token) => {
         { _id: id },
         "name username avatar guardians relatedAnimals"
       );
-      if (user) {
-        return resolve(user);
+      if (animal) {
+        return resolve(animal);
       } else {
         reject("Not authorized.");
       }
@@ -92,7 +92,7 @@ module.exports.requireAuthAnimal = async (req, res, next) => {
   const { authorization } = req.headers;
   if (!authorization) return res.status(401).send({ error: "Not authorized." });
   try {
-    const animal = await this.verifyJwt(authorization);
+    const animal = await this.verifyJwtAnimal(authorization);
     // Allow other middlewares to access the authenticated user details.
     res.locals.animal = animal;
     return next();

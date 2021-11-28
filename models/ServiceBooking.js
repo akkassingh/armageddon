@@ -44,6 +44,21 @@ const bookingDetailsSchema = new Schema({
     city: String,
     pinCode: String,
   },
+
+  //to be added below code
+  // location:{
+  //   type: {
+  //     type: String, // Don't do `{ location: { type: String } }`
+  //     enum: ['Point'], // 'location.type' must be 'Point'
+  //     required: false
+  //   },
+  //   coordinates: {
+  //     type: [Number],
+  //     required: false
+  //   }
+  // },
+  // latitude:{type: Number, required:true},
+  // longitude:{type: Number, required:true},
   phone: String,
   alternatePhone: String,
   alternateName: String,

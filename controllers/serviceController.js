@@ -52,12 +52,19 @@ module.exports.getServiceProviderProfile = async (req, res, next) => {
 
 module.exports.createService = async (req, res, next) => {
   try {
-    let ServiceModel = new Service({
+    if(! await Service.findOne({
       serviceProvider: res.locals.user._id,
       serviceType: req.body.serviceType,
-    });
-    let resp = await ServiceModel.save();
-    return res.status(200).json(resp);
+      })){
+      let ServiceModel = new Service({
+        serviceProvider: res.locals.user._id,
+        serviceType: req.body.serviceType,
+      });
+      let resp = await ServiceModel.save();
+      return res.status(200).json(resp);
+    }
+    else return res.status(200).send({msg:"This service has already been created"});
+
   } catch (err) {
     console.log(err);
     next(err);
@@ -96,7 +103,7 @@ module.exports.addBackgroundCheckToService = async (req, res, next) => {
       "---------fileArr---------",
       fileArr.find((el) => el.fieldname === "adharFront")
     );
-
+      
     let BackgroundCheckModel = new BackgroundCheck({
       service: req.body.serviceId,
       adharFront: fileArr.find((el) => el.fieldname === "adharFront").url,
@@ -122,6 +129,7 @@ module.exports.addBackgroundCheckToService = async (req, res, next) => {
       { _id: req.body.serviceId },
       { backgroundCheck: BackgroundCheckModel._id, isBackgroundCheck: true }
     );
+    // await BackgroundCheck.deleteMany({ service: req.body.serviceId})
     let resp = await BackgroundCheckModel.save();
     return res.status(200).json(resp);
   } catch (err) {

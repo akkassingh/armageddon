@@ -67,7 +67,7 @@ const UserSchema = new Schema({
     {
       pet: {
         type: Schema.ObjectId,
-        ref: "User",
+        ref: "Animal",
       },
       confirmed: {
         type: Boolean,
