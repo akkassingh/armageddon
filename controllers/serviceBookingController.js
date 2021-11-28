@@ -135,6 +135,7 @@ module.exports.bookService = async (req, res, next) => {
      // req.body.runDetails[1].runTime,
       runDetails:arr,
       startDate:formatDate(new Date(parseInt(req.body.startDate))),
+      start:new Date(parseInt(req.body.startDate)),
       dayOff: dayoff,
       User: res.locals.user._id
       //(new Date(req.body.dayOff).toDateString()).split(' ')[0],

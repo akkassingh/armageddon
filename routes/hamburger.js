@@ -11,4 +11,6 @@ const {
 
 hamburgerRouter.get('/getBookmarks/:offset',requireAuth,getBookmarks);
 hamburgerRouter.post('/submitFeedback',requireAuth, submitFeedback)
+hamburgerRouter.get('/getBookings',requireAuth,getBookings);
+
 module.exports = hamburgerRouter;
