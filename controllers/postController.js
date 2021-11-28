@@ -701,14 +701,20 @@ module.exports.retrievePostFeed = async (req, res, next) => {
   const { offset } = req.params;
 
   try {
-    const followingDocument = await Following.findOne({ user: user._id });
+    const followingDocument = await Following.find({'user.id': user._id });
     if (!followingDocument) {
+      console.log(followingDocument)
       return res.status(404).send({ error: "Could not find any posts." });
     }
-    const following = followingDocument.following.map(
-      (following) => following.user
-    );
+    console.log(followingDocument)
 
+    // const following = followingDocument.map(
+    //   (following) => followingDocument.followingDetails.followingId
+    // );
+const following =[]
+for(let i=0;i<followingDocument.length;i++){
+  following.push(followingDocument[i].followingDetails.followingId)
+}
     // Fields to not include on the user object
     const unwantedUserFields = [
       "author.password",
@@ -728,7 +734,7 @@ module.exports.retrievePostFeed = async (req, res, next) => {
         },
       },
       { $sort: { date: -1 } },
-      { $skip: Number(offset) },
+      { $skip: Number(offset)*5 },
       { $limit: 5 },
       {
         $lookup: {
