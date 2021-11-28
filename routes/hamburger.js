@@ -5,12 +5,14 @@ const { requireAuth } = require('../controllers/authController');
 const {
     getBookmarks,
     getBookings,
-    submitFeedback
+    submitFeedback,
+    getHelp
 } = require('../controllers/hamburgerController');
 
 
 hamburgerRouter.get('/getBookmarks/:offset',requireAuth,getBookmarks);
-hamburgerRouter.post('/submitFeedback',requireAuth, submitFeedback)
+hamburgerRouter.post('/submitFeedback',requireAuth, submitFeedback);
 hamburgerRouter.get('/getBookings',requireAuth,getBookings);
+hamburgerRouter.post('/getHelp',requireAuth,getHelp)
 
 module.exports = hamburgerRouter;
