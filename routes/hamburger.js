@@ -9,6 +9,5 @@ const {
 
 
 hamburgerRouter.get('/getBookmarks/:offset',requireAuth,getBookmarks);
-hamburgerRouter.get('/getBookings', requireAuth, getBookings);
 
 module.exports = hamburgerRouter;
