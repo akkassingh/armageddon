@@ -1073,7 +1073,20 @@ module.exports.showPeopleToFollow = async (req, res, next) => {
   const user = res.locals.user;
   const {counter} = req.body;
   try {
-    const result = await User.find({_id: { $ne: user._id }}, {username: 1, fullName: 1, avatar: 1}).limit(20).skip(20*counter);
+    const following = await Following.find({"user.id": user._id},{'followingDetails.followingId': 1, '_id': 0}).lean();
+    const followingIds = [];
+    for (var i=0; i< following.length; i++){
+      followingIds[i] = following[i].followingDetails.followingId.toString();
+    }
+    const result = await User.find({_id: { $ne: user._id }}, {username: 1, fullName: 1, avatar: 1}).limit(20).skip(20*counter).lean();    
+    for (var i=0;i < result.length;i++){
+      if (followingIds.indexOf(result[i]._id.toString())>-1){
+        result[i]['following'] = 1; // it means user is already following this person
+      }
+      else{
+        result[i]['following'] = 0;
+      }
+    }
     return res.status(200).send({"profiles":result});
   }
   catch (err){
