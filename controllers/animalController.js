@@ -421,3 +421,16 @@ module.exports.getPetDetails = async (req, res, next) => {
     next(err);
   }
 };
+
+module.exports.getGuardians = async (req, res, next) => {
+  try {
+    const guardians = await Animal.findOne({_id: req.body.petId}, {guardians: 1, _id: 0}).populate('guardians.user', 'username email avatar');
+    if (!guardians) return res.status(404).send({ error: "No such pet exists!" });
+    return res.status(201).send(guardians);
+  }
+  catch(err) {
+    logger.info(err);
+    console.log(err);
+    next(err);
+  }
+}
