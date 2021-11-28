@@ -854,7 +854,7 @@ for(let i=0;i<followingDocument.length;i++){
         $unset: [...unwantedUserFields, "comments", "commentCount"],
       },
     ]);
-    return res.send(posts);
+    return res.send({posts:posts});
   } catch (err) {
     next(err);
   }
