@@ -930,64 +930,68 @@ module.exports.getUserDetails = async (req, res, next) => {
   const user = res.locals.user;
   const { idPet } = req.body;
   try {
-    const user_details = await User.findById(user._id);
+    const user_details = await User.findById(user._id).populate("pets.pet", '_id name avatar');
     if (!user_details)
       return res.status(404).send({ error: "No such user exists!" });
 
-    const animal_details = await Animal.find({ "guardians.user": user._id });
+    const animal_details = await Animal.find({ "guardians.user": user._id }, 'username name avatar');
     let newAnimalArr = [];
     if (animal_details.length > 0) {
       for (let a1 of animal_details) {
         const tempObj = a1.toObject();
-        const followersCount = await Followers.aggregate([
-          {
-            $match: { "user.id": ObjectId(a1._id) },
-          },
-          {
-            $count: "totalFollowers",
-          },
-        ]);
+        // const followersCount = await Followers.aggregate([
+        //   {
+        //     $match: { "user.id": ObjectId(a1._id) },
+        //   },
+        //   {
+        //     $count: "totalFollowers",
+        //   },
+        // ]);
 
-        let totalFollowers =
-          followersCount.length == 0 ? 0 : followersCount[0].totalFollowers;
-        tempObj.totalFollowers = totalFollowers;
+        // let totalFollowers =
+        //   followersCount.length == 0 ? 0 : followersCount[0].totalFollowers;
+        // tempObj.totalFollowers = totalFollowers;
 
-        const followingCount = await Following.aggregate([
-          {
-            $match: { "user.id": ObjectId(a1._id) },
-          },
-          {
-            $count: "totalFollowing",
-          },
-        ]);
+        // const followingCount = await Following.aggregate([
+        //   {
+        //     $match: { "user.id": ObjectId(a1._id) },
+        //   },
+        //   {
+        //     $count: "totalFollowing",
+        //   },
+        // ]);
 
-        let totalFollowings =
-          followingCount.length == 0 ? 0 : followingCount[0].totalFollowing;
-        tempObj.totalFollowings = totalFollowings;
+        // let totalFollowings =
+        //   followingCount.length == 0 ? 0 : followingCount[0].totalFollowing;
+        // tempObj.totalFollowings = totalFollowings;
 
-        const getPosts = await Post.find({
-          "postOwnerDetails.postOwnerId": a1._id,
-        });
+        // const getPosts = await Post.find({
+        //   "postOwnerDetails.postOwnerId": a1._id,
+        // });
 
-        let totalLikes = 0;
-        let totalPosts = 0;
-        if (getPosts.length > 0) {
-          totalPosts = getPosts.length;
-          for (let p1 of getPosts) {
-            const getLikes = await PostVote.aggregate([
-              {
-                $match: { post: ObjectId(p1._id) },
-              },
-              {
-                $count: "totalLikes",
-              },
-            ]);
-            totalLikes +=
-              getLikes.length == 0 ? 0 : Number(getLikes[0].totalLikes);
-          }
-        }
-        tempObj.totalLikes = totalLikes;
-        tempObj.totalPosts = totalPosts;
+        // let totalLikes = 0;
+        // let totalPosts = 0;
+        // if (getPosts.length > 0) {
+        //   totalPosts = getPosts.length;
+        //   for (let p1 of getPosts) {
+        //     const getLikes = await PostVote.aggregate([
+        //       {
+        //         $match: { post: ObjectId(p1._id) },
+        //       },
+        //       {
+        //         $count: "totalLikes",
+        //       },
+        //     ]);
+        //     totalLikes +=
+        //       getLikes.length == 0 ? 0 : Number(getLikes[0].totalLikes);
+        //   }
+        // }
+        // tempObj.totalLikes = totalLikes;
+        // tempObj.totalPosts = totalPosts;
+        // const newObj;
+        // newObj._id = tempObj._id;
+        // newObj.username = tempObj.username;
+        // newObj.
         newAnimalArr.push(tempObj);
       }
     }
