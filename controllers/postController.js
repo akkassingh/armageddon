@@ -698,7 +698,7 @@ module.exports.acceptFollowRequests = async (req, res, next) => {
 
 module.exports.retrievePostFeed = async (req, res, next) => {
   const user = res.locals.user;
-  const { offset } = req.params;
+  const { counter } = req.body;
 
   try {
     const followingDocument = await Following.find({'user.id': user._id });
@@ -734,7 +734,7 @@ for(let i=0;i<followingDocument.length;i++){
         },
       },
       { $sort: { date: -1 } },
-      { $skip: Number(offset)*5 },
+      { $skip: Number(counter)*5 },
       { $limit: 5 },
       {
         $lookup: {
@@ -861,7 +861,7 @@ for(let i=0;i<followingDocument.length;i++){
 };
 
 module.exports.retrieveSuggestedPosts = async (req, res, next) => {
-  const { offset = 0 } = req.params;
+  const { counter = 0 } = req.body;
 
   try {
     const posts = await Post.aggregate([
@@ -869,7 +869,7 @@ module.exports.retrieveSuggestedPosts = async (req, res, next) => {
         $sort: { date: -1 },
       },
       {
-        $skip: Number(offset),
+        $skip: Number(counter*20),
       },
       {
         $limit: 20,
@@ -886,7 +886,7 @@ module.exports.retrieveSuggestedPosts = async (req, res, next) => {
 };
 
 module.exports.retrievMyPosts = async (req, res, next) => {
-  const { offset = 0 } = req.params;
+  const { counter = 0 } = req.body;
 
   try {
     // const authorId = ObjectId(res.locals.user._id);
@@ -897,7 +897,7 @@ module.exports.retrievMyPosts = async (req, res, next) => {
         $sort: { date: -1 },
       },
       {
-        $skip: Number(offset),
+        $skip: Number(counter*20),
       },
       {
         $limit: 20,
@@ -953,7 +953,8 @@ module.exports.retrievMyPosts = async (req, res, next) => {
 };
 
 module.exports.retrieveHashtagPosts = async (req, res, next) => {
-  const { hashtag, offset } = req.params;
+  const { hashtag } = req.params;
+  const { counter } = req.body;
 
   try {
     const posts = await Post.aggregate([
@@ -964,7 +965,7 @@ module.exports.retrieveHashtagPosts = async (req, res, next) => {
               $match: { hashtags: hashtag },
             },
             {
-              $skip: Number(offset),
+              $skip: Number(counter*20),
             },
             {
               $limit: 20,

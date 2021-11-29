@@ -134,11 +134,12 @@ module.exports.retrieveUser = async (req, res, next) => {
 
 module.exports.retrievePosts = async (req, res, next) => {
   // Retrieve a user's posts with the post's comments & likes
-  const { username, offset = 0 } = req.params;
+  const { username } = req.params;
+  const {counter = 0} = req.body;
   try {
     const posts = await Post.aggregate([
       { $sort: { date: -1 } },
-      { $skip: Number(offset) },
+      { $skip: Number(counter*12) },
       { $limit: 12 },
       {
         $lookup: {
@@ -392,10 +393,11 @@ const retrieveRelatedUsers = async (user, userId, offset, followers) => {
 };
 
 module.exports.retrieveFollowing = async (req, res, next) => {
-  const { userId, offset = 0 } = req.params;
+  const { userId } = req.params;
+  const {counter = 0} = req.body;
   const user = res.locals.user;
   try {
-    const users = await retrieveRelatedUsers(user, userId, offset);
+    const users = await retrieveRelatedUsers(user, userId, counter*10);
     return res.send(users);
   } catch (err) {
     next(err);
@@ -403,11 +405,12 @@ module.exports.retrieveFollowing = async (req, res, next) => {
 };
 
 module.exports.retrieveFollowers = async (req, res, next) => {
-  const { userId, offset = 0 } = req.params;
+  const { userId } = req.params;
+  const {counter = 0} = req.body;
   const user = res.locals.user;
 
   try {
-    const users = await retrieveRelatedUsers(user, userId, offset, true);
+    const users = await retrieveRelatedUsers(user, userId, counter*10, true);
     return res.send(users);
   } catch (err) {
     next(err);
@@ -415,7 +418,8 @@ module.exports.retrieveFollowers = async (req, res, next) => {
 };
 
 module.exports.searchUsers = async (req, res, next) => {
-  const { username, offset = 0 } = req.params;
+  const { username } = req.params;
+  const {counter = 0} = req.body;
   if (!username) {
     return res
       .status(400)
@@ -449,7 +453,7 @@ module.exports.searchUsers = async (req, res, next) => {
         $sort: { followersCount: -1 },
       },
       {
-        $skip: Number(offset),
+        $skip: Number(counter*10),
       },
       {
         $limit: 10,
