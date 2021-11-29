@@ -11,7 +11,7 @@ const {ServiceAppointment}=require("../models/Service");
 const Help = require('../models/Help');
 
 module.exports.getBookmarks = async (req, res, next) => {
-    const { offset = 0 } = req.params;
+    const { counter = 0 } = req.body;
     const user = res.locals.user;
   try {
     const bookmarkIDs = [];
@@ -25,7 +25,7 @@ module.exports.getBookmarks = async (req, res, next) => {
         $sort: { date: -1 },
       },
       {
-        $skip: Number(offset),
+        $skip: Number(counter*20),
       },
       {
         $limit: 20,

@@ -30,10 +30,10 @@ userRouter.get("/userDetails", requireAuth, getUserDetails);
 userRouter.get('/showPeopleToFollow',requireAuth, showPeopleToFollow);
 userRouter.get("/suggested/:max?", requireAuth, retrieveSuggestedUsers);
 userRouter.get("/:username", optionalAuth, retrieveUser);
-userRouter.get("/:username/posts/:offset", retrievePosts);
-userRouter.get("/:userId/:offset/following", requireAuth, retrieveFollowing);
-userRouter.get("/:userId/:offset/followers", requireAuth, retrieveFollowers);
-userRouter.get("/:username/:offset/search", searchUsers);
+userRouter.get("/:username/posts", retrievePosts);
+userRouter.get("/:userId/following", requireAuth, retrieveFollowing);
+userRouter.get("/:userId/followers", requireAuth, retrieveFollowers);
+userRouter.get("/:username/search", searchUsers);
 
 userRouter.put("/confirm", requireAuth, confirmUser);
 userRouter.put(
