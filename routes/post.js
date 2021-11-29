@@ -45,7 +45,7 @@ postRouter.get("/filters", (req, res) => {
   res.send({ filters });
 });
 postRouter.get("/:postId", retrievePost);
-postRouter.get("/feed", requireAuth, retrievePostFeed);
+postRouter.get("/feed/:counter", requireAuth, retrievePostFeed);
 postRouter.get("/hashtag/:hashtag", requireAuth, retrieveHashtagPosts);
 
 postRouter.delete("/post", requireAuth, deletePost);
