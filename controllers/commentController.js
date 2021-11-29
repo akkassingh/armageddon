@@ -288,8 +288,8 @@ module.exports.voteCommentReply = async (req, res, next) => {
 };
 
 module.exports.retrieveCommentReplies = async (req, res, next) => {
-  const { parentCommentId, offset = 0 } = req.params;
-
+  const { parentCommentId } = req.params;
+  const {counter = 0} = req.body;
   try {
     const comment = await Comment.findById(parentCommentId);
     if (!comment) {
@@ -301,7 +301,7 @@ module.exports.retrieveCommentReplies = async (req, res, next) => {
     const commentReplies = await CommentReply.aggregate([
       { $match: { parentComment: ObjectId(parentCommentId) } },
       { $sort: { date: -1 } },
-      { $skip: Number(offset) },
+      { $skip: Number(counter*3) },
       { $limit: 3 },
       {
         $lookup: {
@@ -350,9 +350,10 @@ module.exports.retrieveCommentReplies = async (req, res, next) => {
 };
 
 module.exports.retrieveComments = async (req, res, next) => {
-  const { postId, offset, exclude } = req.params;
+  const { postId, exclude } = req.params;
+  const {counter = 0} = req.body;
   try {
-    const comments = await retrieveComments(postId, offset, exclude);
+    const comments = await retrieveComments(postId, counter*10, exclude);
     return res.send(comments);
   } catch (err) {
     next(err);

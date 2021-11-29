@@ -13,15 +13,24 @@ const {
   getPetDetails,
   editPet,
   editPetHabits,
-  getGuardians
+  getGuardians,
+  confirmRelation,
+  addRelatedAnimals,
+  getRelations,
+  getRelationRequests,
 } = require("../controllers/animalController");
 
 const { requireAuth, requireAuthAnimal } = require("../controllers/authController");
 
-animalRouter.post("/register", upload, requireAuth, registerPet);
-animalRouter.post("/addGuardian", requireAuthAnimal, addGuardian);
-animalRouter.post("/getPetDetails", requireAuth, getPetDetails);
-animalRouter.put("/editPet", upload, requireAuth, editPet);
-animalRouter.post("/editPetHabits", requireAuth, editPetHabits);
-animalRouter.get('/getGuardians', requireAuth, getGuardians);
+animalRouter.post("/register", upload, requireAuth, registerPet); //ok
+animalRouter.post("/addGuardian", addGuardian); //ok
+animalRouter.post("/getPetDetails", requireAuth, getPetDetails); //ok
+animalRouter.put("/editPet", upload, requireAuth, editPet); //ok
+animalRouter.post("/editPetHabits", requireAuth, editPetHabits); //ok
+animalRouter.get('/getGuardians', requireAuth, getGuardians); //ok
+animalRouter.get("/getRelations",getRelations); //ok
+animalRouter.post('/confirmRelation', confirmRelation); //ok
+animalRouter.post('/sendRelationRequest', addRelatedAnimals);
+animalRouter.get('/getRelationRequests', getRelationRequests); //ok
+
 module.exports = animalRouter;

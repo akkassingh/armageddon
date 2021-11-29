@@ -266,44 +266,42 @@ module.exports.editPetHabits = async (req, res, next) => {
 // };
 
 module.exports.addGuardian = async (req, res, next) => {
-  // console.log(res.locals.user)
 
-  const animal = res.locals.animal;
-  console.log(res.locals.animal)
-  const { idUser } = req.body;
+  const { idUser, idAnimal } = req.body;
+  const animal = await Animal.findById(idAnimal);
+  const user = await User.findById(idUser);
+  if (!animal || !user) {
+    return res.setatus(404).send({"error" : "Invalid Request!"})
+  }
   try {
-    const user = await User.findById(idUser);
-    if (!user)
-      return res.status(404).send({ error: "No such pet or user exists!" });
     const found = animal.guardians.findIndex(function (ele, index) {
       if (ele.user == idUser) return true;
     });
     if (found != -1) {
+      const request = animal.guardians[found].confirmed;
       if (animal.guardians[found].confirmed) {
         return res.status(403).send({
           error: `${user.fullName} is already guardian of ${animal.name}!`,
         });
       } 
       else {
-        animal.guardians[found].confirmed=true;
+        return res.status(200).send({"message": "Request already sent!"})
       }
     }
     const userObject = {
       user: user._id,
-      confirmed: true,
+      confirmed: false,
     };
     const petObject = {
       pet: animal._id,
-      confirmed: true,
+      confirmed: false,
     };
     await User.updateOne({ _id: user._id }, { $push: { pets: petObject } });
     await Animal.updateOne(
       { _id: animal._id },
-      { guardians: animal.guardians }
+      { $push : {guardians: userObject} }
     );
-    return res.status(201).send({
-      message: `Hurray! Now, ${user.fullName} is the guardian of ${animal.name}!`,
-    });
+    return res.status(201).send({message: "Your request has been sent successfully!"});
   } catch (err) {
     logger.info(err);
     console.log(err);
@@ -312,9 +310,15 @@ module.exports.addGuardian = async (req, res, next) => {
 };
 
 module.exports.addRelatedAnimals = async (req, res, next) => {
-  const animal = res.locals.animal;
-  const { idRelatedAnimal, relation } = req.body;
+  const { idRelatedAnimal, relation, animalId } = req.body;
+  if (!idRelatedAnimal || !relation || !animalId){
+    return res.status(400).send({error: "Invalid Request!"});
+  }
+  if (idRelatedAnimal == animalId){
+    return res.status(400).send({error: "Please select a different animal!"});
+  }
   try {
+    const animal = await Animal.findById(animalId, 'relatedAnimals');
     const relatedAnimal = await Animal.findById(idRelatedAnimal);
     if (!relatedAnimal) {
       return res.status(404).send({ error: "Invalid animal!" });
@@ -325,11 +329,11 @@ module.exports.addRelatedAnimals = async (req, res, next) => {
     if (found != -1) {
       if (animal.relatedAnimals[found].confirmed) {
         return res.status(403).send({
-          error: `${animal.name} is already your ${pet.relatedAnimals[found].relation}!`,
+          error: `${relatedAnimal.name} is already your ${animal.relatedAnimals[found].relation}!`,
         });
       } else {
         return res.status(403).send({
-          error: `You have already requested ${animal.name} to be your ${pet.relatedAnimals[found].relation}!`,
+          error: `You have already requested ${relatedAnimal.name} to be your ${animal.relatedAnimals[found].relation}!`,
         });
       }
     }
@@ -338,12 +342,14 @@ module.exports.addRelatedAnimals = async (req, res, next) => {
     const objAnimal = {
       relation: relation,
       confirmed: false,
-      animal: animal._id,
+      animal: relatedAnimal._id,
+      status: 0
     };
     const objRelatedAnimal = {
       relation: oppRelation,
       confirmed: false,
-      animal: pet._id,
+      animal: animal._id,
+      status: 1
     };
     await Animal.updateOne(
       { _id: animal._id },
@@ -364,44 +370,57 @@ module.exports.addRelatedAnimals = async (req, res, next) => {
 };
 
 module.exports.confirmRelation = async (req, res, next) => {
-  const animal = res.locals.animal;
-  const { idRelatedAnimal } = req.body;
+  const { idRelatedAnimal, animalId } = req.body;
   try {
-    const relatedAnimal = await Animal.findById(idRelatedAnimal);
-    if (!relatedAnimal)
+    const animal = await Animal.findById(animalId, 'relatedAnimals');
+    console.log(animal);
+    const relatedAnimal = await Animal.findById(idRelatedAnimal, 'relatedAnimals');
+    console.log(relatedAnimal)
+    if (!relatedAnimal || !animal)
       return res.status(404).send({ error: "Invalid animal!" });
     const found = animal.relatedAnimals.findIndex(function (ele, index) {
       if (ele.animal == idRelatedAnimal) return true;
     });
+    console.log(found)
     const foundRelated = relatedAnimal.relatedAnimals.findIndex(function (
       ele,
       index
     ) {
-      if (ele.animal == animal._id) return true;
+      if (ele.animal == animalId) return true;
     });
+    console.log(foundRelated)
     if (found == -1 || foundRelated == -1) {
       return res
         .status(404)
         .send({ error: `There is no request from ${relatedAnimal.name}` });
     }
+    if (animal.relatedAnimals[found].confirmed) {
+      return res.status(200).send({"message" : "Request has been already accepted!"})
+    }
+    if (animal.relatedAnimals[found].status == -1 || animal.relatedAnimals[found] == 0) {
+      return res.status(400).send({error: "Invalid Request!"})
+    }
     const objId = animal.relatedAnimals[found]._id;
-    const relatedId = relatedAnimals[foundRelated]._id;
+    const relatedId = relatedAnimal.relatedAnimals[foundRelated]._id;
     await Animal.updateOne(
       { "relatedAnimals._id": objId },
       {
         $set: {
           "relatedAnimals.$.confirmed": true,
+          "relatedAnimals.$.status" : -1,
         },
       }
     );
     await Animal.updateOne(
-      { "relatedAnimals._id": newId },
+      { "relatedAnimals._id": relatedId },
       {
         $set: {
           "relatedAnimals.$.confirmed": true,
+          "relatedAnimals.$.status" : -1,
         },
       }
     );
+    return res.status(201).send({"message" : "Request Accepted Successfully!"});
   } catch (err) {
     logger.info(err);
     console.log(err);
@@ -424,7 +443,7 @@ module.exports.getPetDetails = async (req, res, next) => {
 
 module.exports.getGuardians = async (req, res, next) => {
   try {
-    const guardians = await Animal.findOne({_id: req.body.petId}, {guardians: 1, _id: 0}).populate('guardians.user', 'username email avatar');
+    const guardians = await Animal.findOne({_id: req.body.animalId}, {guardians: 1, _id: 0}).populate('guardians.user', 'username email avatar confirmed');
     if (!guardians) return res.status(404).send({ error: "No such pet exists!" });
     return res.status(201).send(guardians);
   }
@@ -434,3 +453,48 @@ module.exports.getGuardians = async (req, res, next) => {
     next(err);
   }
 }
+
+module.exports.getRelations = async (req, res, next) => {
+  const {animalId} = req.body;
+  if (!animalId) {
+    return res.status(400).send({"error": "Invalid Request!"})
+  }
+  try {
+    const animal = await Animal.findById(animalId, 'relatedAnimals');
+    if (!animal) {
+      return res.status(404).send({"error" : "Fuck off!"});
+    }
+    var relations = animal.relatedAnimals.filter(function(check)
+    {
+      return check.confirmed == true;
+    });
+    return res.status(200).send({"relatives":relations});
+  }
+  catch (err){
+    console.log(err);
+    next(err);
+  }
+};
+
+module.exports.getRelationRequests = async (req, res, next) => {
+  const {animalId, type} = req.body;
+  // type will be of 2 types, either incoming or outgoing
+  if (!animalId || !type || (type != "incoming" && type != "outgoing")) {
+    return res.status(404).send({"error": "Invalid Request!"});
+  }
+  try{
+    const requests = await Animal.findById(animalId, 'relatedAnimals').populate('relatedAnimals.animal', 'name username avatar _id');
+    if (!requests){
+      return res.status(400).send({error: "Invalid Request!"});
+    }
+    const val = (type == "incoming") ? 1 : 0; 
+    const result = requests.relatedAnimals.filter(function(ele){
+      return ele.status = val;
+    })
+    return res.status(200).send({"pendingIncomingRequests": result});
+  }
+  catch(err){
+    console.log(err);
+    next(err);
+  }
+};

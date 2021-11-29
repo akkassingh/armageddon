@@ -3,11 +3,15 @@ const Comment = require("../models/Comment");
 const PostVote = require("../models/PostVote");
 const Animal = require("../models/Animal");
 const ServiceBooking = require("../models/ServiceBooking");
+const cloudinary = require("cloudinary").v2;
+const fs = require("fs");
+const Feedback = require('../models/Feedback');
 const {bookingDetails} = require("../models/ServiceBooking");
-const {ServiceAppointment}=require("../models/Service")
+const {ServiceAppointment}=require("../models/Service");
+const Help = require('../models/Help');
 
 module.exports.getBookmarks = async (req, res, next) => {
-    const { offset = 0 } = req.params;
+    const { counter = 0 } = req.body;
     const user = res.locals.user;
   try {
     const bookmarkIDs = [];
@@ -21,7 +25,7 @@ module.exports.getBookmarks = async (req, res, next) => {
         $sort: { date: -1 },
       },
       {
-        $skip: Number(offset),
+        $skip: Number(counter*20),
       },
       {
         $limit: 20,
@@ -58,6 +62,29 @@ module.exports.getBookmarks = async (req, res, next) => {
   }
 };
 
+module.exports.submitFeedback = async (req, res, next) => {
+  const user = res.locals.user;
+  const {rating, tags, description, screenshot} = req.body;
+
+  if (!rating && !tags && !description && !screenshot) {
+      return res.send({error: 'Please submit a valid feedback!'})
+  }
+  try {
+      const feedbackDocument = new Feedback({
+          rating: Number(rating),
+          tags,
+          description,
+          screenshot,
+          author: user._id
+      });
+      await feedbackDocument.save();
+      return res.status(201).send({"message": "Feedback submitted successfully!"})
+  }
+  catch (err) {
+      console.log(err);
+      next(err);
+  }
+}
 module.exports.getBookings = async (req, res, next) => {
   try {
     let serviceList1=[]
@@ -79,3 +106,26 @@ module.exports.getBookings = async (req, res, next) => {
     next(err);
   }
 };
+
+module.exports.getHelp = async (req, res, next) => {
+  const user = res.locals.user;
+  const {phoneNumber,email,description,screenshot} = req.body;
+  if (!phoneNumber && !email && !description && !screenshot){
+    return res.send({error:"Please send a valid request!"})
+  }
+  try {
+    const helpDocument = new Help({
+      phoneNumber,
+      email,
+      description,
+      screenshot,
+      author: user._id
+    });
+    await helpDocument.save();
+    return res.status(201).send({"message": "Your issue has been noted! Our support team will contact you within 24 hours!"})
+  }
+  catch (err){
+    console.log(err);
+    next(err);
+  }
+}

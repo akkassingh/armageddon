@@ -39,6 +39,7 @@ const AnimalSchema = new Schema({
         type: Schema.ObjectId,
         ref: "Animal",
       },
+      status: Number //  0 , 1 , -1 
     },
   ],
   //TODO: make a different schema of category
