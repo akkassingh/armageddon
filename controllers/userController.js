@@ -1099,3 +1099,25 @@ module.exports.showPeopleToFollow = async (req, res, next) => {
   }
   
 }
+
+module.exports.getPendingGuardianRequests = async (req, res, next) => {
+  const user = res.locals.user;
+  try {
+    const userDocument = await User.findById(user._id).populate('pets.pet', '_id name username avatar');
+    const pets = userDocument.pets;
+    const pendingPets = [];
+    for (var i=0;i<pets.length;i++){
+      console.log(pets[i]);
+      if (!pets[i].confirmed){
+        console.log('765')
+        pendingPets.push(pets[i].pet);
+      }
+    }
+    console.log(pendingPets);
+    return res.status(200).send({"pendingRequests" : pendingPets});
+  }
+  catch(err){
+    console.log(err);
+    next(err);
+  }
+}
