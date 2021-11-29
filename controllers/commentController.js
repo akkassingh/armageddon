@@ -36,8 +36,14 @@ module.exports.createComment = async (req, res, next) => {
         .status(404)
         .send({ error: 'Could not find a post with that post id.' });
     }
-
-    const comment = new Comment({ message, author: user._id, post: postId });
+    let authorDetails;
+    if(req.body.type=="human"){
+       authorDetails={
+        authorId: user._id,
+        authorType:"Human"
+      }
+    }
+    const comment = new Comment({ message, authorDetails: authorDetails, post: postId });
     await comment.save();
     res.status(201).send({
       ...comment.toObject(),

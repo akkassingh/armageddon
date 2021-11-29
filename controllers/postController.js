@@ -203,7 +203,7 @@ module.exports.retrievePost = async (req, res, next) => {
 };
 
 module.exports.votePost = async (req, res, next) => {
-  console.log("------------", req.body);
+  // console.log("------------", req.body);
   const { postId, voterDetails, vote } = req.body;
   const user = res.locals.user;
 
@@ -269,13 +269,9 @@ module.exports.votePost = async (req, res, next) => {
           // }
         }
       } else {
-        check = await PostVote.find({
-          $and: [
-            { "voterDetails.voterId": user._id },
-            { post: ObjectId(postId) },
-          ],
-        });
-        if (check.length > 0) {
+        check = await PostVote.findOne({ "voterDetails.voterId": user._id, post: postId});
+        if (check) {
+          // console.log('loooooo'+check+'loooooo')
           return res.send({ success: true });
         } else {
           let postVote = new PostVote({
@@ -711,11 +707,14 @@ module.exports.retrievePostFeed = async (req, res, next) => {
     // const following = followingDocument.map(
     //   (following) => followingDocument.followingDetails.followingId
     // );
-const following =[]
+let following =[]
 for(let i=0;i<followingDocument.length;i++){
   following.push(followingDocument[i].followingDetails.followingId)
 }
+
+//  following.push(ObjectId('618a0d66e443a1dcaf4e4d8c'))
     // Fields to not include on the user object
+    console.log(following)
     const unwantedUserFields = [
       "author.password",
       "author.private",
@@ -725,8 +724,37 @@ for(let i=0;i<followingDocument.length;i++){
       "author.website",
       "author.bio",
       "author.githubId",
+      "author.pets",
+      "author.googleUserId"
     ];
-
+    const unwantedAnimalFields = [
+      "Animalauthor.mating",
+      "Animalauthor.adoption",
+      "Animalauthor.playBuddies",
+      "Animalauthor.username",
+      "Animalauthor.category",
+      "Animalauthor.animal_type",
+      "Animalauthor.location",
+      "Animalauthor.guardians",
+      "Animalauthor.pets",
+      "Animalauthor.bio",
+      "Animalauthor.animalType",
+      "Animalauthor.gender",
+      "Animalauthor.breed",
+      "Animalauthor.age",
+      "Animalauthor.playFrom",
+      "Animalauthor.playTo",
+      "Animalauthor.servicePet",
+      "Animalauthor.spayed",
+      "Animalauthor.friendlinessWithHumans",
+      "Animalauthor.friendlinessWithAnimals",
+      "Animalauthor.favouriteThings",
+      "Animalauthor.thingsDislikes",
+      "Animalauthor.uniqueHabits",
+      "Animalauthor.eatingHabits",
+      "Animalauthor.relatedAnimals",
+      "Animalauthor.registeredWithKennelClub"
+    ];
     const posts = await Post.aggregate([
       {
         $match: {
@@ -745,13 +773,88 @@ for(let i=0;i<followingDocument.length;i++){
         },
       },
       {
+        $unset: unwantedUserFields,
+      },     
+      {
+        $lookup: {
+          from: "animals",
+          localField: "postOwnerDetails.postOwnerId",
+          foreignField: "_id",
+          as: "Animalauthor",
+        },
+      },
+      {
+        $unset: unwantedAnimalFields,
+      },
+      {
         $lookup: {
           from: "postvotes",
-          localField: "_id",
-          foreignField: "post",
+          let: { post: "$_id" },
+          pipeline: [
+            {
+              // Finding comments related to the postId
+              $match: {
+                $expr: {
+                  $eq: ["$post", "$$post"],
+                },
+              },
+            }
+          ],
+          // localField: "_id",
+          // foreignField: "post",
           as: "postVotes",
         },
       },
+      {
+        $lookup: {
+          from: "postvotes",
+          let: { post: "$_id" },
+          pipeline: [
+            {
+              $match: {
+                $expr: {
+                  $eq: ["$post", "$$post"],
+                },
+              },
+            },
+            {
+              $group: { _id: null, count: { $sum: 1 } },
+            },
+            {
+              $project: {
+                _id: false,
+              },
+            },
+          ],
+          as: "votesCount",
+        },
+      },
+      // {
+      //   $unwind: {
+      //     path: "$votesCount",
+      //     preserveNullAndEmptyArrays: true,
+      //   },
+      // },
+      // {
+      //   $addFields: {
+      //     // postVotes: "$postVotes.votes",
+      //     votesData: {
+      //       votes: "$postVotes",
+      //       votesCount: "$votesCount.count",
+      //     },
+      //   },
+      // },
+      // {
+      //   $unwind:{
+      //     path:  "$postVotes",
+      //     preserveNullAndEmptyArrays: true,
+      //   },
+      // },
+      // {
+      //   $addFields: {
+      //     postVotes: "$postVotes",
+      //   },
+      // },
       {
         $lookup: {
           from: "comments",
@@ -771,10 +874,21 @@ for(let i=0;i<followingDocument.length;i++){
             {
               $lookup: {
                 from: "users",
-                localField: "author",
+                localField: "authorDetails.authorId",
                 foreignField: "_id",
                 as: "author",
               },
+            },
+            {
+              $lookup: {
+                from: "animals",
+                localField: "authorDetails.authorId",
+                foreignField: "_id",
+                as: "Animalauthor",
+              },
+            },
+            {
+              $unset: unwantedAnimalFields,
             },
             {
               $lookup: {
@@ -784,9 +898,9 @@ for(let i=0;i<followingDocument.length;i++){
                 as: "commentVotes",
               },
             },
-            {
-              $unwind: "$author",
-            },
+            // {
+            //   $unwind: "$author",
+            // },
             {
               $unwind: {
                 path: "$commentVotes",
@@ -835,15 +949,18 @@ for(let i=0;i<followingDocument.length;i++){
           preserveNullAndEmptyArrays: true,
         },
       },
-      {
-        $unwind: "$postVotes",
-      },
-      {
-        $unwind: "$author",
-      },
+      // {
+      //   $unwind: "$postVotes",
+      // },
+      // {
+      //   $unwind: "$author",
+      // },
+      // {
+      //   $unwind: "$authorAnimal",
+      // },
       {
         $addFields: {
-          postVotes: "$postVotes.votes",
+          // postVotes: "$postVotes.votes",
           commentData: {
             comments: "$comments",
             commentCount: "$commentCount.count",
@@ -945,7 +1062,7 @@ module.exports.retrievMyPosts = async (req, res, next) => {
     //   },
     //   ...populatePostsPipeline,
     // ]);
-    return res.send({"posts": posts});
+    return res.send(posts);
   } catch (err) {
     console.log(err);
     next(err);

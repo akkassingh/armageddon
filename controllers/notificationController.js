@@ -3,11 +3,13 @@ const ObjectId = require('mongoose').Types.ObjectId;
 
 module.exports.retrieveNotifications = async (req, res, next) => {
   const user = res.locals.user;
+  const notification = await Notification.find({receiver:user._id})
+  console.log(notification)
 
   try {
     const notifications = await Notification.aggregate([
       {
-        $match: { receiver: ObjectId(user._id) },
+        $match: { receiver: user._id },
       },
       {
         $sort: { date: -1 },
@@ -35,25 +37,25 @@ module.exports.retrieveNotifications = async (req, res, next) => {
         $unwind: '$receiver',
       },
       // Look for the sender's followers
-      {
-        $lookup: {
-          from: 'followers',
-          localField: 'sender._id',
-          foreignField: 'user',
-          as: 'senderFollowers',
-        },
-      },
-      {
-        $unwind: '$senderFollowers',
-      },
-      // Check for the receiver's id in the sender's followers array
-      {
-        $addFields: {
-          isFollowing: {
-            $in: ['$receiver._id', '$senderFollowers.followers.user'],
-          },
-        },
-      },
+      // {
+      //   $lookup: {
+      //     from: 'followers',
+      //     localField: 'sender._id',
+      //     foreignField: 'user',
+      //     as: 'senderFollowers',
+      //   },
+      // },
+      // {
+      //   $unwind: '$senderFollowers',
+      // },
+      // // Check for the receiver's id in the sender's followers array
+      // {
+      //   $addFields: {
+      //     isFollowing: {
+      //       $in: ['$receiver._id', '$senderFollowers.followers.user'],
+      //     },
+      //   },
+      // },
       {
         $project: {
           read: true,
@@ -68,6 +70,7 @@ module.exports.retrieveNotifications = async (req, res, next) => {
         },
       },
     ]);
+    console.log(notifications)
     return res.send(notifications);
   } catch (err) {
     next(err);
