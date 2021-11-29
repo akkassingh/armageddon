@@ -20,10 +20,12 @@ const {
   petanduserdetails,
   getUserDetails,
   updateBioAndAvatar,
-  showPeopleToFollow
+  showPeopleToFollow,
+  getPendingGuardianRequests
 } = require("../controllers/userController");
 const { requireAuth, optionalAuth } = require("../controllers/authController");
 
+userRouter.get("/getPendingGuardianRequests",requireAuth,getPendingGuardianRequests)
 userRouter.get("/userDetails", requireAuth, getUserDetails);
 userRouter.get('/showPeopleToFollow',requireAuth, showPeopleToFollow);
 userRouter.get("/suggested/:max?", requireAuth, retrieveSuggestedUsers);
