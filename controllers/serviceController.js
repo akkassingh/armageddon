@@ -27,7 +27,7 @@ module.exports.serviceList = async (req, res, next) => {
     let serviceList = await Service.find({
       serviceProvider: res.locals.user._id,
     });
-    let count=await ServiceAppointment.find({ServiceProvider: res.locals.user._id})
+    let count=await ServiceAppointment.find({ServiceProvider: res.locals.user._id,bookingStatus:1})
 
     return res.status(201).json({ services: serviceList[0].serviceType, serviceStatus: serviceList[0].isVerified, appointments:count.length });
   } catch (err) {

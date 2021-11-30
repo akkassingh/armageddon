@@ -7,11 +7,15 @@ const PostVoteSchema = new Schema({
     ref: "Post",
   },
   voterDetails: {
-    voterType: {
-      type: String,
-      enum: ["Animal", "Human"],
+    Animalvoter:  {
+      type: Schema.ObjectId,
+      ref: "Animal",
     },
-    voterId: Schema.ObjectId,
+    Uservoter:  {
+      type: Schema.ObjectId,
+      ref: "User",
+    },
+    voterType:String,
   },
 });
 

@@ -7,13 +7,15 @@ const CommentSchema = new Schema({
     default: Date.now,
   },
   message: String,
-  authorDetails: {
-    authorType: {
-      type: String,
-      enum: ["Animal", "Human"],
-    },
-    authorId: Schema.ObjectId,
+  Animalauthor:  {
+    type: Schema.ObjectId,
+    ref: "Animal",
   },
+  Userauthor:  {
+    type: Schema.ObjectId,
+    ref: "User",
+  },
+  authorType:String,
   post: {
     type: Schema.ObjectId,
     ref: "Post",
