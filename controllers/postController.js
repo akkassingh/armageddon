@@ -1007,7 +1007,7 @@ module.exports.retrievMyPosts = async (req, res, next) => {
 
   try {
     // const authorId = ObjectId(res.locals.user._id);
-    const authorId = res.locals.user._id.toString();
+    const authorId = res.locals.user._id;
     const posts = await Post.aggregate([
       { $match: { author: authorId } },
       {
