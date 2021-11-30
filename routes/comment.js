@@ -18,7 +18,7 @@ commentRouter.post('/:commentId/vote', requireAuth, voteComment);
 commentRouter.post('/:commentReplyId/replyVote', requireAuth, voteCommentReply);
 commentRouter.post('/:parentCommentId/reply', requireAuth, createCommentReply);
 
-commentRouter.get('/:parentCommentId/replies/', retrieveCommentReplies);
+commentRouter.get('/:parentCommentId/:counter/replies/', retrieveCommentReplies);
 commentRouter.get('/:postId/:exclude', retrieveComments);
 
 commentRouter.delete('/:commentId', requireAuth, deleteComment);

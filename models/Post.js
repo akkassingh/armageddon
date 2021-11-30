@@ -16,14 +16,22 @@ const PostSchema = new Schema({
     type: Date,
     default: Date.now,
   },
-  author: String,
-  postOwnerDetails: {
-    postOwnerId: String,
-    postOwnerType: {
-      type: String,
-      enum: ["Animal", "Human"],
-    },
+  Animalauthor:  {
+    type: Schema.ObjectId,
+    ref: "Animal",
   },
+  Userauthor:  {
+    type: Schema.ObjectId,
+    ref: "User",
+  },
+  authorType:String
+  // postOwnerDetails: {
+  //   postOwnerId: String,
+  //   postOwnerType: {
+  //     type: String,
+  //     enum: ["Animal", "Human"],
+  //   },
+  // },
 });
 
 PostSchema.pre("deleteOne", async function (next) {

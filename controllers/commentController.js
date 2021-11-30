@@ -15,7 +15,19 @@ const {
 module.exports.createComment = async (req, res, next) => {
   const { postId } = req.params;
   const { message } = req.body;
-  const user = res.locals.user;
+  let Userauthor,Animalauthor;
+  let user=undefined;
+  if(req.body.type=="human"){
+   user = res.locals.user
+   Userauthor=user._id
+   authorType="human"
+  }
+  else{
+  user = res.locals.animal  
+  authorType="human"
+  Animalauthor=user._id
+  }
+
   let post = undefined;
 
   if (!message) {
@@ -37,13 +49,8 @@ module.exports.createComment = async (req, res, next) => {
         .send({ error: 'Could not find a post with that post id.' });
     }
     let authorDetails;
-    if(req.body.type=="human"){
-       authorDetails={
-        authorId: user._id,
-        authorType:"Human"
-      }
-    }
-    const comment = new Comment({ message, authorDetails: authorDetails, post: postId });
+
+    const comment = new Comment({ message, Userauthor, Animalauthor, authorType, post: postId });
     await comment.save();
     res.status(201).send({
       ...comment.toObject(),
@@ -194,7 +201,7 @@ module.exports.createCommentReply = async (req, res, next) => {
     const parentCommentDocument = await Comment.findById(parentCommentId);
     const postDocument = await Post.findById(
       parentCommentDocument.post
-    ).populate('author');
+    ).populate({path:'author', model:'User'});
     const image = formatCloudinaryUrl(
       postDocument.image,
       {
@@ -289,7 +296,7 @@ module.exports.voteCommentReply = async (req, res, next) => {
 
 module.exports.retrieveCommentReplies = async (req, res, next) => {
   const { parentCommentId } = req.params;
-  const {counter = 0} = req.body;
+  const {counter = 0} = req.params;
   try {
     const comment = await Comment.findById(parentCommentId);
     if (!comment) {
