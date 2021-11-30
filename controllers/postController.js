@@ -1062,7 +1062,7 @@ module.exports.retrievMyPosts = async (req, res, next) => {
     //   },
     //   ...populatePostsPipeline,
     // ]);
-    return res.send(posts);
+    return res.send({"posts" : posts});
   } catch (err) {
     console.log(err);
     next(err);
