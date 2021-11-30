@@ -27,13 +27,13 @@ const { requireAuth, optionalAuth } = require("../controllers/authController");
 
 userRouter.get("/getPendingGuardianRequests",requireAuth,getPendingGuardianRequests)
 userRouter.get("/userDetails", requireAuth, getUserDetails);
-userRouter.get('/showPeopleToFollow',requireAuth, showPeopleToFollow);
+userRouter.post('/showPeopleToFollow',requireAuth, showPeopleToFollow);
 userRouter.get("/suggested/:max?", requireAuth, retrieveSuggestedUsers);
 userRouter.get("/:username", optionalAuth, retrieveUser);
-userRouter.get("/:username/posts", retrievePosts);
-userRouter.get("/:userId/following", requireAuth, retrieveFollowing);
-userRouter.get("/:userId/followers", requireAuth, retrieveFollowers);
-userRouter.get("/:username/search", searchUsers);
+userRouter.post("/:username/posts", retrievePosts);
+userRouter.post("/:userId/following", requireAuth, retrieveFollowing);
+userRouter.post("/:userId/followers", requireAuth, retrieveFollowers);
+userRouter.post("/:username/search", searchUsers);
 
 userRouter.put("/confirm", requireAuth, confirmUser);
 userRouter.put(

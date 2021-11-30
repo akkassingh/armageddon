@@ -694,7 +694,7 @@ module.exports.acceptFollowRequests = async (req, res, next) => {
 
 module.exports.retrievePostFeed = async (req, res, next) => {
   const user = res.locals.user;
-  const { counter } = req.params;
+  const { counter } = req.body;
 
   try {
     const followingDocument = await Following.find({'user.id': user._id });
