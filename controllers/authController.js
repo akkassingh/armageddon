@@ -70,21 +70,37 @@ module.exports.verifyJwtAnimal = (token) => {
 
 module.exports.requireAuth = async (req, res, next) => {
   const { authorization } = req.headers;
-  const type  = req.body.type ? req.body.type : req.query.type;
+  const {type} = req.body;
+  if (!type) {
+    return res.status(400).send({error: "Invalid Request Type!"})
+  }
+  // const type  = req.body.type ? req.body.type : req.query.type;
   if (!authorization) return res.status(401).send({ error: "Not authorized." });
-  try {
-    let user;
-    if (type && type === "sp") {
-      user = await this.verifyJwt(authorization, type);
-    } else {
-      user = await this.verifyJwt(authorization);
+  if (type === "animal"){
+    try {
+      let animal;
+      animal = await this.verifyJwtAnimal(authorization);
+      res.locals.animal = animal;
+      return next();
     }
-
-    // Allow other middlewares to access the authenticated user details.
-    res.locals.user = user;
-    return next();
-  } catch (err) {
-    return res.status(401).send({ error: err });
+    catch (err) {
+      return res.status(401).send({ error: err });
+    }
+  }
+  else {
+    try {
+      let user;
+      if (type && type === "sp") {
+        user = await this.verifyJwt(authorization, type);
+      } else {
+        user = await this.verifyJwt(authorization);
+      }
+      // Allow other middlewares to access the authenticated user details.
+      res.locals.user = user;
+      return next();
+    } catch (err) {
+      return res.status(401).send({ error: err });
+    }
   }
 };
 
