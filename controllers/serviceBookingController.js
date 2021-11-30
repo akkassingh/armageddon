@@ -207,7 +207,7 @@ module.exports.getmybookedAppointments = async (req, res, next) => {
       let obj= await ServiceAppointment.findOne({
         bookingDetails: serviceList[i]._id,
         bookingStatus:0
-      }).populate('bookingDetails','package run1 run2 startDate dayOff').populate('petDetails', 'name username'); 
+      }).populate('bookingDetails','package run1 run2 startDate dayOff').populate('petDetails', 'name username').populate('ServiceProvider','fullName username avatar'); 
       if(obj!=null)
       serviceList1.push(obj);
     }   
