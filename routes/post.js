@@ -38,7 +38,7 @@ const postLimiter = rateLimit({
 });
 
 postRouter.post("/", postLimiter, requireAuth, upload, createPost);
-postRouter.get("/myPosts", requireAuth, retrievMyPosts);
+postRouter.post("/myPosts", requireAuth, retrievMyPosts);
 postRouter.post("/suggested", requireAuth, retrieveSuggestedPosts);
 postRouter.post("/vote", requireAuth, votePost);
 postRouter.get("/foryoufeed/:counter", requireAuth, foryoufeed);
@@ -47,8 +47,8 @@ postRouter.get("/filters", (req, res) => {
   res.send({ filters });
 });
 postRouter.get("/:postId", retrievePost);
-postRouter.get("/feed/:counter", requireAuth, retrievePostFeed);
-postRouter.get("/hashtag/:hashtag", requireAuth, retrieveHashtagPosts);
+postRouter.post("/feed", requireAuth, retrievePostFeed);
+postRouter.post("/hashtag/:hashtag", requireAuth, retrieveHashtagPosts);
 
 postRouter.delete("/post", requireAuth, deletePost);
 

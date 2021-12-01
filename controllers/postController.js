@@ -694,7 +694,7 @@ module.exports.acceptFollowRequests = async (req, res, next) => {
 
 module.exports.retrievePostFeed = async (req, res, next) => {
   const user = res.locals.user;
-  const { counter } = req.params;
+  const { counter } = req.body;
 
   try {
     const followingDocument = await Following.find({'user.id': user._id });
@@ -1007,7 +1007,7 @@ module.exports.retrievMyPosts = async (req, res, next) => {
 
   try {
     // const authorId = ObjectId(res.locals.user._id);
-    const authorId = res.locals.user._id.toString();
+    const authorId = res.locals.user._id;
     const posts = await Post.aggregate([
       { $match: { author: authorId } },
       {
@@ -1062,7 +1062,7 @@ module.exports.retrievMyPosts = async (req, res, next) => {
     //   },
     //   ...populatePostsPipeline,
     // ]);
-    return res.send(posts);
+    return res.send({"posts" : posts});
   } catch (err) {
     console.log(err);
     next(err);

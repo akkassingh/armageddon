@@ -10,7 +10,7 @@ const {
 } = require('../controllers/hamburgerController');
 
 
-hamburgerRouter.get('/getBookmarks',requireAuth,getBookmarks);
+hamburgerRouter.post('/getBookmarks',requireAuth,getBookmarks);
 hamburgerRouter.post('/submitFeedback',requireAuth, submitFeedback);
 hamburgerRouter.get('/getBookings',requireAuth,getBookings);
 hamburgerRouter.post('/getHelp',requireAuth,getHelp)
