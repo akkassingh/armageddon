@@ -417,60 +417,133 @@ module.exports.retrieveFollowers = async (req, res, next) => {
   }
 };
 
+searchHuman = async(username,counter,type) => {
+  let lim = 10;
+  if (type === "Both") {lim = 5;}
+  const users = await User.aggregate([
+    {
+      $match: {
+        $or : [{username: { $regex: new RegExp(username,"i")}},{fullName: { $regex: new RegExp(username,"i")}}]
+      },
+    },
+    // {
+    //   $lookup: {
+    //     from: "followers",
+    //     localField: "_id",
+    //     foreignField: "user.id",
+    //     as: "followers",
+    //   },
+    // },
+    // {
+    //   $unwind: "$followers",
+    // },
+    // {
+    //   $addFields: {
+    //     followersCount: { $size: "$followers.followers" },
+    //   },
+    // },
+    {
+      $sort: { followersCount: -1 },
+    },
+    {
+      $skip: Number(counter*10),
+    },
+    {
+      $limit: lim,
+    },
+    {
+      $project: {
+        _id: true,
+        username: true,
+        avatar: true,
+        fullName: true,
+      },
+    },
+  ]);
+  users.forEach(function (element) {
+    element.type = "Human";
+  });
+  return users;
+};
+
+searchAnimal = async(username,counter,type) => {
+  let lim = 10;
+  if (type === "Both") {lim = 5;}
+  const users = await Animal.aggregate([
+    {
+      $match: {
+        $or : [{username: { $regex: new RegExp(username,"i")}},{fullName: { $regex: new RegExp(username,"i")}}]
+      },
+    },
+    {
+      $sort: { followersCount: -1 },
+    },
+    {
+      $skip: Number(counter*10),
+    },
+    {
+      $limit: lim,
+    },
+    {
+      $project: {
+        _id: true,
+        username: true,
+        avatar: true,
+        fullName: true,
+      },
+    },
+  ]);
+  users.forEach(function (element) {
+    element.type = "Animal";
+  });
+  return users;
+};
+
+
+
 module.exports.searchUsers = async (req, res, next) => {
-  const {username, counter = 0} = req.body;
-  if (!username) {
+  const {username, counter = 0, type} = req.body;
+  //type will be of 3 types
+  // "Both" will mean both user and animal
+  // "Animal" will mean only animal
+  // "Human" will mean only humans
+  if (!username || !type) {
     return res
       .status(400)
       .send({ error: "Please provide a user to search for" });
   }
   try {
-    const users = await User.aggregate([
-      {
-        $match: {
-          $or : [{username: { $regex: new RegExp(username,"i")}},{fullName: { $regex: new RegExp(username,"i")}}]
-        },
-      },
-      // {
-      //   $lookup: {
-      //     from: "followers",
-      //     localField: "_id",
-      //     foreignField: "user.id",
-      //     as: "followers",
-      //   },
-      // },
-      // {
-      //   $unwind: "$followers",
-      // },
-      // {
-      //   $addFields: {
-      //     followersCount: { $size: "$followers.followers" },
-      //   },
-      // },
-      {
-        $sort: { followersCount: -1 },
-      },
-      {
-        $skip: Number(counter*10),
-      },
-      {
-        $limit: 10,
-      },
-      {
-        $project: {
-          _id: true,
-          username: true,
-          avatar: true,
-          fullName: true,
-        },
-      },
-    ]);
-    if (users.length === 0) {
-      return res
-        .status(404)
-        .send({ error: "Could not find any users matching the criteria." });
+    if (type === "Human"){
+      const users = await searchHuman(username,counter,type);
+      if (users.length === 0) {
+        return res
+          .status(404)
+          .send({ error: "Could not find any users matching the criteria." });
+      }
+      return res.send(users);
     }
-    return res.send(users);
+    else if (type == "Animal"){
+      const users = await searchAnimal(username,counter,type);
+      if (users.length === 0) {
+        return res
+          .status(404)
+          .send({ error: "Could not find any users matching the criteria." });
+      }
+      return res.send(users);
+
+    }
+    else if (type=== "Both"){
+      const humans = await searchHuman(username,counter,type);
+      const animals = await searchAnimal(username,counter,type);
+      const users = humans.concat(animals);
+      if (users.length === 0) {
+        return res
+          .status(404)
+          .send({ error: "Could not find any users matching the criteria." });
+      }
+      return res.send(users);
+    }
+    
   } catch (err) {
     next(err);
   }
