@@ -1213,10 +1213,9 @@ module.exports.verifyResetPasswordOTP = async (req, res, next) => {
     const confirmationToken = await ConfirmationToken.findOne({
       user: user._id,
     });
-    console.log(confirmationToken);
     if (
       !confirmationToken ||
-      Date.now() > confirmationToken.timestamp + 900000
+      Date.now() > confirmationToken.timestampreset + 900000
     ) {
       return res
         .status(404)
