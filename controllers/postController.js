@@ -1123,7 +1123,7 @@ module.exports.retrieveHashtagPosts = async (req, res, next) => {
 
 module.exports.foryoufeed = async (req, res, next) => {
   const user = res.locals.user;
-  const { counter } = req.params;
+  const { counter } = req.body;
 
   try {
 
