@@ -28,6 +28,7 @@ const {
   sendFollowRequest,
   getFollowRequests,
   acceptFollowRequests,
+  foryoufeed
 } = require("../controllers/postController");
 const filters = require("../utils/filters");
 
@@ -38,8 +39,9 @@ const postLimiter = rateLimit({
 
 postRouter.post("/", postLimiter, requireAuth, upload, createPost);
 postRouter.get("/myPosts", requireAuth, retrievMyPosts);
-postRouter.get("/suggested", requireAuth, retrieveSuggestedPosts);
+postRouter.post("/suggested", requireAuth, retrieveSuggestedPosts);
 postRouter.post("/vote", requireAuth, votePost);
+postRouter.get("/foryoufeed/:counter", requireAuth, foryoufeed);
 
 postRouter.get("/filters", (req, res) => {
   res.send({ filters });
