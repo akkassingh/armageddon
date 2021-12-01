@@ -71,12 +71,14 @@ module.exports.createComment = async (req, res, next) => {
     sendCommentNotification(
       req,
       user,
-      post.author,
+      post.Animalauthor,
+      post.Userauthor,
       image,
       post.filter,
       message,
       post._id
     );
+
 
     // Find the username of the post author
     const postDocument = await Post.findById(post._id).populate('author');

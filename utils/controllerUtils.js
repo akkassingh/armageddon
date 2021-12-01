@@ -303,17 +303,19 @@ module.exports.formatCloudinaryUrl = (url, size, thumb) => {
 module.exports.sendCommentNotification = async (
   req,
   sender,
-  receiver,
+  Userreceiver,
+  Animalreceiver,
   image,
   filter,
   message,
   postId
 ) => {
   try {
-    if (String(sender._id) !== String(receiver)) {
+    if (String(sender._id) !== String(Userreceiver) && String(sender._id) !== String(Animalreceiver)) {
       const notification = new Notification({
         sender: sender._id,
-        receiver,
+        Userreceiver,
+        Animalreceiver,
         notificationType: "comment",
         date: Date.now(),
         notificationData: {
@@ -323,7 +325,8 @@ module.exports.sendCommentNotification = async (
           filter,
         },
       });
-      await notification.save();
+      let ep=await notification.save();
+      console.log(ep)
       socketHandler.sendNotification(req, {
         ...notification.toObject(),
         sender: {

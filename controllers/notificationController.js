@@ -25,7 +25,7 @@ module.exports.retrieveNotifications = async (req, res, next) => {
       {
         $lookup: {
           from: 'users',
-          localField: 'receiver',
+          localField: 'Userreceiver',
           foreignField: '_id',
           as: 'receiver',
         },

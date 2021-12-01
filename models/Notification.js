@@ -6,9 +6,13 @@ const NotificationSchema = new Schema({
     type: Schema.ObjectId,
     ref: 'User',
   },
-  receiver: {
+  Userreceiver: {
     type: Schema.ObjectId,
     ref: 'User',
+  },
+  Animalreceiver: {
+    type: Schema.ObjectId,
+    ref: 'Animal',
   },
   notificationType: {
     type: String,
