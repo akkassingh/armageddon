@@ -317,10 +317,30 @@ module.exports.getmyactiveAppointments = async (req, res, next) => {
     let serviceList = await ServiceAppointment.find({
       ServiceProvider: res.locals.user._id,
       bookingStatus:{ $lte:1}
-    }).populate('bookingDetails','package run1 run2 startDate dayOff paymentDetails').populate('petDetails', 'name username').populate('User','fullName username avatar');
+    }).populate('bookingDetails','package run1 run2 startDate dayOff paymentDetails numberOfPets').populate('petDetails', 'name username').populate('User','fullName username avatar');
+    console.log(serviceList)
     serviceList.filter(function (ele) {
       return ele.bookingDetails.paymentDetails.status == 1;
     });   
+    for(let i=0;i<serviceList.length;i++){
+      if(serviceList[i].petDetails==null){
+        let pet={
+          name:"dog",
+          username:"dog",
+          _id:"1"
+        }
+        serviceList[i].petDetails.push(pet)
+      }
+      if(serviceList[i].petDetails.length==1 && serviceList[i].bookingDetails.numberOfPets==2){
+        console.log('looooooo')
+        let pet={
+          name:"dog",
+          username:"dog",
+          _id:"1"
+        }
+        serviceList[i].petDetails.push(pet)
+      }
+    }
     return res.status(200).json({serviceList:serviceList});
   } catch (err) {
     console.log(err);
@@ -333,10 +353,29 @@ module.exports.getmypastAppointments = async (req, res, next) => {
     let serviceList = await ServiceAppointment.find({
       ServiceProvider: res.locals.user._id,
       bookingStatus:{ $gte:2} //recieved=0,accepted(confirmed=1).rejected(cancelled)=2,completed=3
-    }).populate('bookingDetails','package run1 run2 paymentDetails').populate('petDetails', 'name username').populate('User','fullName username avatar');
+    }).populate('bookingDetails','package run1 run2 paymentDetails numberOfPets').populate('petDetails', 'name username').populate('User','fullName username avatar');
     serviceList.filter(function (ele) {
       return ele.bookingDetails.paymentDetails.status == 1;
     });
+    for(let i=0;i<serviceList.length;i++){
+      if(serviceList[i].petDetails==null){
+        let pet={
+          name:"dog",
+          username:"dog",
+          _id:"1"
+        }
+        serviceList[i].petDetails.push(pet)
+      }
+      if(serviceList[i].petDetails.length==1 && serviceList[i].bookingDetails.numberOfPets==2){
+        console.log('looooooo')
+        let pet={
+          name:"dog",
+          username:"dog",
+          _id:"1"
+        }
+        serviceList[i].petDetails.push(pet)
+      }
+    }
     return res.status(200).json({serviceList:serviceList});
   } catch (err) {
     console.log(err);
@@ -408,6 +447,7 @@ module.exports.changeRunstatus = async (req, res, next) => {
           }
         }
       }
+      
     return res.status(200).send({success:true});
   } catch (err) {
     console.log(err);
@@ -441,6 +481,22 @@ module.exports.getAppointmentDetails = async (req, res, next) => {
       }
     }
       serviceList.bookingDetails.runDetails=[]
+      if(serviceList.petDetails==null){
+        let pet={
+          name:"dog",
+          username:"dog",
+          _id:"1"
+        }
+        serviceList.petDetails.push(pet)
+      }
+      if(serviceList.petDetails.length==1 && serviceList.bookingDetails.numberOfPets==2){
+        let pet={
+          name:"dog",
+          username:"dog",
+          _id:"1"
+        }
+        serviceList.petDetails.push(pet)
+      }
     return res.status(200).json(serviceList);
   } catch (err) {
     console.log(err);
