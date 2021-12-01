@@ -21,19 +21,21 @@ const {
   getUserDetails,
   updateBioAndAvatar,
   showPeopleToFollow,
-  getPendingGuardianRequests
+  getPendingGuardianRequests,
+  getUserDetailsById
 } = require("../controllers/userController");
 const { requireAuth, optionalAuth } = require("../controllers/authController");
 
 userRouter.get("/getPendingGuardianRequests",requireAuth,getPendingGuardianRequests)
 userRouter.get("/userDetails", requireAuth, getUserDetails);
+userRouter.post("/getUserDetailsById", getUserDetailsById);
 userRouter.post('/showPeopleToFollow',requireAuth, showPeopleToFollow);
 userRouter.get("/suggested/:max?", requireAuth, retrieveSuggestedUsers);
 userRouter.get("/:username", optionalAuth, retrieveUser);
 userRouter.post("/:username/posts", retrievePosts);
 userRouter.post("/:userId/following", requireAuth, retrieveFollowing);
 userRouter.post("/:userId/followers", requireAuth, retrieveFollowers);
-userRouter.post("/:username/search", searchUsers);
+userRouter.post("/search", searchUsers);
 
 userRouter.put("/confirm", requireAuth, confirmUser);
 userRouter.put(

@@ -418,37 +418,35 @@ module.exports.retrieveFollowers = async (req, res, next) => {
 };
 
 module.exports.searchUsers = async (req, res, next) => {
-  const { username } = req.params;
-  const {counter = 0} = req.body;
+  const {username, counter = 0} = req.body;
   if (!username) {
     return res
       .status(400)
-      .send({ error: "Please provide a user to search for." });
+      .send({ error: "Please provide a user to search for" });
   }
-
   try {
     const users = await User.aggregate([
       {
         $match: {
-          username: { $regex: new RegExp(username), $options: "i" },
+          $or : [{username: { $regex: new RegExp(username,"i")}},{fullName: { $regex: new RegExp(username,"i")}}]
         },
       },
-      {
-        $lookup: {
-          from: "followers",
-          localField: "_id",
-          foreignField: "user",
-          as: "followers",
-        },
-      },
-      {
-        $unwind: "$followers",
-      },
-      {
-        $addFields: {
-          followersCount: { $size: "$followers.followers" },
-        },
-      },
+      // {
+      //   $lookup: {
+      //     from: "followers",
+      //     localField: "_id",
+      //     foreignField: "user.id",
+      //     as: "followers",
+      //   },
+      // },
+      // {
+      //   $unwind: "$followers",
+      // },
+      // {
+      //   $addFields: {
+      //     followersCount: { $size: "$followers.followers" },
+      //   },
+      // },
       {
         $sort: { followersCount: -1 },
       },
@@ -1124,4 +1122,79 @@ module.exports.getPendingGuardianRequests = async (req, res, next) => {
     console.log(err);
     next(err);
   }
+}
+
+module.exports.getUserDetailsById = async (req, res, next) => {
+  const { id, type } = req.body;
+  let user = {};
+  try {
+    if (type == "Human"){
+      user = await User.findById(id).populate("pets.pet", '_id name avatar');
+      if (!user)
+        return res.status(404).send({ error: "No such user exists!" });
+    }
+    else {
+      user = await Animal.findById(id , 'username name avatar');
+      if (!user)
+        return res.status(404).send({ error: "No such user exists!" });
+    }
+    
+    const followersCount = await Followers.aggregate([
+      {
+        $match: { "user.id": id },
+      },
+      {
+        $count: "totalFollowers",
+      },
+    ]);
+
+    let totalFollowers =
+      followersCount.length == 0 ? 0 : followersCount[0].totalFollowers;
+
+    const followingCount = await Following.aggregate([
+      {
+        $match: { "user.id": id },
+      },
+      {
+        $count: "totalFollowing",
+      },
+    ]);
+
+    let totalFollowings =
+      followingCount.length == 0 ? 0 : followingCount[0].totalFollowing;
+
+    const getPosts = await Post.find({
+      "postOwnerDetails.postOwnerId": id,
+    });
+
+    let totalLikes = 0;
+    let totalPosts = 0;
+    if (getPosts.length > 0) {
+      totalPosts = getPosts.length;
+      for (let p1 of getPosts) {
+        const getLikes = await PostVote.aggregate([
+          {
+            $match: { post: ObjectId(p1._id) },
+          },
+          {
+            $count: "totalLikes",
+          },
+        ]);
+        totalLikes += getLikes.length == 0 ? 0 : Number(getLikes[0].totalLikes);
+      }
+    }
+
+    return res.status(200).json({
+      user,
+      totalFollowers,
+      totalFollowings,
+      totalLikes,
+      totalPosts,
+    });
+  } catch (err) {
+    console.log(err);
+    logger.info(err);
+    res.status(400).send({ error: err });
+  }
+
 }
