@@ -116,7 +116,7 @@ module.exports.optionalAuth = async (req, res, next) => {
 };
 
 module.exports.loginAuthentication = async (req, res, next) => {
-  const { authorization } = req.headers;
+  let { authorization } = req.headers;
   authorization = null;
   const { usernameOrEmail, password, type } = req.body;
   if (type && type === "sp") {
