@@ -27,7 +27,8 @@ const {
   getscrollAppointmentstatus,
   getReport,
   changeRunstatus,
-  getServiceProviderProfile
+  getServiceProviderProfile,
+  postPayment
 } = require("../controllers/serviceController");
 
 const { requireAuth } = require("../controllers/authController");
@@ -65,5 +66,6 @@ serviceRouter.post("/getscrollAppointmentstatus", requireAuth, getscrollAppointm
 serviceRouter.post("/changeRunstatus", requireAuth, changeRunstatus);
 
 serviceRouter.post("/getServiceProviderProfile", requireAuth, getServiceProviderProfile);
+serviceRouter.patch("/postPayment", requireAuth, postPayment);
 
 module.exports = serviceRouter;

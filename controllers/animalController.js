@@ -489,7 +489,7 @@ module.exports.getRelationRequests = async (req, res, next) => {
     }
     const val = (type == "incoming") ? 1 : 0; 
     const result = requests.relatedAnimals.filter(function(ele){
-      return ele.status = val;
+      return ele.status == val;
     })
     return res.status(200).send({"pendingIncomingRequests": result});
   }

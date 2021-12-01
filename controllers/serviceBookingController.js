@@ -207,11 +207,10 @@ module.exports.getmybookedAppointments = async (req, res, next) => {
       let obj= await ServiceAppointment.findOne({
         bookingDetails: serviceList[i]._id,
         bookingStatus:0
-      }).populate('bookingDetails','package run1 run2 startDate dayOff').populate('petDetails', 'name username').populate('ServiceProvider','fullName username avatar'); 
-      if(obj!=null)
+      }).populate('bookingDetails','package run1 run2 startDate dayOff paymentDetails').populate('petDetails', 'name username').populate('ServiceProvider','fullName username avatar'); 
+      if(obj!=null && obj.bookingDetails.paymentDetails.status)
       serviceList1.push(obj);
     }   
-  
     return res.status(200).json({serviceList:serviceList1});
   } catch (err) {
     console.log(err);
@@ -224,7 +223,10 @@ module.exports.getmyactiveAppointments = async (req, res, next) => {
     let serviceList = await ServiceAppointment.find({
       User: res.locals.user._id,
       bookingStatus:1
-    }).populate('bookingDetails','package run1 run2 startDate dayOff').populate('petDetails', 'name username').populate('ServiceProvider','fullName username avatar');     
+    }).populate('bookingDetails','package run1 run2 startDate dayOff paymentDetails').populate('petDetails', 'name username').populate('ServiceProvider','fullName username avatar');     
+    serviceList.filter(function (ele){
+      return ele.bookingDetails.paymentDetails.status == 1;
+    })
     return res.status(200).json({serviceList:serviceList});
   } catch (err) {
     console.log(err);
@@ -238,7 +240,10 @@ module.exports.getmypastAppointments = async (req, res, next) => {
     let serviceList = await ServiceAppointment.find({
       User: res.locals.user._id,
       bookingStatus:{ $gte:3} //recieved=0,accepted(confirmed=1).rejected(cancelled)=2,completed=3
-    }).populate('bookingDetails','package run1 run2').populate('petDetails', 'name username').populate('ServiceProvider','fullName username avatar');          
+    }).populate('bookingDetails','package run1 run2 paymentDetails').populate('petDetails', 'name username').populate('ServiceProvider','fullName username avatar');       
+    serviceList.filter(function (ele){
+      return ele.bookingDetails.paymentDetails.status == 1;
+    })   
     return res.status(200).json({serviceList:serviceList});
   } catch (err) {
     console.log(err);
@@ -251,9 +256,13 @@ module.exports.getAppointmentDetails = async (req, res, next) => {
     let serviceList = await ServiceAppointment.findOne(     
       { bookingDetails: req.body.bookingDetailsId }).populate('bookingDetails').populate('petDetails').populate('ServiceProvider','fullName username avatar');     
       console.log(serviceList)
-
-      serviceList.bookingDetails.runDetails=[]
-    return res.status(200).json(serviceList);
+      if (serviceList.bookingDetails.paymentDetails.status){
+        serviceList.bookingDetails.runDetails=[]
+        return res.status(200).json(serviceList);
+      }
+      else{
+        return res.status(200).send({error : "Payment Not Done for this Service!"})
+      }
   } catch (err) {
     console.log(err);
     next(err);
@@ -268,7 +277,8 @@ module.exports.getscrollAppointmentstatus = async (req, res, next) => {
       { bookingDetails: req.body.bookingDetailsId }).populate('bookingDetails');
       const count=serviceList.bookingDetails.runDetails.length;
       for(let i=0;i<count;i++){
-        if(serviceList.bookingDetails.runDetails[i].runDate==formatDate(new Date(parseInt(req.body.date)))){
+        if(serviceList.bookingDetails.runDetails[i].runDate==formatDate(new Date(parseInt(req.body.date))) && 
+            serviceList.bookingDetails.paymentDetails.status){
           status=serviceList.bookingDetails.runDetails[i].run1Status
           resp.push({"walkStatus":status})
           // if(serviceList.bookingDetails.runDetails[i].run2Status){

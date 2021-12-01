@@ -213,7 +213,7 @@ module.exports.sendPasswordResetOTP = async (
           resettoken: hashedotp,
           timestampreset: current_time,
         });
-        confirmationToken.save();
+        await confirmationToken.save();
       } else {
         await ConfirmationToken.findOneAndUpdate(
           { user: user._id },
@@ -250,7 +250,7 @@ module.exports.sendPasswordResetOTP = async (
           resettoken: hashedotp,
           timestampreset: current_time,
         });
-        confirmationToken.save();
+        await confirmationToken.save();
       } else {
         await ConfirmationToken.findOneAndUpdate(
           { user: user._id },

@@ -317,7 +317,10 @@ module.exports.getmyactiveAppointments = async (req, res, next) => {
     let serviceList = await ServiceAppointment.find({
       ServiceProvider: res.locals.user._id,
       bookingStatus:{ $lte:1}
-    }).populate('bookingDetails','package run1 run2 startDate dayOff').populate('petDetails', 'name username').populate('User','fullName username avatar');     
+    }).populate('bookingDetails','package run1 run2 startDate dayOff paymentDetails').populate('petDetails', 'name username').populate('User','fullName username avatar');
+    serviceList.filter(function (ele) {
+      return ele.bookingDetails.paymentDetails.status == 1;
+    });   
     return res.status(200).json({serviceList:serviceList});
   } catch (err) {
     console.log(err);
@@ -330,7 +333,10 @@ module.exports.getmypastAppointments = async (req, res, next) => {
     let serviceList = await ServiceAppointment.find({
       ServiceProvider: res.locals.user._id,
       bookingStatus:{ $gte:2} //recieved=0,accepted(confirmed=1).rejected(cancelled)=2,completed=3
-    }).populate('bookingDetails','package run1 run2').populate('petDetails', 'name username').populate('User','fullName username avatar');     ;     
+    }).populate('bookingDetails','package run1 run2 paymentDetails').populate('petDetails', 'name username').populate('User','fullName username avatar');
+    serviceList.filter(function (ele) {
+      return ele.bookingDetails.paymentDetails.status == 1;
+    });
     return res.status(200).json({serviceList:serviceList});
   } catch (err) {
     console.log(err);
@@ -415,6 +421,7 @@ module.exports.getAppointmentDetails = async (req, res, next) => {
       { _id: req.body.appointmentId }).populate('bookingDetails').populate('petDetails').populate('User','fullName username avatar');     
       console.log(serviceList)
       let count=serviceList.bookingDetails.runDetails.length;
+      if (serviceList.bookingDetails.paymentDetails.status){
       if(serviceList.bookingDetails.runDetails[count-1].run1Status){
         if(serviceList.bookingDetails.runDetails[count-1].runTime2){
           if(serviceList.bookingDetails.runDetails[count-1].run2Status){
@@ -432,6 +439,7 @@ module.exports.getAppointmentDetails = async (req, res, next) => {
           serviceList.serviceStatus=1;
         }
       }
+    }
       serviceList.bookingDetails.runDetails=[]
     return res.status(200).json(serviceList);
   } catch (err) {
@@ -552,4 +560,37 @@ function formatDate(date) {
       day = '0' + day;
 
   return [year, month, day].join('-');
+}
+
+module.exports.postPayment = async (req, res, next) => {
+  const {bookingId, transactionId, amount} = req.body;
+  const user = res.locals.user;
+  if (!bookingId) {
+    return res.status(400).send({"error": "Invalid Request!"})
+  }
+  try{
+    const bookingStatus = await bookingDetails.findById(bookingId, 'paymentDetails');
+    if (!bookingStatus){
+      return res.status(404).send({"error" : "No Booking Found with given credentials!"});
+    }
+    if (!bookingStatus.paymentDetails.status){
+      await bookingDetails.updateOne(
+        {
+          "_id" : bookingId
+        },
+        {
+          "paymentDetails.transactionId" : transactionId,
+          "paymentDetails.status" : 1,
+          "paymentDetails.amount" : amount,
+        });
+      return res.status(201).send({"message" : "Your booking has been registered successfully!"})
+    }
+    else {
+      return res.status(200).send({error : "Your booking has been already registered!"})
+    }
+  }
+  catch (err) {
+    console.log(err);
+    next(err);
+  }
 }
