@@ -28,6 +28,7 @@ const {
   sendFollowRequest,
   getFollowRequests,
   acceptFollowRequests,
+  foryoufeed
 } = require("../controllers/postController");
 const filters = require("../utils/filters");
 
@@ -40,6 +41,7 @@ postRouter.post("/", postLimiter, requireAuth, upload, createPost);
 postRouter.post("/myPosts", requireAuth, retrievMyPosts);
 postRouter.post("/suggested", requireAuth, retrieveSuggestedPosts);
 postRouter.post("/vote", requireAuth, votePost);
+postRouter.post("/foryoufeed/", requireAuth, foryoufeed);
 
 postRouter.get("/filters", (req, res) => {
   res.send({ filters });

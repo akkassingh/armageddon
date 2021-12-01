@@ -121,6 +121,10 @@ const bookingDetailsSchema = new Schema({
   status:{
     type: Number,
     default: 0,
+  },
+  paymentStatus:{
+    type:Number,
+    default:0
   }
 });
 
