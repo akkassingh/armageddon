@@ -43,17 +43,20 @@ module.exports.registerPet = async (req, res, next) => {
     registeredWithKennelClub,
   } = req.body;
   try {
-    let fileArr = [];
+    let fileArr = null;
+    if (req.files){
+      fileArr = [];
     for (let fl of req.files) {
       const response = await cloudinary.uploader.upload(fl.path);
       fileArr.push(response.secure_url);
       fs.unlinkSync(fl.path);
     }
+  }
 
     const animal = new Animal({
       name,
       username,
-      avatar: fileArr[0],
+      avatar: (fileArr == null) ? null : fileArr[0],
       category,
       bio,
       animalType,
