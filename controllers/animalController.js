@@ -20,6 +20,7 @@ module.exports.registerPet = async (req, res, next) => {
   const user = res.locals.user;
   const {
     name,
+    avatar,
     username,
     category,
     bio,
@@ -44,20 +45,20 @@ module.exports.registerPet = async (req, res, next) => {
     registeredWithKennelClub,
   } = req.body;
   try {
-    let fileArr = null;
-    if (req.files){
-      fileArr = [];
-    for (let fl of req.files) {
-      const response = await cloudinary.uploader.upload(fl.path);
-      fileArr.push(response.secure_url);
-      fs.unlinkSync(fl.path);
-    }
-  }
+    // let fileArr = null;
+  //   if (req.files){
+  //     fileArr = [];
+  //   for (let fl of req.files) {
+  //     const response = await cloudinary.uploader.upload(fl.path);
+  //     fileArr.push(response.secure_url);
+  //     fs.unlinkSync(fl.path);
+  //   }
+  // }
 
     const animal = new Animal({
       name,
       username,
-      avatar: (fileArr == null) ? null : fileArr[0],
+      avatar,
       category,
       bio,
       animalType,
