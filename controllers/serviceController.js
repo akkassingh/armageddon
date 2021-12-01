@@ -583,7 +583,7 @@ module.exports.postPayment = async (req, res, next) => {
           "paymentDetails.status" : 1,
           "paymentDetails.amount" : amount,
         });
-      return res.status(201).send({"message" : "Your booking has been registered successfully!"})
+      return res.status(201).send({"success" : true})
     }
     else {
       return res.status(200).send({error : "Your booking has been already registered!"})

@@ -9,6 +9,7 @@ const bcrypt = require("bcrypt");
 const jwt = require("jwt-simple");
 const fs = require("fs");
 const cloudinary = require("cloudinary").v2;
+const dogNames = require('dog-names');
 cloudinary.config({
   cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
   api_key: process.env.CLOUDINARY_API_KEY,
@@ -501,3 +502,19 @@ module.exports.getRelationRequests = async (req, res, next) => {
     next(err);
   }
 };
+
+module.exports.getUniquePetName = async (req, res, next) => {
+  let uniqueUsername = undefined;
+  try {
+    while (!uniqueUsername) {
+      const username = dogNames.allRandom() + Math.floor(Math.random(1000) * 9999 + 1);
+      const user = await Animal.findOne({username});
+      if (!user) {
+        uniqueUsername = username;
+      }
+    }
+    return res.status(200).send({"username" :uniqueUsername});
+  } catch (err) {
+    throw new Error(err.message);
+  }
+}
