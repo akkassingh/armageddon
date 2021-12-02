@@ -8,8 +8,13 @@ module.exports.retrieveNotifications = async (req, res, next) => {
 
   try {
     const notifications = await Notification.aggregate([
+      // {
+      //   $match: { receiver: user._id },
+      // },
       {
-        $match: { receiver: user._id },
+        $match: {
+          $or: [{ Userreceiver: user._id  }, { Animalreceiver: user._id }],
+        },
       },
       {
         $sort: { date: -1 },
@@ -19,20 +24,31 @@ module.exports.retrieveNotifications = async (req, res, next) => {
           from: 'users',
           localField: 'sender',
           foreignField: '_id',
-          as: 'sender',
+          as: 'senderUser',
+        },
+      },
+      {
+        $lookup: {
+          from: 'animals',
+          localField: 'sender',
+          foreignField: '_id',
+          as: 'senderAnimal',
         },
       },
       {
         $lookup: {
           from: 'users',
-          localField: 'receiver',
+          localField: 'Userreceiver',
           foreignField: '_id',
           as: 'receiver',
         },
       },
-      {
-        $unwind: '$sender',
-      },
+      // {
+      //   $unwind: '$senderUser',
+      // },
+      // {
+      //   $unwind: '$senderAnimal',
+      // },
       {
         $unwind: '$receiver',
       },
@@ -63,9 +79,12 @@ module.exports.retrieveNotifications = async (req, res, next) => {
           isFollowing: true,
           date: true,
           notificationData: true,
-          'sender.username': true,
-          'sender.avatar': true,
-          'sender._id': true,
+          'senderUser.username': true,
+          'senderUser.avatar': true,
+          'senderUser._id': true,
+          'senderAnimal.username': true,
+          'senderAnimal.avatar': true,
+          'senderAnimal._id': true,
           'receiver._id': true,
         },
       },
