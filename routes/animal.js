@@ -36,5 +36,4 @@ animalRouter.post('/sendRelationRequest', addRelatedAnimals);
 animalRouter.get('/getRelationRequests', getRelationRequests); //ok
 animalRouter.get('/getUniquePetName', getUniquePetName);
 animalRouter.patch('/editPetMainDetails' ,requireAuth, editPetMainDetails);
-
 module.exports = animalRouter;

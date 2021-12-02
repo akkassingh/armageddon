@@ -348,7 +348,7 @@ module.exports.getscrollAppointmentstatus = async (req, res, next) => {
     let resp=[];
     let status;
     let serviceList = await ServiceAppointment.findOne(     
-      { bookingDetails: req.body.bookingDetailsId }).populate('bookingDetails');
+      { bookingDetails: req.body.bookingDetailsId }).populate('bookingDetails').populate('ServiceProvider','fullName username avatar'); 
       const count=serviceList.bookingDetails.runDetails.length;
       for(let i=0;i<count;i++){
         if(serviceList.bookingDetails.runDetails[i].runDate==formatDate(new Date(parseInt(req.body.date))) && 
