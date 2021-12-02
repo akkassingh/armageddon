@@ -71,8 +71,8 @@ module.exports.createComment = async (req, res, next) => {
     sendCommentNotification(
       req,
       user,
-      post.Animalauthor,
       post.Userauthor,
+      post.Animalauthor,
       image,
       post.filter,
       message,
