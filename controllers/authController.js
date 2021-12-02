@@ -28,7 +28,7 @@ module.exports.verifyJwt = (token, type) => {
         if (user) {
           return resolve(user);
         } else {
-          reject("Not authorized.");
+          reject("Not authorized");
         }
       } else {
         const id = jwt.decode(token, process.env.JWT_SECRET).id;
@@ -40,11 +40,11 @@ module.exports.verifyJwt = (token, type) => {
         if (user) {
           return resolve(user);
         } else {
-          reject("Not authorized.");
+          reject("Not authorized");
         }
       }
     } catch (err) {
-      return reject("Not authorized.");
+      return reject("Not authorized");
     }
   });
 };
@@ -60,10 +60,10 @@ module.exports.verifyJwtAnimal = (token) => {
       if (animal) {
         return resolve(animal);
       } else {
-        reject("Not authorized.");
+        reject("Not authorized");
       }
     } catch (err) {
-      return reject("Not authorized.");
+      return reject("Not authorized");
     }
   });
 };
@@ -71,7 +71,7 @@ module.exports.verifyJwtAnimal = (token) => {
 module.exports.requireAuth = async (req, res, next) => {
   const { authorization } = req.headers;
   const type  = req.body.type ? req.body.type : req.query.type;
-  if (!authorization) return res.status(401).send({ error: "Not authorized." });
+  if (!authorization) return res.status(401).send({ error: "Not authorized" });
   try {
     let user;
     if (type && type === "sp") {
@@ -90,7 +90,7 @@ module.exports.requireAuth = async (req, res, next) => {
 
 module.exports.requireAuthAnimal = async (req, res, next) => {
   const { authorization } = req.headers;
-  if (!authorization) return res.status(401).send({ error: "Not authorized." });
+  if (!authorization) return res.status(401).send({ error: "Not authorized" });
   try {
     const animal = await this.verifyJwtAnimal(authorization);
     // Allow other middlewares to access the authenticated user details.
