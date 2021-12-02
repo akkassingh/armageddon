@@ -498,3 +498,31 @@ module.exports.getRelationRequests = async (req, res, next) => {
     next(err);
   }
 };
+
+module.exports.editPetMainDetails = async (req, res, next) => {
+  const {petId, username, fullName, bio, avatar} = req.body;
+  const user = res.locals.user;
+  let found = false;
+  for (var i=0; i<user.pets.length;i++){
+    if (user.pets[i].pet == petId){
+      found = true;
+    }
+  }
+  if (!found){
+    return res.status(401).send({error: "You are not authorized!"})
+  }
+  try {
+    let animal = await Animal.findById(petId, '_id');
+    if (!animal) return res.status(404).send({ error: "No such pet exists!" });
+    await Animal.updateOne(
+      { _id : petId},
+      {
+        ...req.body
+      }
+    )
+    return res.status(200).send({success: true});
+  }
+  catch (err) {
+    console.log(err);
+  }
+}
