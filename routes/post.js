@@ -42,7 +42,7 @@ postRouter.post("/", postLimiter, requireAuth, upload, createPost);
 postRouter.post("/myPosts", requireAuth, retrievMyPosts);
 postRouter.post("/suggested", requireAuth, retrieveSuggestedPosts);
 postRouter.post("/vote", requireAuth, votePost);
-postRouter.post("/foryoufeed/", requireAuth, foryoufeed);
+postRouter.post("/foryoufeed", requireAuth, foryoufeed);
 
 postRouter.get("/filters", (req, res) => {
   res.send({ filters });
