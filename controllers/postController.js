@@ -1388,3 +1388,56 @@ module.exports.foryoufeed = async (req, res, next) => {
     next(err);
   }
 };
+
+module.exports.follow = async (req, res, next) => {
+  try {
+    const { from, to } = req.body;
+    const user = res.locals.user;
+    if (from.toType === "Animal"){
+      let found = false;
+      for (var i=0; i<user.pets.length;i++){
+        if (user.pets[i].pet == from.fromId){
+          found = true;
+        }
+      }
+      if (!found){
+        return res.status(401).send({error: "You are not authorized!"})
+      }
+    }
+    if (user._id.toString() != from.fromId && from.fromType === "Human") {
+      return res.status(401).send({error: "You are not authorized!"})
+    }
+    let fromId = from.fromId === null ? user._id : from.fromId;
+    let toId = to.toId === null ? user._id : to.toId;
+    if (fromId === toId && from.fromType === to.toType){
+      res.status(400).send({error: "You can't follow yourself!"})
+    }
+    let check = await Followers.findOne({
+      $and: [
+        { "user.id": ObjectId(toId) },
+        { "followerDetails.followerId": ObjectId(fromId) },
+      ],
+    });
+    if (check) {
+      return res.status(200).send({ message: "You are already following the given user!" });
+    } else {
+      const followerDocument = new Followers({
+        "user.id" : ObjectId(toId),
+        "followerDetails.followerId": ObjectId(fromId),
+        "user.userType" : to.toType,
+        "followerDetails.followerType" : from.fromType 
+      });
+      const followingDocument = new Following({
+        "user.id" : ObjectId(fromId),
+        "followerDetails.followerId": ObjectId(toId),
+        "user.userType" : from.fromType,
+        "followerDetails.followerType" : to.toType 
+      });
+      await followerDocument.save();
+      await followingDocument.save();
+      return res.send({ success: true });
+    }
+  } catch (err) {
+    next(err);
+  }
+}

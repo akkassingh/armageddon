@@ -520,7 +520,7 @@ module.exports.searchUsers = async (req, res, next) => {
           .status(404)
           .send({ error: "Could not find any users matching the criteria." });
       }
-      return res.send(users);
+      return res.status(200).send({"profiles" : users});
     }
     else if (type == "Animal"){
       const users = await searchAnimal(username,counter,type);
@@ -529,7 +529,7 @@ module.exports.searchUsers = async (req, res, next) => {
           .status(404)
           .send({ error: "Could not find any users matching the criteria." });
       }
-      return res.send(users);
+      return res.status(200).send({"profiles" : users});
 
     }
     else if (type=== "Both"){
@@ -541,7 +541,7 @@ module.exports.searchUsers = async (req, res, next) => {
           .status(404)
           .send({ error: "Could not find any users matching the criteria." });
       }
-      return res.send(users);
+      return res.status(200).send({"profiles" : users});
     }
     
   } catch (err) {
