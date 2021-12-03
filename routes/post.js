@@ -28,6 +28,8 @@ const {
   sendFollowRequest,
   getFollowRequests,
   acceptFollowRequests,
+  foryoufeed,
+  follow
 } = require("../controllers/postController");
 const filters = require("../utils/filters");
 
@@ -37,16 +39,17 @@ const postLimiter = rateLimit({
 });
 
 postRouter.post("/", postLimiter, requireAuth, upload, createPost);
-postRouter.get("/myPosts", requireAuth, retrievMyPosts);
-postRouter.get("/suggested", requireAuth, retrieveSuggestedPosts);
+postRouter.post("/myPosts", requireAuth, retrievMyPosts);
+postRouter.post("/suggested", requireAuth, retrieveSuggestedPosts);
 postRouter.post("/vote", requireAuth, votePost);
+postRouter.post("/foryoufeed", requireAuth, foryoufeed);
 
 postRouter.get("/filters", (req, res) => {
   res.send({ filters });
 });
 postRouter.get("/:postId", retrievePost);
-postRouter.get("/feed/:counter", requireAuth, retrievePostFeed);
-postRouter.get("/hashtag/:hashtag", requireAuth, retrieveHashtagPosts);
+postRouter.post("/feed", requireAuth, retrievePostFeed);
+postRouter.post("/hashtag/:hashtag", requireAuth, retrieveHashtagPosts);
 
 postRouter.delete("/post", requireAuth, deletePost);
 
@@ -70,5 +73,6 @@ postRouter.post("/subcommentVote", requireAuth, postSubCommentVote);
 postRouter.post("/sendfollowrequest", requireAuth, sendFollowRequest);
 postRouter.post("/getfollowrequests", requireAuth, getFollowRequests);
 postRouter.post("/acceptfollowrequests", requireAuth, acceptFollowRequests);
+postRouter.post("/follow",requireAuth, follow);
 
 module.exports = postRouter;

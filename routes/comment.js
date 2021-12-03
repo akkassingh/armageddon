@@ -18,8 +18,8 @@ commentRouter.post('/:commentId/vote', requireAuth, voteComment);
 commentRouter.post('/:commentReplyId/replyVote', requireAuth, voteCommentReply);
 commentRouter.post('/:parentCommentId/reply', requireAuth, createCommentReply);
 
-commentRouter.get('/:parentCommentId/:counter/replies/', retrieveCommentReplies);
-commentRouter.get('/:postId/:exclude', retrieveComments);
+commentRouter.post('/:parentCommentId/replies/', retrieveCommentReplies);
+commentRouter.post('/:postId/:exclude', retrieveComments);
 
 commentRouter.delete('/:commentId', requireAuth, deleteComment);
 commentRouter.delete('/:commentReplyId/reply', requireAuth, deleteCommentReply);

@@ -101,10 +101,12 @@ const bookingDetailsSchema = new Schema({
   ],
   paymentDetails: {
     transactionId: String,
-    Status: {
-      type: String,
-      default: "Pending",
-      enum: ["Success", "Fail", "Pending"],
+    amount: Number,
+    status: {
+      type: Number,
+      default: 0,
+      // 0 for failed
+      // 1 for successful transaction
     },
   },
   bookingStatus: {
@@ -119,6 +121,10 @@ const bookingDetailsSchema = new Schema({
   status:{
     type: Number,
     default: 0,
+  },
+  paymentStatus:{
+    type:Number,
+    default:0
   }
 });
 

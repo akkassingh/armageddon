@@ -203,7 +203,7 @@ module.exports.sendPasswordResetOTP = async (
         username: user.username,
         otp: otp,
       });
-      const hashedotp = await this.hashPassword(otp, 10);
+      const hashedotp = await this.hashPassword(otp.toString(), 10);
       const confirmationTokenDocument = await ConfirmationToken.findOne({
         user: user._id,
       });
@@ -213,7 +213,7 @@ module.exports.sendPasswordResetOTP = async (
           resettoken: hashedotp,
           timestampreset: current_time,
         });
-        confirmationToken.save();
+        await confirmationToken.save();
       } else {
         await ConfirmationToken.findOneAndUpdate(
           { user: user._id },
@@ -240,7 +240,7 @@ module.exports.sendPasswordResetOTP = async (
         username: user.username,
         otp: otp,
       });
-      const hashedotp = await this.hashPassword(otp, 10);
+      const hashedotp = await this.hashPassword(otp.toString(), 10);
       const confirmationTokenDocument = await ConfirmationToken.findOne({
         user: user._id,
       });
@@ -250,7 +250,7 @@ module.exports.sendPasswordResetOTP = async (
           resettoken: hashedotp,
           timestampreset: current_time,
         });
-        confirmationToken.save();
+        await confirmationToken.save();
       } else {
         await ConfirmationToken.findOneAndUpdate(
           { user: user._id },

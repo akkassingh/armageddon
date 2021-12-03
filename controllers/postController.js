@@ -709,7 +709,7 @@ module.exports.retrievePostFeed = async (req, res, next) => {
    user = res.locals.user
   else
    user = res.locals.animal
-  const { counter } = req.params;
+  const { counter } = req.body;
 
   try {
     const followingDocument = await Following.find({'user.id': user._id });
@@ -1021,7 +1021,7 @@ module.exports.retrievMyPosts = async (req, res, next) => {
 
   try {
     // const authorId = ObjectId(res.locals.user._id);
-    const authorId = res.locals.user._id.toString();
+    const authorId = res.locals.user._id;
     const posts = await Post.aggregate([
       { $match: { author: authorId } },
       {
@@ -1076,7 +1076,7 @@ module.exports.retrievMyPosts = async (req, res, next) => {
     //   },
     //   ...populatePostsPipeline,
     // ]);
-    return res.send(posts);
+    return res.send({"posts" : posts});
   } catch (err) {
     console.log(err);
     next(err);
@@ -1131,3 +1131,327 @@ module.exports.retrieveHashtagPosts = async (req, res, next) => {
     next(err);
   }
 };
+
+
+
+
+module.exports.foryoufeed = async (req, res, next) => {
+  const user = res.locals.user;
+  const { counter } = req.body;
+
+  try {
+
+    const unwantedUserFields = [
+      "author.password",
+      "author.private",
+      "author.confirmed",
+      "author.bookmarks",
+      "author.email",
+      "author.website",
+      "author.bio",
+      "author.githubId",
+      "author.pets",
+      "author.googleUserId"
+    ];
+    const unwantedAnimalFields = [
+      "Animalauthor.mating",
+      "Animalauthor.adoption",
+      "Animalauthor.playBuddies",
+      "Animalauthor.username",
+      "Animalauthor.category",
+      "Animalauthor.animal_type",
+      "Animalauthor.location",
+      "Animalauthor.guardians",
+      "Animalauthor.pets",
+      "Animalauthor.bio",
+      "Animalauthor.animalType",
+      "Animalauthor.gender",
+      "Animalauthor.breed",
+      "Animalauthor.age",
+      "Animalauthor.playFrom",
+      "Animalauthor.playTo",
+      "Animalauthor.servicePet",
+      "Animalauthor.spayed",
+      "Animalauthor.friendlinessWithHumans",
+      "Animalauthor.friendlinessWithAnimals",
+      "Animalauthor.favouriteThings",
+      "Animalauthor.thingsDislikes",
+      "Animalauthor.uniqueHabits",
+      "Animalauthor.eatingHabits",
+      "Animalauthor.relatedAnimals",
+      "Animalauthor.registeredWithKennelClub"
+    ];
+    const posts = await Post.aggregate([
+      // {
+      //   $match: {
+      //     $or: [{ author: { $in: following } }, { author: ObjectId(user._id) }],
+      //   },
+      // },
+      { $sort: { date: -1 } },
+      { $skip: Number(counter)*5 },
+      { $limit: 5 },
+      {
+        $lookup: {
+          from: "users",
+          localField: "author",
+          foreignField: "_id",
+          as: "author",
+        },
+      },
+      {
+        $unset: unwantedUserFields,
+      },     
+      {
+        $lookup: {
+          from: "animals",
+          localField: "postOwnerDetails.postOwnerId",
+          foreignField: "_id",
+          as: "Animalauthor",
+        },
+      },
+      {
+        $unset: unwantedAnimalFields,
+      },
+      {
+        $lookup: {
+          from: "postvotes",
+          let: { post: "$_id" },
+          pipeline: [
+            {
+              // Finding comments related to the postId
+              $match: {
+                $expr: {
+                  $eq: ["$post", "$$post"],
+                },
+              },
+            }
+          ],
+          // localField: "_id",
+          // foreignField: "post",
+          as: "postVotes",
+        },
+      },
+      {
+        $lookup: {
+          from: "postvotes",
+          let: { post: "$_id" },
+          pipeline: [
+            {
+              $match: {
+                $expr: {
+                  $eq: ["$post", "$$post"],
+                },
+              },
+            },
+            {
+              $group: { _id: null, count: { $sum: 1 } },
+            },
+            {
+              $project: {
+                _id: false,
+              },
+            },
+          ],
+          as: "votesCount",
+        },
+      },
+      // {
+      //   $unwind: {
+      //     path: "$votesCount",
+      //     preserveNullAndEmptyArrays: true,
+      //   },
+      // },
+      // {
+      //   $addFields: {
+      //     // postVotes: "$postVotes.votes",
+      //     votesData: {
+      //       votes: "$postVotes",
+      //       votesCount: "$votesCount.count",
+      //     },
+      //   },
+      // },
+      // {
+      //   $unwind:{
+      //     path:  "$postVotes",
+      //     preserveNullAndEmptyArrays: true,
+      //   },
+      // },
+      // {
+      //   $addFields: {
+      //     postVotes: "$postVotes",
+      //   },
+      // },
+      {
+        $lookup: {
+          from: "comments",
+          let: { postId: "$_id" },
+          pipeline: [
+            {
+              // Finding comments related to the postId
+              $match: {
+                $expr: {
+                  $eq: ["$post", "$$postId"],
+                },
+              },
+            },
+            { $sort: { date: -1 } },
+            { $limit: 3 },
+            // Populating the author field
+            {
+              $lookup: {
+                from: "users",
+                localField: "authorDetails.authorId",
+                foreignField: "_id",
+                as: "author",
+              },
+            },
+            {
+              $lookup: {
+                from: "animals",
+                localField: "authorDetails.authorId",
+                foreignField: "_id",
+                as: "Animalauthor",
+              },
+            },
+            {
+              $unset: unwantedAnimalFields,
+            },
+            {
+              $lookup: {
+                from: "commentvotes",
+                localField: "_id",
+                foreignField: "comment",
+                as: "commentVotes",
+              },
+            },
+            // {
+            //   $unwind: "$author",
+            // },
+            {
+              $unwind: {
+                path: "$commentVotes",
+                preserveNullAndEmptyArrays: true,
+              },
+            },
+            {
+              $unset: unwantedUserFields,
+            },
+            {
+              $addFields: {
+                commentVotes: "$commentVotes.votes",
+              },
+            },
+          ],
+          as: "comments",
+        },
+      },
+      {
+        $lookup: {
+          from: "comments",
+          let: { postId: "$_id" },
+          pipeline: [
+            {
+              $match: {
+                $expr: {
+                  $eq: ["$post", "$$postId"],
+                },
+              },
+            },
+            {
+              $group: { _id: null, count: { $sum: 1 } },
+            },
+            {
+              $project: {
+                _id: false,
+              },
+            },
+          ],
+          as: "commentCount",
+        },
+      },
+      {
+        $unwind: {
+          path: "$commentCount",
+          preserveNullAndEmptyArrays: true,
+        },
+      },
+      // {
+      //   $unwind: "$postVotes",
+      // },
+      // {
+      //   $unwind: "$author",
+      // },
+      // {
+      //   $unwind: "$authorAnimal",
+      // },
+      {
+        $addFields: {
+          // postVotes: "$postVotes.votes",
+          commentData: {
+            comments: "$comments",
+            commentCount: "$commentCount.count",
+          },
+        },
+      },
+      {
+        $unset: [...unwantedUserFields, "comments", "commentCount"],
+      },
+    ]);
+    return res.send({posts:posts});
+  } catch (err) {
+    next(err);
+  }
+};
+
+module.exports.follow = async (req, res, next) => {
+  try {
+    const { from, to } = req.body;
+    const user = res.locals.user;
+    if (from.toType === "Animal"){
+      let found = false;
+      for (var i=0; i<user.pets.length;i++){
+        if (user.pets[i].pet == from.fromId){
+          found = true;
+        }
+      }
+      if (!found){
+        return res.status(401).send({error: "You are not authorized!"})
+      }
+    }
+    if (user._id.toString() != from.fromId && from.fromType === "Human") {
+      return res.status(401).send({error: "You are not authorized!"})
+    }
+    let fromId = from.fromId === null ? user._id : from.fromId;
+    let toId = to.toId === null ? user._id : to.toId;
+    if (fromId === toId && from.fromType === to.toType){
+      res.status(400).send({error: "You can't follow yourself!"})
+    }
+    let check = await Followers.findOne({
+      $and: [
+        { "user.id": ObjectId(toId) },
+        { "followerDetails.followerId": ObjectId(fromId) },
+      ],
+    });
+    if (check) {
+      return res.status(200).send({ message: "You are already following the given user!" });
+    } else {
+      const followerDocument = new Followers({
+        "user.id" : ObjectId(toId),
+        "followerDetails.followerId": ObjectId(fromId),
+        "user.userType" : to.toType,
+        "followerDetails.followerType" : from.fromType 
+      });
+      const followingDocument = new Following({
+        "user.id" : ObjectId(fromId),
+        "followerDetails.followerId": ObjectId(toId),
+        "user.userType" : from.fromType,
+        "followerDetails.followerType" : to.toType 
+      });
+      await followerDocument.save();
+      await followingDocument.save();
+      return res.send({ success: true });
+    }
+  } catch (err) {
+    next(err);
+  }
+}

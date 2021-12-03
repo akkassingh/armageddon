@@ -9,6 +9,7 @@ const bcrypt = require("bcrypt");
 const jwt = require("jwt-simple");
 const fs = require("fs");
 const cloudinary = require("cloudinary").v2;
+const dogNames = require('dog-names');
 cloudinary.config({
   cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
   api_key: process.env.CLOUDINARY_API_KEY,
@@ -19,6 +20,7 @@ module.exports.registerPet = async (req, res, next) => {
   const user = res.locals.user;
   const {
     name,
+    avatar,
     username,
     category,
     bio,
@@ -43,17 +45,20 @@ module.exports.registerPet = async (req, res, next) => {
     registeredWithKennelClub,
   } = req.body;
   try {
-    let fileArr = [];
-    for (let fl of req.files) {
-      const response = await cloudinary.uploader.upload(fl.path);
-      fileArr.push(response.secure_url);
-      fs.unlinkSync(fl.path);
-    }
+    // let fileArr = null;
+  //   if (req.files){
+  //     fileArr = [];
+  //   for (let fl of req.files) {
+  //     const response = await cloudinary.uploader.upload(fl.path);
+  //     fileArr.push(response.secure_url);
+  //     fs.unlinkSync(fl.path);
+  //   }
+  // }
 
     const animal = new Animal({
       name,
       username,
-      avatar: fileArr[0],
+      avatar,
       category,
       bio,
       animalType,
@@ -489,7 +494,7 @@ module.exports.getRelationRequests = async (req, res, next) => {
     }
     const val = (type == "incoming") ? 1 : 0; 
     const result = requests.relatedAnimals.filter(function(ele){
-      return ele.status = val;
+      return ele.status == val;
     })
     return res.status(200).send({"pendingIncomingRequests": result});
   }
@@ -498,6 +503,22 @@ module.exports.getRelationRequests = async (req, res, next) => {
     next(err);
   }
 };
+
+module.exports.getUniquePetName = async (req, res, next) => {
+  let uniqueUsername = undefined;
+  try {
+    while (!uniqueUsername) {
+      const username = dogNames.allRandom() + Math.floor(Math.random(1000) * 9999 + 1);
+      const user = await Animal.findOne({username});
+      if (!user) {
+        uniqueUsername = username;
+      }
+    }
+    return res.status(200).send({"username" :uniqueUsername});
+  } catch (err) {
+    throw new Error(err.message);
+  }
+}
 
 module.exports.editPetMainDetails = async (req, res, next) => {
   const {petId, username, fullName, bio, avatar} = req.body;

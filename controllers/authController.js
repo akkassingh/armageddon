@@ -28,7 +28,7 @@ module.exports.verifyJwt = (token, type) => {
         if (user) {
           return resolve(user);
         } else {
-          reject("Not authorized.");
+          reject("Not authorized");
         }
       } else {
         const id = jwt.decode(token, process.env.JWT_SECRET).id;
@@ -40,11 +40,11 @@ module.exports.verifyJwt = (token, type) => {
         if (user) {
           return resolve(user);
         } else {
-          reject("Not authorized.");
+          reject("Not authorized");
         }
       }
     } catch (err) {
-      return reject("Not authorized.");
+      return reject("Not authorized");
     }
   });
 };
@@ -60,37 +60,53 @@ module.exports.verifyJwtAnimal = (token) => {
       if (animal) {
         return resolve(animal);
       } else {
-        reject("Not authorized.");
+        reject("Not authorized");
       }
     } catch (err) {
-      return reject("Not authorized.");
+      return reject("Not authorized");
     }
   });
 };
 
 module.exports.requireAuth = async (req, res, next) => {
   const { authorization } = req.headers;
-  const type  = req.body.type ? req.body.type : req.query.type;
+  const {type} = req.body;
+  if (!type) {
+    return res.status(400).send({error: "Invalid Request Type!"})
+  }
+  // const type  = req.body.type ? req.body.type : req.query.type;
   if (!authorization) return res.status(401).send({ error: "Not authorized." });
-  try {
-    let user;
-    if (type && type === "sp") {
-      user = await this.verifyJwt(authorization, type);
-    } else {
-      user = await this.verifyJwt(authorization);
+  if (type === "animal"){
+    try {
+      let animal;
+      animal = await this.verifyJwtAnimal(authorization);
+      res.locals.animal = animal;
+      return next();
     }
-
-    // Allow other middlewares to access the authenticated user details.
-    res.locals.user = user;
-    return next();
-  } catch (err) {
-    return res.status(401).send({ error: err });
+    catch (err) {
+      return res.status(401).send({ error: err });
+    }
+  }
+  else {
+    try {
+      let user;
+      if (type && type === "sp") {
+        user = await this.verifyJwt(authorization, type);
+      } else {
+        user = await this.verifyJwt(authorization);
+      }
+      // Allow other middlewares to access the authenticated user details.
+      res.locals.user = user;
+      return next();
+    } catch (err) {
+      return res.status(401).send({ error: err });
+    }
   }
 };
 
 module.exports.requireAuthAnimal = async (req, res, next) => {
   const { authorization } = req.headers;
-  if (!authorization) return res.status(401).send({ error: "Not authorized." });
+  if (!authorization) return res.status(401).send({ error: "Not authorized" });
   try {
     const animal = await this.verifyJwtAnimal(authorization);
     // Allow other middlewares to access the authenticated user details.
@@ -116,7 +132,8 @@ module.exports.optionalAuth = async (req, res, next) => {
 };
 
 module.exports.loginAuthentication = async (req, res, next) => {
-  const { authorization } = req.headers;
+  let { authorization } = req.headers;
+  authorization = null;
   const { usernameOrEmail, password, type } = req.body;
   if (type && type === "sp") {
     if (authorization) {
@@ -576,25 +593,7 @@ module.exports.facebookLoginAuthentication = async (req, res, next) => {
   }
   try {
     if (type && type === "sp") {
-      const { data } = await axios({
-        url: "https://graph.facebook.com/v4.0/oauth/access_token",
-        method: "get",
-        params: {
-          client_id: process.env.FACEBOOK_CLIENT_ID,
-          client_secret: process.env.FACEBOOK_CLIENT_SECRET,
-          redirect_uri: `${process.env.HOME_URL}/api/auth/authenticate/facebook/`,
-          grant_type: "authorization_code",
-          code,
-          state,
-        },
-      });
-      const accessToken = data.access_token;
-      console.log(accessToken);
-      logger.info("accessToken is ", JSON.stringify(accessToken));
-      logger.info("*******************************************");
-
-      // Retrieve the user's info
-      //{ locale: 'en_US', fields: 'name, email' }
+      const accessToken = code;
       const fbUser = await axios.get(
         "https://graph.facebook.com/v2.5/me?fields=id,name,email,first_name,last_name",
         {
@@ -603,107 +602,64 @@ module.exports.facebookLoginAuthentication = async (req, res, next) => {
       );
       console.log("fbUser is as below");
       console.log(fbUser.data);
-      logger.info("fbUser is ", JSON.stringify(fbUser.data));
       const primaryEmail = fbUser.data.email;
       const facebookId = fbUser.data.id;
-      const userDocument = await ServiceProvider.findOne({
-        faceBookUserId: facebookId,
-      });
-      logger.info("userDocument is ", JSON.stringify(userDocument));
+      const userDocument = await ServiceProvider.findOne({$or: [{ faceBookUserId: facebookId }, {email: primaryEmail}]}, '_id email username avatar');
       let isNewUser = true;
-      if (user.avatar) {
-        isNewUser = false;
-      }
       if (userDocument) {
-        return res.send({
+        if (userDocument.avatar){
+          isNewUser = false;
+        }
+        return res.status(200).send({
           user: {
             _id: userDocument._id,
             email: userDocument.email,
             username: userDocument.username,
             avatar: userDocument.avatar,
-            bookmarks: userDocument.bookmarks,
           },
           isNewUser,
           token: jwt.encode({ id: userDocument._id }, process.env.JWT_SECRET),
         });
       }
 
-      const existingUser = await ServiceProvider.findOne({
-        email: primaryEmail,
-      });
-      // const existingUser = await User.findOne({
-      //   $or: [{ email: primaryEmail }, { username: fbUser.data.first_name+fbUser.data.last_name.toLowerCase() }],
-      // });
-
-      logger.info("existingUser is ", JSON.stringify(existingUser));
-
-      if (existingUser) {
-        let isNewUser = true;
-        if (existingUser.avatar) {
-          isNewUser = false;
-        }
-        logger.info("User Exists!!!!");
-        if (existingUser.email === primaryEmail) {
-          // return res.status(400).send({
-          //   error:
-          //     'A user with the same email already exists, please change your email.',
-          // });
-          return res.send(200).json({
-            user: {
-              email: primaryEmail,
-              username: existingUser.username,
-            },
-            isNewUser,
-            token: jwt.encode({ id: existingUser._id }, process.env.JWT_SECRET),
-          });
-        }
-        // if (existingUser.username === fbUser.data.first_name+fbUser.data.last_name.toLowerCase()) {
-        //   const username = await generateUniqueUsername(fbUser.data.first_name+fbUser.data.last_name.toLowerCase());
-        //   fbUser.data.login = username;
-        // }
-      }
-      logger.info("fbUser is ", JSON.stringify(fbUser.data));
       const user = new ServiceProvider({
         email: primaryEmail,
         fullName: fbUser.data.name,
-        // username: fbUser.data.login ? fbUser.data.login : fbUser.data.first_name+fbUser.data.last_name.toLowerCase(),
-        username: await generateUniqueUsername(
-          fbUser.data.first_name + fbUser.data.last_name.toLowerCase()
-        ),
+        username: await generateUniqueUsername(fbUser.data.first_name.toLowerCase()),
         confirmed: true,
-        faceBookUserId: fbUser.data.id,
+        faceBookUserId: facebookId,
       });
 
       await user.save();
-      return res.send({
+      return res.status(201).send({
         user: {
+          id : user._id,
           email: user.email,
           username: user.username,
-          bookmarks: user.bookmarks,
         },
         isNewUser: true,
         token: jwt.encode({ id: user._id }, process.env.JWT_SECRET),
       });
     } else {
-      const { data } = await axios({
-        url: "https://graph.facebook.com/v4.0/oauth/access_token",
-        method: "get",
-        params: {
-          client_id: process.env.FACEBOOK_CLIENT_ID,
-          client_secret: process.env.FACEBOOK_CLIENT_SECRET,
-          redirect_uri: `${process.env.HOME_URL}/api/auth/authenticate/facebook/`,
-          grant_type: "authorization_code",
-          code,
-          state,
-        },
-      });
-      const accessToken = data.access_token;
-      console.log(accessToken);
-      logger.info("accessToken is ", JSON.stringify(accessToken));
-      logger.info("*******************************************");
+      // const { data } = await axios({
+      //   url: "https://graph.facebook.com/v4.0/oauth/access_token",
+      //   method: "get",
+      //   params: {
+      //     client_id: process.env.FACEBOOK_CLIENT_ID,
+      //     client_secret: process.env.FACEBOOK_CLIENT_SECRET,
+      //     redirect_uri: `${process.env.HOME_URL}/api/auth/authenticate/facebook/`,
+      //     grant_type: "authorization_code",
+      //     code,
+      //     state,
+      //   },
+      // });
+      // const accessToken = data.access_token;
+      // console.log(accessToken);
+      // logger.info("accessToken is ", JSON.stringify(accessToken));
 
       // Retrieve the user's info
       //{ locale: 'en_US', fields: 'name, email' }
+      const accessToken = code;
       const fbUser = await axios.get(
         "https://graph.facebook.com/v2.5/me?fields=id,name,email,first_name,last_name",
         {
@@ -712,79 +668,41 @@ module.exports.facebookLoginAuthentication = async (req, res, next) => {
       );
       console.log("fbUser is as below");
       console.log(fbUser.data);
-      logger.info("fbUser is ", JSON.stringify(fbUser.data));
       const primaryEmail = fbUser.data.email;
       const facebookId = fbUser.data.id;
-      const userDocument = await User.findOne({ faceBookUserId: facebookId });
-      logger.info("userDocument is ", JSON.stringify(userDocument));
+      const userDocument = await User.findOne({$or: [{ faceBookUserId: facebookId }, {email: primaryEmail}]}, '_id email username avatar googleUserId facebookUserId');
+      console.log(userDocument, "userDoc")
       let isNewUser = true;
-      if (user.avatar) {
-        isNewUser = false;
-      }
       if (userDocument) {
-        return res.send({
+        if (userDocument.avatar || userDocument.googleUserId || userdocument.faceBookUserId){
+          isNewUser = false;
+        }
+        return res.status(200).send({
           user: {
             _id: userDocument._id,
             email: userDocument.email,
             username: userDocument.username,
             avatar: userDocument.avatar,
-            bookmarks: userDocument.bookmarks,
           },
           isNewUser,
           token: jwt.encode({ id: userDocument._id }, process.env.JWT_SECRET),
         });
       }
 
-      const existingUser = await User.findOne({ email: primaryEmail });
-      // const existingUser = await User.findOne({
-      //   $or: [{ email: primaryEmail }, { username: fbUser.data.first_name+fbUser.data.last_name.toLowerCase() }],
-      // });
-
-      logger.info("existingUser is ", JSON.stringify(existingUser));
-
-      if (existingUser) {
-        let isNewUser = true;
-        if (existingUser.avatar) {
-          isNewUser = false;
-        }
-        logger.info("User Exists!!!!");
-        if (existingUser.email === primaryEmail) {
-          // return res.status(400).send({
-          //   error:
-          //     'A user with the same email already exists, please change your email.',
-          // });
-          return res.send(200).json({
-            user: {
-              email: primaryEmail,
-              username: existingUser.username,
-            },
-            isNewUser,
-            token: jwt.encode({ id: existingUser._id }, process.env.JWT_SECRET),
-          });
-        }
-        // if (existingUser.username === fbUser.data.first_name+fbUser.data.last_name.toLowerCase()) {
-        //   const username = await generateUniqueUsername(fbUser.data.first_name+fbUser.data.last_name.toLowerCase());
-        //   fbUser.data.login = username;
-        // }
-      }
-      logger.info("fbUser is ", JSON.stringify(fbUser.data));
       const user = new User({
         email: primaryEmail,
         fullName: fbUser.data.name,
-        // username: fbUser.data.login ? fbUser.data.login : fbUser.data.first_name+fbUser.data.last_name.toLowerCase(),
-        username: await generateUniqueUsername(
-          fbUser.data.first_name + fbUser.data.last_name.toLowerCase()
-        ),
+        username: await generateUniqueUsername(fbUser.data.first_name.toLowerCase()),
         confirmed: true,
-        faceBookUserId: fbUser.data.id,
+        faceBookUserId: facebookId,
       });
 
       await user.save();
-      return res.send({
+      return res.status(201).send({
         user: {
+          id : user._id,
           email: user.email,
           username: user.username,
-          bookmarks: user.bookmarks,
         },
         isNewUser: true,
         token: jwt.encode({ id: user._id }, process.env.JWT_SECRET),
@@ -792,7 +710,7 @@ module.exports.facebookLoginAuthentication = async (req, res, next) => {
     }
   } catch (err) {
     console.log(err);
-    logger.err("err is ", err);
+    // logger.err("err is ", err);
     next(err);
   }
 };
@@ -1213,10 +1131,9 @@ module.exports.verifyResetPasswordOTP = async (req, res, next) => {
     const confirmationToken = await ConfirmationToken.findOne({
       user: user._id,
     });
-    console.log(confirmationToken);
     if (
       !confirmationToken ||
-      Date.now() > confirmationToken.timestamp + 900000
+      Date.now() > confirmationToken.timestampreset + 900000
     ) {
       return res
         .status(404)
