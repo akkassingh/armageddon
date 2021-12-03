@@ -323,13 +323,14 @@ module.exports.getmyactiveAppointments = async (req, res, next) => {
       return ele.bookingDetails.paymentDetails.status == 1;
     });   
     for(let i=0;i<serviceList.length;i++){
-      if(serviceList[i].petDetails==null){
+      if(serviceList[i].petDetails==null || serviceList[i].petDetails.length==0){
         let pet={
           name:"dog",
           username:"dog",
           _id:"1"
         }
         serviceList[i].petDetails.push(pet)
+        console.log(pet)
       }
       if(serviceList[i].petDetails.length==1 && serviceList[i].bookingDetails.numberOfPets==2){
         console.log('looooooo')
@@ -358,7 +359,7 @@ module.exports.getmypastAppointments = async (req, res, next) => {
       return ele.bookingDetails.paymentDetails.status == 1;
     });
     for(let i=0;i<serviceList.length;i++){
-      if(serviceList[i].petDetails==null){
+      if(serviceList[i].petDetails==null || serviceList[i].petDetails.length==0){
         let pet={
           name:"dog",
           username:"dog",
@@ -481,7 +482,7 @@ module.exports.getAppointmentDetails = async (req, res, next) => {
       }
     }
       serviceList.bookingDetails.runDetails=[]
-      if(serviceList.petDetails==null){
+      if(serviceList.petDetails==null || serviceList.petDetails.length==0){
         let pet={
           name:"dog",
           username:"dog",
