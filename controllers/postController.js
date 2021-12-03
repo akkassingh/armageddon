@@ -26,6 +26,7 @@ const filters = require("../utils/filters");
 
 module.exports.createPost = async (req, res, next) => {
   const user = res.locals.user;
+  console.log(req.body)
   const { caption, filter: filterName, postOwnerId, postOwnerType } = req.body;
   let post = undefined;
   const filterObject = filters.find((filter) => filter.name === filterName);
@@ -105,23 +106,25 @@ module.exports.createPost = async (req, res, next) => {
   try {
     // Updating followers feed with post
     const followersDocument = await Followers.find({ user: user._id });
-    const followers = followersDocument[0].followers;
-    const postObject = {
-      ...post.toObject(),
-      author: { username: user.username, avatar: user.avatar },
-      commentData: { commentCount: 0, comments: [] },
-      postVotes: [],
-    };
+    if(followersDocument.length>0){
+      const followers = followersDocument[0].followers;
+      const postObject = {
+        ...post.toObject(),
+        author: { username: user.username, avatar: user.avatar },
+        commentData: { commentCount: 0, comments: [] },
+        postVotes: [],
+      };
 
-    // socketHandler.sendPost(req, postObject, user._id);
-    followers.forEach((follower) => {
-      socketHandler.sendPost(
-        req,
-        // Since the post is new there is no need to look up any fields
-        postObject,
-        follower.user
-      );
-    });
+      // socketHandler.sendPost(req, postObject, user._id);
+      followers.forEach((follower) => {
+        socketHandler.sendPost(
+          req,
+          // Since the post is new there is no need to look up any fields
+          postObject,
+          follower.user
+        );
+      });
+    }
   } catch (err) {
     console.log(err);
   }
