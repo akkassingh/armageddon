@@ -1,11 +1,10 @@
 const logger = require("./logger/logger");
 const mongoose = require("mongoose");
-var expressBusboy = require('express-busboy');
 require("dotenv").config();
 (async function () {
   try {
     await mongoose.connect(process.env.MONGO_URI_dev, {
-      // await mongoose.connect(process.env.MONGO_URI, {
+      // await mongoose.connect(process.env.MONGO_URI_dev, {
 
       useNewUrlParser: true,
       useUnifiedTopology: true,
@@ -48,7 +47,6 @@ app.use(cors());
 // }));
 app.use(express.json());
 app.use(express.urlencoded());
-expressBusboy.extend(app);
 app.use(morgan("tiny", { stream: logger.stream }));
 app.set("trust proxy", 1);
 app.use("/api", apiRouter);
