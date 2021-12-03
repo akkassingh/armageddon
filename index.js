@@ -1,5 +1,6 @@
 const logger = require("./logger/logger");
 const mongoose = require("mongoose");
+var expressBusboy = require('express-busboy');
 require("dotenv").config();
 (async function () {
   try {
@@ -47,6 +48,7 @@ app.use(cors());
 // }));
 app.use(express.json());
 app.use(express.urlencoded());
+expressBusboy.extend(app);
 app.use(morgan("tiny", { stream: logger.stream }));
 app.set("trust proxy", 1);
 app.use("/api", apiRouter);

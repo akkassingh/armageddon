@@ -27,6 +27,7 @@ const filters = require("../utils/filters");
 
 module.exports.createPost = async (req, res, next) => {
   let user=undefined;
+  console.log('loooooooooS')
   if(req.body.type=="human")
    user = res.locals.user
   else

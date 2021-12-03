@@ -1,6 +1,7 @@
 const Comment = require("../models/Comment");
 const Notification = require("../models/Notification");
 const User = require("../models/User");
+const Animal = require("../models/Animal");
 const ServiceProvider = require("../models/ServiceProvider");
 const ObjectId = require("mongoose").Types.ObjectId;
 const nodemailer = require("nodemailer");
@@ -30,6 +31,46 @@ module.exports.hashPassword = async (password, saltRounds) => {
  */
 module.exports.retrieveComments = async (postId, offset, exclude = 0) => {
   try {
+    const unwantedUserFields = [
+      "Userauthor.password",
+      "Userauthor.private",
+      "Userauthor.confirmed",
+      "Userauthor.bookmarks",
+      "Userauthor.email",
+      "Userauthor.website",
+      "Userauthor.bio",
+      "Userauthor.githubId",
+      "Userauthor.pets",
+      "Userauthor.googleUserId"
+    ];
+    const unwantedAnimalFields = [
+      "Animalauthor.mating",
+      "Animalauthor.adoption",
+      "Animalauthor.playBuddies",
+      "Animalauthor.username",
+      "Animalauthor.category",
+      "Animalauthor.animal_type",
+      "Animalauthor.location",
+      "Animalauthor.guardians",
+      "Animalauthor.pets",
+      "Animalauthor.bio",
+      "Animalauthor.animalType",
+      "Animalauthor.gender",
+      "Animalauthor.breed",
+      "Animalauthor.age",
+      "Animalauthor.playFrom",
+      "Animalauthor.playTo",
+      "Animalauthor.servicePet",
+      "Animalauthor.spayed",
+      "Animalauthor.friendlinessWithHumans",
+      "Animalauthor.friendlinessWithAnimals",
+      "Animalauthor.favouriteThings",
+      "Animalauthor.thingsDislikes",
+      "Animalauthor.uniqueHabits",
+      "Animalauthor.eatingHabits",
+      "Animalauthor.relatedAnimals",
+      "Animalauthor.registeredWithKennelClub"
+    ];
     const commentsAggregation = await Comment.aggregate([
       {
         $facet: {
@@ -61,31 +102,44 @@ module.exports.retrieveComments = async (postId, offset, exclude = 0) => {
                 as: "commentVotes",
               },
             },
-            { $unwind: "$commentVotes" },
+            // { $unwind: "$commentVotes" },
             {
               $lookup: {
                 from: "users",
-                localField: "author",
+                localField: "Userauthor",
                 foreignField: "_id",
-                as: "author",
+                as: "Userauthor",
               },
             },
-            { $unwind: "$author" },
+            {
+              $unset: unwantedUserFields,
+            },     
+            {
+              $lookup: {
+                from: "animals",
+                localField: "Animalauthor",
+                foreignField: "_id",
+                as: "Animalauthor",
+              },
+            },
+            {
+              $unset: unwantedAnimalFields,
+            },     
             {
               $addFields: {
                 commentReplies: { $size: "$commentReplies" },
                 commentVotes: "$commentVotes.votes",
               },
             },
-            {
-              $unset: [
-                "author.password",
-                "author.email",
-                "author.private",
-                "author.bio",
-                "author.bookmarks",
-              ],
-            },
+            // {
+            //   $unset: [
+            //     "author.password",
+            //     "author.email",
+            //     "author.private",
+            //     "author.bio",
+            //     "author.bookmarks",
+            //   ],
+            // },
           ],
           commentCount: [
             {
