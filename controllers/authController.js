@@ -588,10 +588,10 @@ module.exports.facebookLoginAuthentication = async (req, res, next) => {
       console.log(fbUser.data);
       const primaryEmail = fbUser.data.email;
       const facebookId = fbUser.data.id;
-      const userDocument = await ServiceProvider.findOne({$or: [{ faceBookUserId: facebookId }, {email: primaryEmail}]}, '_id email username avatar');
+      const userDocument = await ServiceProvider.findOne({$or: [{ faceBookUserId: facebookId }, {email: primaryEmail}]}, '_id email username avatar googleUserId facebookUserId');
       let isNewUser = true;
       if (userDocument) {
-        if (userDocument.avatar){
+        if (userDocument.avatar || userDocument.googleUserId || userDocument.faceBookUserId){
           isNewUser = false;
         }
         return res.status(200).send({
@@ -658,7 +658,7 @@ module.exports.facebookLoginAuthentication = async (req, res, next) => {
       console.log(userDocument, "userDoc")
       let isNewUser = true;
       if (userDocument) {
-        if (userDocument.avatar || userDocument.googleUserId || userdocument.faceBookUserId){
+        if (userDocument.avatar || userDocument.googleUserId || userDocument.faceBookUserId){
           isNewUser = false;
         }
         return res.status(200).send({
