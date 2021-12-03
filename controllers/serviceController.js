@@ -319,7 +319,7 @@ module.exports.getmyactiveAppointments = async (req, res, next) => {
       bookingStatus:{ $lte:1}
     }).populate('bookingDetails','package run1 run2 startDate dayOff paymentDetails numberOfPets').populate('petDetails', 'name username').populate('User','fullName username avatar');
     console.log(serviceList)
-    serviceList.filter(function (ele) {
+    serviceList = serviceList.filter(function (ele) {
       return ele.bookingDetails.paymentDetails.status == 1;
     });   
     for(let i=0;i<serviceList.length;i++){
@@ -354,7 +354,7 @@ module.exports.getmypastAppointments = async (req, res, next) => {
       ServiceProvider: res.locals.user._id,
       bookingStatus:{ $gte:2} //recieved=0,accepted(confirmed=1).rejected(cancelled)=2,completed=3
     }).populate('bookingDetails','package run1 run2 paymentDetails numberOfPets').populate('petDetails', 'name username').populate('User','fullName username avatar');
-    serviceList.filter(function (ele) {
+    serviceList = serviceList.filter(function (ele) {
       return ele.bookingDetails.paymentDetails.status == 1;
     });
     for(let i=0;i<serviceList.length;i++){

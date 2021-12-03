@@ -243,7 +243,7 @@ module.exports.getmyactiveAppointments = async (req, res, next) => {
       User: res.locals.user._id,
       bookingStatus:1
     }).populate('bookingDetails','package run1 run2 startDate dayOff paymentDetails numberOfPets').populate('petDetails', 'name username').populate('ServiceProvider','fullName username avatar');     
-    serviceList.filter(function (ele){
+    serviceList = serviceList.filter(function (ele){
       return ele.bookingDetails.paymentDetails.status == 1;
     })
     for(let i=0;i<serviceList.length;i++){
