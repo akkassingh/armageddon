@@ -402,7 +402,7 @@ module.exports.retrieveFollowing = async (req, res, next) => {
     const users = await Following.find({
       "user.id" : ObjectId(userId)
     },
-    'followingDetails').populate('followingDetails.followingId', 'username avatar _id').skip(20*counter).limit(20);
+    'followingDetails').populate('followingDetails.followingId', 'username avatar _id fullName').skip(20*counter).limit(20);
     return res.send({"following" : users});
   } catch (err) {
     next(err);
@@ -416,7 +416,7 @@ module.exports.retrieveFollowers = async (req, res, next) => {
     // const users = await retrieveRelatedUsers(user, userId, counter*10, true);
     const users = await Followers.find({
       "user.id" : ObjectId(userId)
-    },'followerDetails').populate('followerDetails.followerId', 'username avatar _id').skip(20*counter).limit(20);
+    },'followerDetails').populate('followerDetails.followerId', 'username avatar _id fullName').skip(20*counter).limit(20);
     return res.send({"followers" : users});
   } catch (err) {
     next(err);
