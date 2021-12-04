@@ -37,10 +37,10 @@ module.exports.createComment = async (req, res, next) => {
         .send({ error: 'Could not find a post with that post id.' });
     }
     let authorDetails;
-    if(req.body.type=="human"){
+    if(req.body.type=="User"){
        authorDetails={
         authorId: user._id,
-        authorType:"Human"
+        authorType:"User"
       }
     }
     const comment = new Comment({ message, authorDetails: authorDetails, post: postId });

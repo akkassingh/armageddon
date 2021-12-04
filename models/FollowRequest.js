@@ -5,16 +5,22 @@ const FollowRequestSchema = new Schema({
   from: {
     fromType: {
       type: String,
-      enum: ["Animal", "Human"],
+      enum: ["Animal", "User"],
     },
-    fromId: Schema.ObjectId,
+    fromId: {
+      type: Schema.ObjectId,
+      refPath: "from.fromType"
+    }
   },
   to: {
     toType: {
       type: String,
-      enum: ["Animal", "Human"],
+      enum: ["Animal", "User"],
     },
-    toId: Schema.ObjectId,
+    toId: {
+      type: Schema.ObjectId,
+      refPath: "to.toType"
+    }
   },
   confirmed: { type: Boolean, default: false },
 });

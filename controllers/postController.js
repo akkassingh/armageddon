@@ -1404,7 +1404,7 @@ module.exports.follow = async (req, res, next) => {
         return res.status(401).send({error: "You are not authorized!"})
       }
     }
-    if (user._id.toString() != from.fromId && from.fromType === "Human") {
+    if (user._id.toString() != from.fromId && from.fromType === "User") {
       return res.status(401).send({error: "You are not authorized!"})
     }
     let fromId = from.fromId === null ? user._id : from.fromId;

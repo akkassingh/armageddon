@@ -33,8 +33,8 @@ userRouter.post('/showPeopleToFollow',requireAuth, showPeopleToFollow);
 userRouter.get("/suggested/:max?", requireAuth, retrieveSuggestedUsers);
 userRouter.get("/:username", optionalAuth, retrieveUser);
 userRouter.post("/:username/posts", retrievePosts);
-userRouter.post("/:userId/following", requireAuth, retrieveFollowing);
-userRouter.post("/:userId/followers", requireAuth, retrieveFollowers);
+userRouter.post("/following", requireAuth, retrieveFollowing);
+userRouter.post("/followers", requireAuth, retrieveFollowers);
 userRouter.post("/search", searchUsers);
 
 userRouter.put("/confirm", requireAuth, confirmUser);
