@@ -4,7 +4,7 @@ const multer = require("multer");
 
 const upload = multer({
   dest: "temp/",
-  limits: { fieldSize: 8 * 1024 * 1024, fileSize: 1000000 },
+  // limits: { fieldSize: 8 * 1024 * 1024, fileSize: 1000000 },
 }).any();
 
 const {
