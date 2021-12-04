@@ -90,7 +90,7 @@ module.exports.addBackgroundCheckToService = async (req, res, next) => {
       //     gravity: "face",
       //     crop: "thumb",
       //   });
-      const response = await cloudinary.uploader.upload(fl.path);
+      const response = await cloudinary.uploader.upload(fl.path, {quality : 100});
 
       fileArr.push({
         fieldname: fl.fieldname,
