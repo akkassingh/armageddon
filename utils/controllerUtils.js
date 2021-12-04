@@ -396,6 +396,57 @@ module.exports.sendCommentNotification = async (
 };
 
 /**
+ * Sends a notification when a user has commented on your post
+ * @function sendCommentNotification
+ * @param {object} req The request object
+ * @param {object} sender User who triggered the notification
+ * @param {string} receiver Id of the user to receive the notification
+ * @param {string} image Image of the post that was commented on
+ * @param {string} filter The filter applied to the image
+ * @param {string} message The message sent by the user
+ * @param {string} postId The id of the post that was commented on
+ */
+ module.exports.sendPostVotenotification = async (
+  req,
+  sender,
+  Userreceiver,
+  Animalreceiver,
+  image,
+  filter,
+  postId
+) => {
+  try {
+    if (String(sender._id) !== String(Userreceiver) && String(sender._id) !== String(Animalreceiver)) {
+      const notification = new Notification({
+        sender: sender._id,
+        Userreceiver,
+        Animalreceiver,
+        notificationType: "like",
+        date: Date.now(),
+        notificationData: {
+          postId,
+          image,
+          filter,
+        },
+      });
+      let ep=await notification.save();
+      console.log(ep)
+      socketHandler.sendNotification(req, {
+        ...notification.toObject(),
+        sender: {
+          _id: sender._id,
+          username: sender.username,
+          avatar: sender.avatar,
+        },
+      });
+    }
+  } catch (err) {
+    throw new Error(err.message);
+  }
+};
+
+
+/**
  * Sends a notification to the user when the user is mentioned
  * @function sendMentionNotification
  * @param {object} req The request object

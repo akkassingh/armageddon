@@ -70,8 +70,8 @@ module.exports.verifyJwtAnimal = (token) => {
 
 module.exports.requireAuth = async (req, res, next) => {
   const { authorization } = req.headers;
-  const {type} = req.body;
-  console.log(req.body)
+  const {type} = req.headers;
+  // console.log(req.body)
   if (!type) {
     return res.status(400).send({error: "Invalid Request Type!"})
   }

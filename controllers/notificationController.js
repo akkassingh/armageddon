@@ -40,7 +40,15 @@ module.exports.retrieveNotifications = async (req, res, next) => {
           from: 'users',
           localField: 'Userreceiver',
           foreignField: '_id',
-          as: 'receiver',
+          as: 'Userreceiver',
+        },
+      },
+      {
+        $lookup: {
+          from: 'animals',
+          localField: 'Animalauthor',
+          foreignField: '_id',
+          as: 'Animalreciever',
         },
       },
       // {
@@ -49,9 +57,9 @@ module.exports.retrieveNotifications = async (req, res, next) => {
       // {
       //   $unwind: '$senderAnimal',
       // },
-      {
-        $unwind: '$receiver',
-      },
+      // {
+      //   $unwind: '$receiver',
+      // },
       // Look for the sender's followers
       // {
       //   $lookup: {
@@ -85,7 +93,8 @@ module.exports.retrieveNotifications = async (req, res, next) => {
           'senderAnimal.username': true,
           'senderAnimal.avatar': true,
           'senderAnimal._id': true,
-          'receiver._id': true,
+          'Userreceiver._id': true,
+          'Animalreciever._id': true,
         },
       },
     ]);
