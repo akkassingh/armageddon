@@ -22,11 +22,13 @@ const {
   retrieveComments,
   formatCloudinaryUrl,
   populatePostsPipeline,
+  sendPostVotenotification
 } = require("../utils/controllerUtils");
 const filters = require("../utils/filters");
 
 module.exports.createPost = async (req, res, next) => {
   let user=undefined;
+  // console.log('loooooooooS')
   if(req.body.type=="human")
    user = res.locals.user
   else
@@ -209,10 +211,16 @@ module.exports.votePost = async (req, res, next) => {
   // console.log("------------", req.body);
   const { postId, voterDetails, vote } = req.body;
   let user=undefined;
-  if(req.body.type=="human")
+  if(req.headers.type=="human")
    user = res.locals.user
   else
    user = res.locals.animal
+  let post = await Post.findById(postId);
+   if (!post) {
+     return res
+       .status(404)
+       .send({ error: 'Could not find a post with that post id.' });
+   }
   try {
     if (vote === true) {
       let check;
@@ -234,7 +242,7 @@ module.exports.votePost = async (req, res, next) => {
             },
           });
           await postVote.save();
-          return res.send({ success: true });
+          res.send({ success: true });
 
           // Sending a like notification
           // const post = await Post.findById(postId);
@@ -288,8 +296,39 @@ module.exports.votePost = async (req, res, next) => {
             },
           });
           await postVote.save();
-          return res.send({ success: true });
+          res.send({ success: true });
         }
+      }
+      try {
+        // Sending comment notification
+        let image = formatCloudinaryUrl(
+          post.image,
+          { height: 50, width: 50, x: '100%', y: '100%' },
+          true
+        );
+        sendPostVotenotification(
+          req,
+          user,
+          post.Userauthor,
+          post.Animalauthor,
+          image,
+          post.filter,
+          post._id
+        );
+          console.log('loooooo')
+    
+        // Find the username of the post author
+        // const postDocument = await Post.findById(post._id).populate('author');
+        // image = formatCloudinaryUrl(
+        //   post.image,
+        //   { height: 50, width: 50, x: '100%', y: '100%' },
+        //   true
+        // );
+    
+        // // Sending a mention notification
+        // sendMentionNotification(req, message, image, postDocument, user);
+      } catch (err) {
+        console.log(err);
       }
     } else {
       let check;
@@ -705,7 +744,7 @@ module.exports.acceptFollowRequests = async (req, res, next) => {
 module.exports.retrievePostFeed = async (req, res, next) => {
   
   let user=undefined;
-  if(req.body.type=="human")
+  if(req.headers.type=="human")
    user = res.locals.user
   else
    user = res.locals.animal
@@ -1455,3 +1494,21 @@ module.exports.follow = async (req, res, next) => {
     next(err);
   }
 }
+
+module.exports.retrievePostlikes = async (req, res, next) => {
+  const { postId } = req.body;
+  const user = res.locals.user;
+
+  try {
+    const postlikes = await PostVote.find({ post: postId}).populate('voterDetails.Uservoter','_id name username avatar').populate('voterDetails.Animalvoter','_id name username avatar');
+    if (!postlikes) {
+      return res.status(404).send({
+        error: "Could not find likes with that postid",
+      });
+    }
+  console.log(postId)
+    return res.send({postlikes});
+  } catch (err) {
+    next(err);
+  }
+};

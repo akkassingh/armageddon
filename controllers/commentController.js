@@ -362,6 +362,7 @@ module.exports.retrieveComments = async (req, res, next) => {
   const { postId, exclude } = req.params;
   const {counter = 0} = req.body;
   try {
+  console.log(postId+"loooo", exclude)
     const comments = await retrieveComments(postId, counter*10, exclude);
     return res.send(comments);
   } catch (err) {

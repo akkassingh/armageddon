@@ -29,7 +29,8 @@ const {
   getFollowRequests,
   acceptFollowRequests,
   foryoufeed,
-  follow
+  follow,
+  retrievePostlikes
 } = require("../controllers/postController");
 const filters = require("../utils/filters");
 
@@ -74,5 +75,10 @@ postRouter.post("/sendfollowrequest", requireAuth, sendFollowRequest);
 postRouter.post("/getfollowrequests", requireAuth, getFollowRequests);
 postRouter.post("/acceptfollowrequests", requireAuth, acceptFollowRequests);
 postRouter.post("/follow",requireAuth, follow);
+
+//------POST VOTES----------------------------------------------
+postRouter.post("/retrievePostlikes", requireAuth, retrievePostlikes);
+
+
 
 module.exports = postRouter;
