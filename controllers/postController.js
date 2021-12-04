@@ -1175,7 +1175,7 @@ module.exports.foryoufeed = async (req, res, next) => {
       // },
       { $sort: { date: -1 } },
       { $skip: Number(counter)*5 },
-      { $limit: 15 },
+      { $limit: 20 },
       {
         $lookup: {
           from: "users",
