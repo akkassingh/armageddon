@@ -1443,9 +1443,9 @@ module.exports.follow = async (req, res, next) => {
       });
       const followingDocument = new Following({
         "user.id" : ObjectId(fromId),
-        "followerDetails.followerId": ObjectId(toId),
+        "followingDetails.followingId": ObjectId(toId),
         "user.userType" : from.fromType,
-        "followerDetails.followerType" : to.toType 
+        "followingDetails.followingType" : to.toType 
       });
       await followerDocument.save();
       await followingDocument.save();
