@@ -29,7 +29,7 @@ const filters = require("../utils/filters");
 module.exports.createPost = async (req, res, next) => {
   let user=undefined;
   // console.log('loooooooooS')
-  if(req.body.type=="human")
+  if(req.headers.type=="human")
    user = res.locals.user
   else
    user = res.locals.animal
@@ -109,7 +109,7 @@ module.exports.createPost = async (req, res, next) => {
 
   try {
     // Updating followers feed with post
-    const followersDocument = await Followers.find({ user: user._id });
+    const followersDocument = await Followers.find({ 'user.id': user._id });
     const followers = followersDocument[0].followers;
     const postObject = {
       ...post.toObject(),
