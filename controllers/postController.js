@@ -29,7 +29,7 @@ const filters = require("../utils/filters");
 module.exports.createPost = async (req, res, next) => {
   let user=undefined;
   // console.log('loooooooooS')
-  if(req.headers.type=="human")
+  if(req.headers.type=="User")
    user = res.locals.user
   else
    user = res.locals.animal
@@ -211,7 +211,7 @@ module.exports.votePost = async (req, res, next) => {
   // console.log("------------", req.body);
   const { postId, voterDetails, vote } = req.body;
   let user=undefined;
-  if(req.headers.type=="human")
+  if(req.headers.type=="User")
    user = res.locals.user
   else
    user = res.locals.animal
@@ -744,7 +744,7 @@ module.exports.acceptFollowRequests = async (req, res, next) => {
 module.exports.retrievePostFeed = async (req, res, next) => {
   
   let user=undefined;
-  if(req.headers.type=="human")
+  if(req.headers.type=="User")
    user = res.locals.user
   else
    user = res.locals.animal
@@ -1444,14 +1444,21 @@ module.exports.foryoufeed = async (req, res, next) => {
 module.exports.follow = async (req, res, next) => {
   try {
     const { from, to } = req.body;
-    const user = res.locals.user;
-    if (from.toType === "Animal"){
+    let user=undefined;
+    if(req.headers.type=="User")
+     user = res.locals.user
+    else
+     user = res.locals.animal 
+    //  console.log(user._id)
+    if (from.fromType === "Animal"){
       let found = false;
-      for (var i=0; i<user.pets.length;i++){
-        if (user.pets[i].pet == from.fromId){
-          found = true;
-        }
-      }
+      // for (var i=0; i<user.pets.length;i++){
+      //   if (user.pets[i].pet == from.fromId){
+      //     found = true;
+      //   }
+      // }
+      if(from.fromId==user._id.toString())
+        found =true;
       if (!found){
         return res.status(401).send({error: "You are not authorized!"})
       }

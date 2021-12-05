@@ -100,7 +100,7 @@ module.exports.deleteComment = async (req, res, next) => {
   const user=res.locals.user;
   try {
     let comment;
-    if(req.headers.type=="human"){
+    if(req.headers.type=="User"){
         comment = await Comment.findOne({
         _id: commentId,
         Userauthor: user._id,

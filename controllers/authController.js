@@ -77,7 +77,7 @@ module.exports.requireAuth = async (req, res, next) => {
   }
   // const type  = req.body.type ? req.body.type : req.query.type;
   if (!authorization) return res.status(401).send({ error: "Not authorized." });
-  if (type === "animal"){
+  if (type === "Animal"){
     try {
       let animal;
       animal = await this.verifyJwtAnimal(authorization);
