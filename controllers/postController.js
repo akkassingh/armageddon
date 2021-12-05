@@ -1178,7 +1178,7 @@ module.exports.foryoufeed = async (req, res, next) => {
       // },
       { $sort: { date: -1 } },
       { $skip: Number(counter)*5 },
-      { $limit: 5 },
+      { $limit: 20 },
       {
         $lookup: {
           from: "users",
@@ -1407,7 +1407,7 @@ module.exports.follow = async (req, res, next) => {
         return res.status(401).send({error: "You are not authorized!"})
       }
     }
-    if (user._id.toString() != from.fromId && from.fromType === "Human") {
+    if (user._id.toString() != from.fromId && from.fromType === "User") {
       return res.status(401).send({error: "You are not authorized!"})
     }
     let fromId = from.fromId === null ? user._id : from.fromId;

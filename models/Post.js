@@ -18,11 +18,14 @@ const PostSchema = new Schema({
   },
   author: String,
   postOwnerDetails: {
-    postOwnerId: String,
     postOwnerType: {
       type: String,
-      enum: ["Animal", "Human"],
+      enum: ["Animal", "User"],
     },
+    postOwnerId: {
+      type: Schema.ObjectId,
+      refPath: "postOwnerDetails.postOwnerType"
+    }
   },
 });
 
