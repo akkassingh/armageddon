@@ -22,7 +22,8 @@ const {
   updateBioAndAvatar,
   showPeopleToFollow,
   getPendingGuardianRequests,
-  getUserDetailsById
+  getUserDetailsById,
+  getAvatarLink
 } = require("../controllers/userController");
 const { requireAuth, optionalAuth } = require("../controllers/authController");
 
@@ -61,5 +62,7 @@ userRouter.get(
 );
 userRouter.post("/addPet", requireAuth, becomeGuardian);
 userRouter.patch("/petanduserdetails", requireAuth, petanduserdetails);
-
+userRouter.post("/getAvatarLink",multer({
+  dest: "temp/",
+}).single("image"), requireAuth, getAvatarLink);
 module.exports = userRouter;

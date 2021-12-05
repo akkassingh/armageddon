@@ -629,6 +629,36 @@ module.exports.confirmUser = async (req, res, next) => {
   }
 };
 
+module.exports.getAvatarLink = async (req, res, next) => {
+  const user = res.locals.user;
+  if (!req.file) {
+    return res
+      .status(400)
+      .send({ error: "Please provide the image to upload." });
+  }
+
+  cloudinary.config({
+    cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
+    api_key: process.env.CLOUDINARY_API_KEY,
+    api_secret: process.env.CLOUDINARY_API_SECRET,
+  });
+
+  try {
+    const response = await cloudinary.uploader.upload(req.file.path,{
+      width: 200,
+      height: 200,
+      gravity: "face",
+      crop: "thumb",
+    });
+    fs.unlinkSync(req.file.path);
+    return res.status(201).send({"avatarLink" : response.secure_url});
+  }
+  catch (err) {
+    console.log(err);
+    next(err);
+  }
+}
+
 module.exports.changeAvatar = async (req, res, next) => {
   const user = res.locals.user;
   const { type } = req.body;
