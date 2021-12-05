@@ -243,11 +243,11 @@ module.exports.getmyactiveAppointments = async (req, res, next) => {
       User: res.locals.user._id,
       bookingStatus:1
     }).populate('bookingDetails','package run1 run2 startDate dayOff paymentDetails numberOfPets').populate('petDetails', 'name username').populate('ServiceProvider','fullName username avatar');     
-    serviceList.filter(function (ele){
+    serviceList = serviceList.filter(function (ele){
       return ele.bookingDetails.paymentDetails.status == 1;
     })
     for(let i=0;i<serviceList.length;i++){
-      if(serviceList[i].petDetails==null){
+      if(serviceList[i].petDetails==null || serviceList[i].petDetails.length==0){
         let pet={
           name:"dog",
           username:"dog",
@@ -283,7 +283,7 @@ module.exports.getmypastAppointments = async (req, res, next) => {
       return ele.bookingDetails.paymentDetails.status == 1;
     })   
     for(let i=0;i<serviceList.length;i++){
-      if(serviceList[i].petDetails==null){
+      if(serviceList[i].petDetails==null || serviceList[i].petDetails.length==0){
         let pet={
           name:"dog",
           username:"dog",
@@ -313,7 +313,7 @@ module.exports.getAppointmentDetails = async (req, res, next) => {
     let serviceList = await ServiceAppointment.findOne(     
       { bookingDetails: req.body.bookingDetailsId }).populate('bookingDetails').populate('petDetails').populate('ServiceProvider','fullName username avatar');     
       console.log(serviceList)
-        if(serviceList.petDetails==null){
+        if(serviceList.petDetails==null || serviceList.petDetails.length==0){
           let pet={
             name:"dog",
             username:"dog",

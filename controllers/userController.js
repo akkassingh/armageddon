@@ -319,10 +319,11 @@ module.exports.followUser = async (req, res, next) => {
  * @param {boolean} followers Whether to query who is following the user or who the user follows default is the latter
  * @returns {array} Array of users
  */
-const retrieveRelatedUsers = async (user, userId, offset, followers) => {
+const retrieveRelatedUsers = async (user, userId, offset, followers=false) => {
+  // console.log(followers, user, userId, offset);
   const pipeline = [
     {
-      $match: { user: ObjectId(userId) },
+      $match: { "user.id" : ObjectId(userId) },
     },
     {
       $lookup: {
@@ -351,8 +352,8 @@ const retrieveRelatedUsers = async (user, userId, offset, followers) => {
     {
       $lookup: {
         from: "followers",
-        localField: "users._id",
-        foreignField: "user",
+        localField: "user.id",
+        foreignField: "user.id",
         as: "userFollowers",
       },
     },
@@ -363,6 +364,7 @@ const retrieveRelatedUsers = async (user, userId, offset, followers) => {
         "users.avatar": true,
         "users.fullName": true,
         userFollowers: true,
+        "followingDetails" : true
       },
     },
   ];
@@ -370,7 +372,7 @@ const retrieveRelatedUsers = async (user, userId, offset, followers) => {
   const aggregation = followers
     ? await Followers.aggregate(pipeline)
     : await Following.aggregate(pipeline);
-
+  console.log(aggregation);
   // Make a set to store the IDs of the followed users
   const followedUsers = new Set();
   // Loop through every follower and add the id to the set if the user's id is in the array
@@ -393,26 +395,46 @@ const retrieveRelatedUsers = async (user, userId, offset, followers) => {
 };
 
 module.exports.retrieveFollowing = async (req, res, next) => {
-  const { userId } = req.params;
-  const {counter = 0} = req.body;
+  const {userId, counter = 0} = req.body;
   const user = res.locals.user;
   try {
-    const users = await retrieveRelatedUsers(user, userId, counter*10);
-    return res.send(users);
+    // const users = await retrieveRelatedUsers(user, userId, counter*10);
+    const users = await Following.find({
+      "user.id" : ObjectId(userId)
+    },
+    'followingDetails').populate('followingDetails.followingId', 'username avatar _id fullName').skip(20*counter).limit(20);
+    return res.send({"following" : users});
   } catch (err) {
     next(err);
   }
 };
 
 module.exports.retrieveFollowers = async (req, res, next) => {
-  const { userId } = req.params;
-  const {counter = 0} = req.body;
+  const {userId, counter = 0} = req.body;
   const user = res.locals.user;
-
   try {
-    const users = await retrieveRelatedUsers(user, userId, counter*10, true);
-    return res.send(users);
-  } catch (err) {
+    // const users = await retrieveRelatedUsers(user, userId, counter*10, true);
+    const following = await Following.find({"user.id": userId},{'followingDetails.followingId': 1, '_id': 0}).lean();
+    const followingIds = [];
+    for (var i=0; i< following.length; i++){
+      followingIds[i] = following[i].followingDetails.followingId.toString();
+    }
+    console.log(followingIds)
+    const users = await Followers.find({
+      "user.id" : ObjectId(userId)
+    },'followerDetails').populate('followerDetails.followerId', 'username avatar _id fullName').skip(20*counter).limit(20).lean();
+    
+    for (var i=0;i<users.length;i++){
+      if (followingIds.indexOf(users[i].followerDetails.followerId._id.toString())>-1){
+        users[i]['isFollowing'] = 1;
+      }
+      else {
+        users[i]['isFollowing'] = 0;
+      }
+    }
+    return res.send({"followers" : users});
+  } 
+  catch (err) {
     next(err);
   }
 };
@@ -461,7 +483,7 @@ searchHuman = async(username,counter,type) => {
     },
   ]);
   users.forEach(function (element) {
-    element.type = "Human";
+    element.type = "User";
   });
   return users;
 };
@@ -504,16 +526,16 @@ searchAnimal = async(username,counter,type) => {
 module.exports.searchUsers = async (req, res, next) => {
   const {username, counter = 0, type} = req.body;
   //type will be of 3 types
-  // "Both" will mean both user and animal
-  // "Animal" will mean only animal
-  // "Human" will mean only humans
+  // "Both" will mean both User and Animal
+  // "Animal" will mean only Animal
+  // "User" will mean only User
   if (!username || !type) {
     return res
       .status(400)
       .send({ error: "Please provide a user to search for" });
   }
   try {
-    if (type === "Human"){
+    if (type === "User"){
       const users = await searchHuman(username,counter,type);
       if (users.length === 0) {
         return res
@@ -1201,7 +1223,7 @@ module.exports.getUserDetailsById = async (req, res, next) => {
   const { id, type } = req.body;
   let user = {};
   try {
-    if (type == "Human"){
+    if (type == "User"){
       user = await User.findById(id).populate("pets.pet", '_id name avatar');
       if (!user)
         return res.status(404).send({ error: "No such user exists!" });

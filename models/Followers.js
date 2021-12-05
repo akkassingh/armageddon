@@ -7,14 +7,17 @@ const FollowersSchema = new Schema({
       type: Schema.ObjectId,
       required: true,
     },
-    userType: { required: true, type: String, enum: ["Animal", "Human"] },
+    userType: { required: true, type: String, enum: ["Animal", "User"] },
   },
   followerDetails: {
     followerType: {
       type: String,
-      enum: ["Animal", "Human"],
+      enum: ["Animal", "User"],
     },
-    followerId: Schema.ObjectId,
+    followerId: {
+      type: Schema.ObjectId,
+      refPath: 'followerDetails.followerType'
+    }
   },
 });
 

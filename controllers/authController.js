@@ -21,7 +21,7 @@ const { validateEmail, validatePassword } = require("../utils/validation");
 module.exports.verifyJwt = (token, type) => {
   return new Promise(async (resolve, reject) => {
     try {
-      console.log("--------verifyJwt--------", token, type);
+      // console.log("--------verifyJwt--------", token, type);
       if (type && type === "sp") {
         const id = jwt.decode(token, process.env.JWT_SECRET).id;
         const user = await ServiceProvider.findOne({ _id: id });
@@ -36,7 +36,7 @@ module.exports.verifyJwt = (token, type) => {
           { _id: id },
           "email username avatar bookmarks bio fullName confirmed website pets"
         );
-        console.log("--------user-------", user);
+        // console.log("--------user-------", user);
         if (user) {
           return resolve(user);
         } else {
@@ -605,10 +605,10 @@ module.exports.facebookLoginAuthentication = async (req, res, next) => {
       console.log(fbUser.data);
       const primaryEmail = fbUser.data.email;
       const facebookId = fbUser.data.id;
-      const userDocument = await ServiceProvider.findOne({$or: [{ faceBookUserId: facebookId }, {email: primaryEmail}]}, '_id email username avatar');
+      const userDocument = await ServiceProvider.findOne({$or: [{ faceBookUserId: facebookId }, {email: primaryEmail}]}, '_id email username avatar googleUserId facebookUserId');
       let isNewUser = true;
       if (userDocument) {
-        if (userDocument.avatar){
+        if (userDocument.avatar || userDocument.googleUserId || userDocument.faceBookUserId){
           isNewUser = false;
         }
         return res.status(200).send({
@@ -675,7 +675,7 @@ module.exports.facebookLoginAuthentication = async (req, res, next) => {
       console.log(userDocument, "userDoc")
       let isNewUser = true;
       if (userDocument) {
-        if (userDocument.avatar || userDocument.googleUserId || userdocument.faceBookUserId){
+        if (userDocument.avatar || userDocument.googleUserId || userDocument.faceBookUserId){
           isNewUser = false;
         }
         return res.status(200).send({
