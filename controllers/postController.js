@@ -1223,7 +1223,7 @@ module.exports.foryoufeed = async (req, res, next) => {
     const posts = await Post.aggregate([
       // {
       //   $match: {
-      //     $or: [{ author: { $in: following } }, { author: ObjectId(user._id) }],
+      //     $or: [{ Userauthor: { $in: following } }, { Animalauthor: { $in: following } }, { author: ObjectId(user._id) }],
       //   },
       // },
       { $sort: { date: -1 } },
@@ -1232,9 +1232,9 @@ module.exports.foryoufeed = async (req, res, next) => {
       {
         $lookup: {
           from: "users",
-          localField: "author",
+          localField: "Userauthor",
           foreignField: "_id",
-          as: "author",
+          as: "Userauthor",
         },
       },
       {
@@ -1243,7 +1243,7 @@ module.exports.foryoufeed = async (req, res, next) => {
       {
         $lookup: {
           from: "animals",
-          localField: "postOwnerDetails.postOwnerId",
+          localField: "Animalauthor",
           foreignField: "_id",
           as: "Animalauthor",
         },
@@ -1251,25 +1251,24 @@ module.exports.foryoufeed = async (req, res, next) => {
       {
         $unset: unwantedAnimalFields,
       },
-      {
-        $lookup: {
-          from: "postvotes",
-          let: { post: "$_id" },
-          pipeline: [
-            {
-              // Finding comments related to the postId
-              $match: {
-                $expr: {
-                  $eq: ["$post", "$$post"],
-                },
-              },
-            }
-          ],
-          // localField: "_id",
-          // foreignField: "post",
-          as: "postVotes",
-        },
-      },
+      // {
+      //   $lookup: {
+      //     from: "postvotes",
+      //     let: { post: "$_id" },
+      //     pipeline: [
+      //       {
+      //         $match: {
+      //           $expr: {
+      //             $eq: ["$post", "$$post"],
+      //           },
+      //         },
+      //       }
+      //     ],
+      //     // localField: "_id",
+      //     // foreignField: "post",
+      //     as: "postVotes",
+      //   },
+      // },
       {
         $lookup: {
           from: "postvotes",
@@ -1339,15 +1338,15 @@ module.exports.foryoufeed = async (req, res, next) => {
             {
               $lookup: {
                 from: "users",
-                localField: "authorDetails.authorId",
+                localField: "Userauthor",
                 foreignField: "_id",
-                as: "author",
+                as: "Userauthor",
               },
             },
             {
               $lookup: {
                 from: "animals",
-                localField: "authorDetails.authorId",
+                localField: "Animalauthor",
                 foreignField: "_id",
                 as: "Animalauthor",
               },
