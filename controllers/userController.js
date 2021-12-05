@@ -644,14 +644,19 @@ module.exports.getAvatarLink = async (req, res, next) => {
   });
 
   try {
-    const response = await cloudinary.uploader.upload(req.file.path,{
-      width: 200,
-      height: 200,
-      gravity: "face",
-      crop: "thumb",
-    });
+    const response = await cloudinary.uploader.upload(req.file.path);
+    const thumbnailUrl = formatCloudinaryUrl(
+      response.secure_url,
+      {
+        width: 400,
+        height: 400,
+      },
+      true
+    );
     fs.unlinkSync(req.file.path);
-    return res.status(201).send({"avatarLink" : response.secure_url});
+    const image = response.secure_url;
+    const thumbnail = thumbnailUrl
+    return res.status(201).send({"avatarLink" : {image, thumbnail}});
   }
   catch (err) {
     console.log(err);
