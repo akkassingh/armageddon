@@ -160,6 +160,46 @@ module.exports.retrievePost = async (req, res, next) => {
   const { postId } = req.params;
   try {
     // Retrieve the post and the post's votes
+    const unwantedUserFields = [
+      "author.password",
+      "author.private",
+      "author.confirmed",
+      "author.bookmarks",
+      "author.email",
+      "author.website",
+      "author.bio",
+      "author.githubId",
+      "author.pets",
+      "author.googleUserId"
+    ];
+    const unwantedAnimalFields = [
+      "Animalauthor.mating",
+      "Animalauthor.adoption",
+      "Animalauthor.playBuddies",
+      "Animalauthor.username",
+      "Animalauthor.category",
+      "Animalauthor.animal_type",
+      "Animalauthor.location",
+      "Animalauthor.guardians",
+      "Animalauthor.pets",
+      "Animalauthor.bio",
+      "Animalauthor.animalType",
+      "Animalauthor.gender",
+      "Animalauthor.breed",
+      "Animalauthor.age",
+      "Animalauthor.playFrom",
+      "Animalauthor.playTo",
+      "Animalauthor.servicePet",
+      "Animalauthor.spayed",
+      "Animalauthor.friendlinessWithHumans",
+      "Animalauthor.friendlinessWithAnimals",
+      "Animalauthor.favouriteThings",
+      "Animalauthor.thingsDislikes",
+      "Animalauthor.uniqueHabits",
+      "Animalauthor.eatingHabits",
+      "Animalauthor.relatedAnimals",
+      "Animalauthor.registeredWithKennelClub"
+    ];
     const post = await Post.aggregate([
       { $match: { _id: ObjectId(postId) } },
       {
@@ -173,22 +213,35 @@ module.exports.retrievePost = async (req, res, next) => {
       {
         $lookup: {
           from: "users",
-          localField: "author",
+          localField: "Userauthor",
           foreignField: "_id",
-          as: "author",
+          as: "Userauthor",
         },
       },
-      { $unwind: "$author" },
-      { $unwind: "$postVotes" },
       {
-        $unset: [
-          "author.password",
-          "author.email",
-          "author.private",
-          "author.bio",
-          "author.githubId",
-        ],
+        $unset: unwantedUserFields,
+      },     
+      {
+        $lookup: {
+          from: "animals",
+          localField: "Animalauthor",
+          foreignField: "_id",
+          as: "Animalauthor",
+        },
       },
+      {
+        $unset: unwantedAnimalFields,
+      },
+      { $unwind: "$postVotes" },
+      // {
+      //   $unset: [
+      //     "author.password",
+      //     "author.email",
+      //     "author.private",
+      //     "author.bio",
+      //     "author.githubId",
+      //   ],
+      // },
       {
         $addFields: { postVotes: "$postVotes.votes" },
       },
