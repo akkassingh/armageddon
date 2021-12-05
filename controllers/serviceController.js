@@ -84,13 +84,13 @@ module.exports.addBackgroundCheckToService = async (req, res, next) => {
     );
     let fileArr = [];
     for (let fl of req.files) {
-      //   const response = await cloudinary.uploader.upload(fl.path, {
-      //     width: 200,
-      //     height: 200,
-      //     gravity: "face",
-      //     crop: "thumb",
-      //   });
-      const response = await cloudinary.uploader.upload(fl.path, {quality : 100});
+        // const response = await cloudinary.uploader.upload(fl.path, {
+        //   width: 200,
+        //   height: 200,
+        //   gravity: "face",
+        //   crop: "thumb",
+        // });
+      const response = await cloudinary.uploader.upload(fl.path);
 
       fileArr.push({
         fieldname: fl.fieldname,
