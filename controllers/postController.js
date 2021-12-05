@@ -4,6 +4,7 @@ const axios = require("axios");
 require("linkifyjs/plugins/hashtag")(linkify);
 const Animal = require("../models/Animal");
 const Comment = require("../models/Comment");
+const User = require("../models/User");
 const CommentReply = require("../models/CommentReply");
 const CommentVote = require("../models/CommentVote");
 const CommentReplyVote = require("../models/CommentReplyVote");
@@ -21,13 +22,18 @@ const {
   retrieveComments,
   formatCloudinaryUrl,
   populatePostsPipeline,
+  sendPostVotenotification
 } = require("../utils/controllerUtils");
 const filters = require("../utils/filters");
 
 module.exports.createPost = async (req, res, next) => {
-  const user = res.locals.user;
-  console.log(req.body)
-  const { caption, filter: filterName, postOwnerId, postOwnerType } = req.body;
+  let user=undefined;
+  // console.log('loooooooooS')
+  if(req.headers.type=="User")
+   user = res.locals.user
+  else
+   user = res.locals.animal
+  const { caption, filter: filterName, Animalauthor, Userauthor, authorType } = req.body;
   let post = undefined;
   const filterObject = filters.find((filter) => filter.name === filterName);
   const hashtags = [];
@@ -81,12 +87,10 @@ module.exports.createPost = async (req, res, next) => {
       thumbnail: thumbnailUrl,
       filter: filterObject ? filterObject.filter : "",
       caption,
-      author: user._id,
       hashtags,
-      postOwnerDetails: {
-        postOwnerId: postOwnerId,
-        postOwnerType: postOwnerType,
-      },
+      Animalauthor:Animalauthor,
+      Userauthor:Userauthor,
+      authorType:authorType
     });
     const postVote = new PostVote({
       post: post._id,
@@ -105,26 +109,24 @@ module.exports.createPost = async (req, res, next) => {
 
   try {
     // Updating followers feed with post
-    const followersDocument = await Followers.find({ user: user._id });
-    if(followersDocument.length>0){
-      const followers = followersDocument[0].followers;
-      const postObject = {
-        ...post.toObject(),
-        author: { username: user.username, avatar: user.avatar },
-        commentData: { commentCount: 0, comments: [] },
-        postVotes: [],
-      };
+    const followersDocument = await Followers.find({ 'user.id': user._id });
+    const followers = followersDocument[0].followers;
+    const postObject = {
+      ...post.toObject(),
+      author: { username: user.username, avatar: user.avatar },
+      commentData: { commentCount: 0, comments: [] },
+      postVotes: [],
+    };
 
-      // socketHandler.sendPost(req, postObject, user._id);
-      followers.forEach((follower) => {
-        socketHandler.sendPost(
-          req,
-          // Since the post is new there is no need to look up any fields
-          postObject,
-          follower.user
-        );
-      });
-    }
+    // socketHandler.sendPost(req, postObject, user._id);
+    followers.forEach((follower) => {
+      socketHandler.sendPost(
+        req,
+        // Since the post is new there is no need to look up any fields
+        postObject,
+        follower.user
+      );
+    });
   } catch (err) {
     console.log(err);
   }
@@ -208,15 +210,24 @@ module.exports.retrievePost = async (req, res, next) => {
 module.exports.votePost = async (req, res, next) => {
   // console.log("------------", req.body);
   const { postId, voterDetails, vote } = req.body;
-  const user = res.locals.user;
-
+  let user=undefined;
+  if(req.headers.type=="User")
+   user = res.locals.user
+  else
+   user = res.locals.animal
+  let post = await Post.findById(postId);
+   if (!post) {
+     return res
+       .status(404)
+       .send({ error: 'Could not find a post with that post id.' });
+   }
   try {
     if (vote === true) {
       let check;
-      if (voterDetails.voterType === "Animal") {
+      if (voterDetails.voterType === "animal") {
         check = await PostVote.find({
           $and: [
-            { "voterDetails.voterId": ObjectId(voterDetails.voterId) },
+            { "voterDetails.Animalvoter": ObjectId(user._id) },
             { post: ObjectId(postId) },
           ],
         });
@@ -226,12 +237,12 @@ module.exports.votePost = async (req, res, next) => {
           let postVote = new PostVote({
             post: ObjectId(postId),
             voterDetails: {
-              voterType: voterDetails.voterType,
-              voterId: ObjectId(voterDetails.voterId),
+              voterType: "animal",
+              Animalvoter: ObjectId(user._id),
             },
           });
           await postVote.save();
-          return res.send({ success: true });
+          res.send({ success: true });
 
           // Sending a like notification
           // const post = await Post.findById(postId);
@@ -272,7 +283,7 @@ module.exports.votePost = async (req, res, next) => {
           // }
         }
       } else {
-        check = await PostVote.findOne({ "voterDetails.voterId": user._id, post: postId});
+        check = await PostVote.findOne({ "voterDetails.Uservoter": user._id, post: postId});
         if (check) {
           // console.log('loooooo'+check+'loooooo')
           return res.send({ success: true });
@@ -280,20 +291,51 @@ module.exports.votePost = async (req, res, next) => {
           let postVote = new PostVote({
             post: ObjectId(postId),
             voterDetails: {
-              voterType: voterDetails.voterType,
-              voterId: user._id,
+              voterType: "human",
+              Uservoter: user._id,
             },
           });
           await postVote.save();
-          return res.send({ success: true });
+          res.send({ success: true });
         }
+      }
+      try {
+        // Sending comment notification
+        let image = formatCloudinaryUrl(
+          post.image,
+          { height: 50, width: 50, x: '100%', y: '100%' },
+          true
+        );
+        sendPostVotenotification(
+          req,
+          user,
+          post.Userauthor,
+          post.Animalauthor,
+          image,
+          post.filter,
+          post._id
+        );
+          console.log('loooooo')
+    
+        // Find the username of the post author
+        // const postDocument = await Post.findById(post._id).populate('author');
+        // image = formatCloudinaryUrl(
+        //   post.image,
+        //   { height: 50, width: 50, x: '100%', y: '100%' },
+        //   true
+        // );
+    
+        // // Sending a mention notification
+        // sendMentionNotification(req, message, image, postDocument, user);
+      } catch (err) {
+        console.log(err);
       }
     } else {
       let check;
-      if (voterDetails.voterType === "Animal") {
+      if (voterDetails.voterType === "animal") {
         check = await PostVote.find({
           $and: [
-            { "voterDetails.voterId": ObjectId(voterDetails.voterId) },
+            { "voterDetails.Animalvoter": ObjectId(user._id) },
             { post: ObjectId(postId) },
           ],
         });
@@ -308,7 +350,7 @@ module.exports.votePost = async (req, res, next) => {
       } else {
         check = await PostVote.find({
           $and: [
-            { "voterDetails.voterId": user._id },
+            { "voterDetails.Uservoter": user._id },
             { post: ObjectId(postId) },
           ],
         });
@@ -563,11 +605,11 @@ module.exports.getFollowRequests = async (req, res, next) => {
       let tempObj = { ...r1.toObject() };
       let userDetails;
       if (r1.from.fromType == "Animal") {
-        userDetails = await Animal.find({ _id: ObjectId(r1.from.fromId) });
+        userDetails = await Animal.findOne({ _id: ObjectId(r1.from.fromId) }).select('username name avatar');
       } else {
-        userDetails = await User.find({ _id: ObjectId(r1.from.fromId) });
+        userDetails = await User.findOne({ _id: ObjectId(r1.from.fromId) }).select('username fullName avatar');
       }
-      tempObj.details = userDetails[0];
+      tempObj.details = userDetails;
       finalData.push(tempObj);
       tempObj = {};
     }
@@ -580,7 +622,11 @@ module.exports.getFollowRequests = async (req, res, next) => {
 module.exports.acceptFollowRequests = async (req, res, next) => {
   try {
     const { from, to } = req.body;
-    const user = res.locals.user;
+    let user=undefined;
+    if(req.body.type=="human")
+     user = res.locals.user
+    else
+     user = res.locals.animal
     let fromId = from.fromId === null ? user._id : from.fromId;
     let toId = to.toId === null ? user._id : to.toId;
     let check = await FollowRequest.find({
@@ -696,16 +742,21 @@ module.exports.acceptFollowRequests = async (req, res, next) => {
 // };
 
 module.exports.retrievePostFeed = async (req, res, next) => {
-  const user = res.locals.user;
+  
+  let user=undefined;
+  if(req.headers.type=="User")
+   user = res.locals.user
+  else
+   user = res.locals.animal
   const { counter } = req.body;
 
   try {
     const followingDocument = await Following.find({'user.id': user._id });
     if (!followingDocument) {
-      console.log(followingDocument)
+      // console.log(followingDocument)
       return res.status(404).send({ error: "Could not find any posts." });
     }
-    console.log(followingDocument)
+    // console.log(followingDocument+'looooo')
 
     // const following = followingDocument.map(
     //   (following) => followingDocument.followingDetails.followingId
@@ -714,21 +765,21 @@ let following =[]
 for(let i=0;i<followingDocument.length;i++){
   following.push(followingDocument[i].followingDetails.followingId)
 }
-
+// following =[]
 //  following.push(ObjectId('618a0d66e443a1dcaf4e4d8c'))
     // Fields to not include on the user object
-    console.log(following)
+    // console.log(following)
     const unwantedUserFields = [
-      "author.password",
-      "author.private",
-      "author.confirmed",
-      "author.bookmarks",
-      "author.email",
-      "author.website",
-      "author.bio",
-      "author.githubId",
-      "author.pets",
-      "author.googleUserId"
+      "Userauthor.password",
+      "Userauthor.private",
+      "Userauthor.confirmed",
+      "Userauthor.bookmarks",
+      "Userauthor.email",
+      "Userauthor.website",
+      "Userauthor.bio",
+      "Userauthor.githubId",
+      "Userauthor.pets",
+      "Userauthor.googleUserId"
     ];
     const unwantedAnimalFields = [
       "Animalauthor.mating",
@@ -761,7 +812,7 @@ for(let i=0;i<followingDocument.length;i++){
     const posts = await Post.aggregate([
       {
         $match: {
-          $or: [{ author: { $in: following } }, { author: ObjectId(user._id) }],
+          $or: [{ Userauthor: { $in: following } }, { Animalauthor: { $in: following } }, { author: ObjectId(user._id) }],
         },
       },
       { $sort: { date: -1 } },
@@ -770,9 +821,9 @@ for(let i=0;i<followingDocument.length;i++){
       {
         $lookup: {
           from: "users",
-          localField: "author",
+          localField: "Userauthor",
           foreignField: "_id",
-          as: "author",
+          as: "Userauthor",
         },
       },
       {
@@ -781,7 +832,7 @@ for(let i=0;i<followingDocument.length;i++){
       {
         $lookup: {
           from: "animals",
-          localField: "postOwnerDetails.postOwnerId",
+          localField: "Animalauthor",
           foreignField: "_id",
           as: "Animalauthor",
         },
@@ -789,25 +840,24 @@ for(let i=0;i<followingDocument.length;i++){
       {
         $unset: unwantedAnimalFields,
       },
-      {
-        $lookup: {
-          from: "postvotes",
-          let: { post: "$_id" },
-          pipeline: [
-            {
-              // Finding comments related to the postId
-              $match: {
-                $expr: {
-                  $eq: ["$post", "$$post"],
-                },
-              },
-            }
-          ],
-          // localField: "_id",
-          // foreignField: "post",
-          as: "postVotes",
-        },
-      },
+      // {
+      //   $lookup: {
+      //     from: "postvotes",
+      //     let: { post: "$_id" },
+      //     pipeline: [
+      //       {
+      //         $match: {
+      //           $expr: {
+      //             $eq: ["$post", "$$post"],
+      //           },
+      //         },
+      //       }
+      //     ],
+      //     // localField: "_id",
+      //     // foreignField: "post",
+      //     as: "postVotes",
+      //   },
+      // },
       {
         $lookup: {
           from: "postvotes",
@@ -877,15 +927,15 @@ for(let i=0;i<followingDocument.length;i++){
             {
               $lookup: {
                 from: "users",
-                localField: "authorDetails.authorId",
+                localField: "Userauthor",
                 foreignField: "_id",
-                as: "author",
+                as: "Userauthor",
               },
             },
             {
               $lookup: {
                 from: "animals",
-                localField: "authorDetails.authorId",
+                localField: "Animalauthor",
                 foreignField: "_id",
                 as: "Animalauthor",
               },
@@ -1173,7 +1223,7 @@ module.exports.foryoufeed = async (req, res, next) => {
     const posts = await Post.aggregate([
       // {
       //   $match: {
-      //     $or: [{ author: { $in: following } }, { author: ObjectId(user._id) }],
+      //     $or: [{ Userauthor: { $in: following } }, { Animalauthor: { $in: following } }, { author: ObjectId(user._id) }],
       //   },
       // },
       { $sort: { date: -1 } },
@@ -1182,9 +1232,9 @@ module.exports.foryoufeed = async (req, res, next) => {
       {
         $lookup: {
           from: "users",
-          localField: "author",
+          localField: "Userauthor",
           foreignField: "_id",
-          as: "author",
+          as: "Userauthor",
         },
       },
       {
@@ -1193,7 +1243,7 @@ module.exports.foryoufeed = async (req, res, next) => {
       {
         $lookup: {
           from: "animals",
-          localField: "postOwnerDetails.postOwnerId",
+          localField: "Animalauthor",
           foreignField: "_id",
           as: "Animalauthor",
         },
@@ -1201,25 +1251,24 @@ module.exports.foryoufeed = async (req, res, next) => {
       {
         $unset: unwantedAnimalFields,
       },
-      {
-        $lookup: {
-          from: "postvotes",
-          let: { post: "$_id" },
-          pipeline: [
-            {
-              // Finding comments related to the postId
-              $match: {
-                $expr: {
-                  $eq: ["$post", "$$post"],
-                },
-              },
-            }
-          ],
-          // localField: "_id",
-          // foreignField: "post",
-          as: "postVotes",
-        },
-      },
+      // {
+      //   $lookup: {
+      //     from: "postvotes",
+      //     let: { post: "$_id" },
+      //     pipeline: [
+      //       {
+      //         $match: {
+      //           $expr: {
+      //             $eq: ["$post", "$$post"],
+      //           },
+      //         },
+      //       }
+      //     ],
+      //     // localField: "_id",
+      //     // foreignField: "post",
+      //     as: "postVotes",
+      //   },
+      // },
       {
         $lookup: {
           from: "postvotes",
@@ -1289,15 +1338,15 @@ module.exports.foryoufeed = async (req, res, next) => {
             {
               $lookup: {
                 from: "users",
-                localField: "authorDetails.authorId",
+                localField: "Userauthor",
                 foreignField: "_id",
-                as: "author",
+                as: "Userauthor",
               },
             },
             {
               $lookup: {
                 from: "animals",
-                localField: "authorDetails.authorId",
+                localField: "Animalauthor",
                 foreignField: "_id",
                 as: "Animalauthor",
               },
@@ -1395,14 +1444,21 @@ module.exports.foryoufeed = async (req, res, next) => {
 module.exports.follow = async (req, res, next) => {
   try {
     const { from, to } = req.body;
-    const user = res.locals.user;
-    if (from.toType === "Animal"){
+    let user=undefined;
+    if(req.headers.type=="User")
+     user = res.locals.user
+    else
+     user = res.locals.animal 
+    //  console.log(user._id)
+    if (from.fromType === "Animal"){
       let found = false;
-      for (var i=0; i<user.pets.length;i++){
-        if (user.pets[i].pet == from.fromId){
-          found = true;
-        }
-      }
+      // for (var i=0; i<user.pets.length;i++){
+      //   if (user.pets[i].pet == from.fromId){
+      //     found = true;
+      //   }
+      // }
+      if(from.fromId==user._id.toString())
+        found =true;
       if (!found){
         return res.status(401).send({error: "You are not authorized!"})
       }
@@ -1432,9 +1488,9 @@ module.exports.follow = async (req, res, next) => {
       });
       const followingDocument = new Following({
         "user.id" : ObjectId(fromId),
-        "followerDetails.followerId": ObjectId(toId),
+        "followingDetails.followingId": ObjectId(toId),
         "user.userType" : from.fromType,
-        "followerDetails.followerType" : to.toType 
+        "followingDetails.followingType" : to.toType 
       });
       await followerDocument.save();
       await followingDocument.save();
@@ -1444,3 +1500,21 @@ module.exports.follow = async (req, res, next) => {
     next(err);
   }
 }
+
+module.exports.retrievePostlikes = async (req, res, next) => {
+  const { postId } = req.body;
+  const user = res.locals.user;
+
+  try {
+    const postlikes = await PostVote.find({ post: postId}).populate('voterDetails.Uservoter','_id name username avatar').populate('voterDetails.Animalvoter','_id name username avatar');
+    if (!postlikes) {
+      return res.status(404).send({
+        error: "Could not find likes with that postid",
+      });
+    }
+  console.log(postId)
+    return res.send({postlikes});
+  } catch (err) {
+    next(err);
+  }
+};
