@@ -414,11 +414,27 @@ module.exports.retrieveFollowers = async (req, res, next) => {
   const user = res.locals.user;
   try {
     // const users = await retrieveRelatedUsers(user, userId, counter*10, true);
+    const following = await Following.find({"user.id": userId},{'followingDetails.followingId': 1, '_id': 0}).lean();
+    const followingIds = [];
+    for (var i=0; i< following.length; i++){
+      followingIds[i] = following[i].followingDetails.followingId.toString();
+    }
+    console.log(followingIds)
     const users = await Followers.find({
       "user.id" : ObjectId(userId)
-    },'followerDetails').populate('followerDetails.followerId', 'username avatar _id fullName').skip(20*counter).limit(20);
+    },'followerDetails').populate('followerDetails.followerId', 'username avatar _id fullName').skip(20*counter).limit(20).lean();
+    
+    for (var i=0;i<users.length;i++){
+      if (followingIds.indexOf(users[i].followerDetails.followerId._id.toString())>-1){
+        users[i]['isFollowing'] = 1;
+      }
+      else {
+        users[i]['isFollowing'] = 0;
+      }
+    }
     return res.send({"followers" : users});
-  } catch (err) {
+  } 
+  catch (err) {
     next(err);
   }
 };
