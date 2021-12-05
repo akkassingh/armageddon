@@ -14,9 +14,12 @@ const CommentReplySchema = new Schema({
   authorDetails: {
     authorType: {
       type: String,
-      enum: ["Animal", "Human"],
+      enum: ["Animal", "User"],
     },
-    authorId: Schema.ObjectId,
+    authorId: {
+      type: Schema.ObjectId,
+      refPath: "authorDetails.authorType"
+    }
   },
 });
 

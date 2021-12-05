@@ -9,9 +9,12 @@ const CommentVoteSchema = new Schema({
   voterDetails: {
     voterType: {
       type: String,
-      enum: ["Animal", "Human"],
+      enum: ["Animal", "User"],
     },
-    voterId: Schema.ObjectId,
+    voterId: {
+      type: Schema.ObjectId,
+      refPath: "voterDetails.voterType"
+    }
   },
   date: {
     type: Date,
