@@ -29,7 +29,7 @@ const filters = require("../utils/filters");
 module.exports.createPost = async (req, res, next) => {
   let user=undefined;
   // console.log('loooooooooS')
-  if(req.body.type=="human")
+  if(req.headers.type=="User")
    user = res.locals.user
   else
    user = res.locals.animal
@@ -109,7 +109,7 @@ module.exports.createPost = async (req, res, next) => {
 
   try {
     // Updating followers feed with post
-    const followersDocument = await Followers.find({ user: user._id });
+    const followersDocument = await Followers.find({ 'user.id': user._id });
     const followers = followersDocument[0].followers;
     const postObject = {
       ...post.toObject(),
@@ -211,7 +211,7 @@ module.exports.votePost = async (req, res, next) => {
   // console.log("------------", req.body);
   const { postId, voterDetails, vote } = req.body;
   let user=undefined;
-  if(req.headers.type=="human")
+  if(req.headers.type=="User")
    user = res.locals.user
   else
    user = res.locals.animal
@@ -744,7 +744,7 @@ module.exports.acceptFollowRequests = async (req, res, next) => {
 module.exports.retrievePostFeed = async (req, res, next) => {
   
   let user=undefined;
-  if(req.headers.type=="human")
+  if(req.headers.type=="User")
    user = res.locals.user
   else
    user = res.locals.animal
@@ -1223,18 +1223,18 @@ module.exports.foryoufeed = async (req, res, next) => {
     const posts = await Post.aggregate([
       // {
       //   $match: {
-      //     $or: [{ author: { $in: following } }, { author: ObjectId(user._id) }],
+      //     $or: [{ Userauthor: { $in: following } }, { Animalauthor: { $in: following } }, { author: ObjectId(user._id) }],
       //   },
       // },
       { $sort: { date: -1 } },
       { $skip: Number(counter)*5 },
-      { $limit: 5 },
+      { $limit: 20 },
       {
         $lookup: {
           from: "users",
-          localField: "author",
+          localField: "Userauthor",
           foreignField: "_id",
-          as: "author",
+          as: "Userauthor",
         },
       },
       {
@@ -1243,7 +1243,7 @@ module.exports.foryoufeed = async (req, res, next) => {
       {
         $lookup: {
           from: "animals",
-          localField: "postOwnerDetails.postOwnerId",
+          localField: "Animalauthor",
           foreignField: "_id",
           as: "Animalauthor",
         },
@@ -1251,25 +1251,24 @@ module.exports.foryoufeed = async (req, res, next) => {
       {
         $unset: unwantedAnimalFields,
       },
-      {
-        $lookup: {
-          from: "postvotes",
-          let: { post: "$_id" },
-          pipeline: [
-            {
-              // Finding comments related to the postId
-              $match: {
-                $expr: {
-                  $eq: ["$post", "$$post"],
-                },
-              },
-            }
-          ],
-          // localField: "_id",
-          // foreignField: "post",
-          as: "postVotes",
-        },
-      },
+      // {
+      //   $lookup: {
+      //     from: "postvotes",
+      //     let: { post: "$_id" },
+      //     pipeline: [
+      //       {
+      //         $match: {
+      //           $expr: {
+      //             $eq: ["$post", "$$post"],
+      //           },
+      //         },
+      //       }
+      //     ],
+      //     // localField: "_id",
+      //     // foreignField: "post",
+      //     as: "postVotes",
+      //   },
+      // },
       {
         $lookup: {
           from: "postvotes",
@@ -1339,15 +1338,15 @@ module.exports.foryoufeed = async (req, res, next) => {
             {
               $lookup: {
                 from: "users",
-                localField: "authorDetails.authorId",
+                localField: "Userauthor",
                 foreignField: "_id",
-                as: "author",
+                as: "Userauthor",
               },
             },
             {
               $lookup: {
                 from: "animals",
-                localField: "authorDetails.authorId",
+                localField: "Animalauthor",
                 foreignField: "_id",
                 as: "Animalauthor",
               },
@@ -1445,19 +1444,26 @@ module.exports.foryoufeed = async (req, res, next) => {
 module.exports.follow = async (req, res, next) => {
   try {
     const { from, to } = req.body;
-    const user = res.locals.user;
-    if (from.toType === "Animal"){
+    let user=undefined;
+    if(req.headers.type=="User")
+     user = res.locals.user
+    else
+     user = res.locals.animal 
+    //  console.log(user._id)
+    if (from.fromType === "Animal"){
       let found = false;
-      for (var i=0; i<user.pets.length;i++){
-        if (user.pets[i].pet == from.fromId){
-          found = true;
-        }
-      }
+      // for (var i=0; i<user.pets.length;i++){
+      //   if (user.pets[i].pet == from.fromId){
+      //     found = true;
+      //   }
+      // }
+      if(from.fromId==user._id.toString())
+        found =true;
       if (!found){
         return res.status(401).send({error: "You are not authorized!"})
       }
     }
-    if (user._id.toString() != from.fromId && from.fromType === "Human") {
+    if (user._id.toString() != from.fromId && from.fromType === "User") {
       return res.status(401).send({error: "You are not authorized!"})
     }
     let fromId = from.fromId === null ? user._id : from.fromId;
@@ -1482,9 +1488,9 @@ module.exports.follow = async (req, res, next) => {
       });
       const followingDocument = new Following({
         "user.id" : ObjectId(fromId),
-        "followerDetails.followerId": ObjectId(toId),
+        "followingDetails.followingId": ObjectId(toId),
         "user.userType" : from.fromType,
-        "followerDetails.followerType" : to.toType 
+        "followingDetails.followingType" : to.toType 
       });
       await followerDocument.save();
       await followingDocument.save();
