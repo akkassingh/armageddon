@@ -14,6 +14,7 @@ const fs = require("fs");
 const crypto = require("crypto");
 const logger = require("../logger/logger");
 const bcrypt = require("bcrypt");
+const jwt = require("jwt-simple");
 
 const {
   validateEmail,
@@ -1062,10 +1063,13 @@ module.exports.getUserDetails = async (req, res, next) => {
   const user = res.locals.user;
   const { idPet } = req.body;
   try {
-    const user_details = await User.findById(user._id).populate("pets.pet", '_id name avatar');
+    let user_details = await User.findById(user._id).populate("pets.pet", '_id name avatar category');
     if (!user_details)
       return res.status(404).send({ error: "No such user exists!" });
-
+      for(let i=0;i<user_details.pets.length;i++){
+       let animal_token= jwt.encode({ id: user_details.pets[i].pet._id }, process.env.JWT_SECRET)
+       user_details.pets[i].pet.category=animal_token;
+      }
     const animal_details = await Animal.find({ "guardians.user": user._id }, 'username name avatar');
     // let newAnimalArr = [];
     // if (animal_details.length > 0) {
