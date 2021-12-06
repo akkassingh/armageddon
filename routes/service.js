@@ -37,7 +37,9 @@ serviceRouter.post("/serviceList", requireAuth, serviceList);
 serviceRouter.post("/service", requireAuth, createService);
 serviceRouter.post(
   "/backgroundCheck",
-  upload,
+  multer({
+    dest: "temp/",
+  }).any(),
   requireAuth,
   addBackgroundCheckToService
 );
