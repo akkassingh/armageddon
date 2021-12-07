@@ -2,3 +2,5 @@ node_modules
 log
 temp
 .DS_Store
+tamely.pem
+.DS_Store
