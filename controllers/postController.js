@@ -22,12 +22,14 @@ const {
   retrieveComments,
   formatCloudinaryUrl,
   populatePostsPipeline,
+  sendPostVotenotification
 } = require("../utils/controllerUtils");
 const filters = require("../utils/filters");
 
 module.exports.createPost = async (req, res, next) => {
   let user=undefined;
-  if(req.body.type=="human")
+  // console.log('loooooooooS')
+  if(req.headers.type=="User")
    user = res.locals.user
   else
    user = res.locals.animal
@@ -107,7 +109,7 @@ module.exports.createPost = async (req, res, next) => {
 
   try {
     // Updating followers feed with post
-    const followersDocument = await Followers.find({ user: user._id });
+    const followersDocument = await Followers.find({ 'user.id': user._id });
     const followers = followersDocument[0].followers;
     const postObject = {
       ...post.toObject(),
@@ -158,6 +160,46 @@ module.exports.retrievePost = async (req, res, next) => {
   const { postId } = req.params;
   try {
     // Retrieve the post and the post's votes
+    const unwantedUserFields = [
+      "author.password",
+      "author.private",
+      "author.confirmed",
+      "author.bookmarks",
+      "author.email",
+      "author.website",
+      "author.bio",
+      "author.githubId",
+      "author.pets",
+      "author.googleUserId"
+    ];
+    const unwantedAnimalFields = [
+      "Animalauthor.mating",
+      "Animalauthor.adoption",
+      "Animalauthor.playBuddies",
+      "Animalauthor.username",
+      "Animalauthor.category",
+      "Animalauthor.animal_type",
+      "Animalauthor.location",
+      "Animalauthor.guardians",
+      "Animalauthor.pets",
+      "Animalauthor.bio",
+      "Animalauthor.animalType",
+      "Animalauthor.gender",
+      "Animalauthor.breed",
+      "Animalauthor.age",
+      "Animalauthor.playFrom",
+      "Animalauthor.playTo",
+      "Animalauthor.servicePet",
+      "Animalauthor.spayed",
+      "Animalauthor.friendlinessWithHumans",
+      "Animalauthor.friendlinessWithAnimals",
+      "Animalauthor.favouriteThings",
+      "Animalauthor.thingsDislikes",
+      "Animalauthor.uniqueHabits",
+      "Animalauthor.eatingHabits",
+      "Animalauthor.relatedAnimals",
+      "Animalauthor.registeredWithKennelClub"
+    ];
     const post = await Post.aggregate([
       { $match: { _id: ObjectId(postId) } },
       {
@@ -171,22 +213,35 @@ module.exports.retrievePost = async (req, res, next) => {
       {
         $lookup: {
           from: "users",
-          localField: "author",
+          localField: "Userauthor",
           foreignField: "_id",
-          as: "author",
+          as: "Userauthor",
         },
       },
-      { $unwind: "$author" },
-      { $unwind: "$postVotes" },
       {
-        $unset: [
-          "author.password",
-          "author.email",
-          "author.private",
-          "author.bio",
-          "author.githubId",
-        ],
+        $unset: unwantedUserFields,
+      },     
+      {
+        $lookup: {
+          from: "animals",
+          localField: "Animalauthor",
+          foreignField: "_id",
+          as: "Animalauthor",
+        },
       },
+      {
+        $unset: unwantedAnimalFields,
+      },
+      { $unwind: "$postVotes" },
+      // {
+      //   $unset: [
+      //     "author.password",
+      //     "author.email",
+      //     "author.private",
+      //     "author.bio",
+      //     "author.githubId",
+      //   ],
+      // },
       {
         $addFields: { postVotes: "$postVotes.votes" },
       },
@@ -209,10 +264,16 @@ module.exports.votePost = async (req, res, next) => {
   // console.log("------------", req.body);
   const { postId, voterDetails, vote } = req.body;
   let user=undefined;
-  if(req.body.type=="human")
+  if(req.headers.type=="User")
    user = res.locals.user
   else
    user = res.locals.animal
+  let post = await Post.findById(postId);
+   if (!post) {
+     return res
+       .status(404)
+       .send({ error: 'Could not find a post with that post id.' });
+   }
   try {
     if (vote === true) {
       let check;
@@ -234,7 +295,7 @@ module.exports.votePost = async (req, res, next) => {
             },
           });
           await postVote.save();
-          return res.send({ success: true });
+          res.send({ success: true });
 
           // Sending a like notification
           // const post = await Post.findById(postId);
@@ -288,8 +349,39 @@ module.exports.votePost = async (req, res, next) => {
             },
           });
           await postVote.save();
-          return res.send({ success: true });
+          res.send({ success: true });
         }
+      }
+      try {
+        // Sending comment notification
+        let image = formatCloudinaryUrl(
+          post.image,
+          { height: 50, width: 50, x: '100%', y: '100%' },
+          true
+        );
+        sendPostVotenotification(
+          req,
+          user,
+          post.Userauthor,
+          post.Animalauthor,
+          image,
+          post.filter,
+          post._id
+        );
+          console.log('loooooo')
+    
+        // Find the username of the post author
+        // const postDocument = await Post.findById(post._id).populate('author');
+        // image = formatCloudinaryUrl(
+        //   post.image,
+        //   { height: 50, width: 50, x: '100%', y: '100%' },
+        //   true
+        // );
+    
+        // // Sending a mention notification
+        // sendMentionNotification(req, message, image, postDocument, user);
+      } catch (err) {
+        console.log(err);
       }
     } else {
       let check;
@@ -705,7 +797,7 @@ module.exports.acceptFollowRequests = async (req, res, next) => {
 module.exports.retrievePostFeed = async (req, res, next) => {
   
   let user=undefined;
-  if(req.body.type=="human")
+  if(req.headers.type=="User")
    user = res.locals.user
   else
    user = res.locals.animal
@@ -1184,7 +1276,7 @@ module.exports.foryoufeed = async (req, res, next) => {
     const posts = await Post.aggregate([
       // {
       //   $match: {
-      //     $or: [{ author: { $in: following } }, { author: ObjectId(user._id) }],
+      //     $or: [{ Userauthor: { $in: following } }, { Animalauthor: { $in: following } }, { author: ObjectId(user._id) }],
       //   },
       // },
       { $sort: { date: -1 } },
@@ -1193,9 +1285,9 @@ module.exports.foryoufeed = async (req, res, next) => {
       {
         $lookup: {
           from: "users",
-          localField: "author",
+          localField: "Userauthor",
           foreignField: "_id",
-          as: "author",
+          as: "Userauthor",
         },
       },
       {
@@ -1204,7 +1296,7 @@ module.exports.foryoufeed = async (req, res, next) => {
       {
         $lookup: {
           from: "animals",
-          localField: "postOwnerDetails.postOwnerId",
+          localField: "Animalauthor",
           foreignField: "_id",
           as: "Animalauthor",
         },
@@ -1212,25 +1304,24 @@ module.exports.foryoufeed = async (req, res, next) => {
       {
         $unset: unwantedAnimalFields,
       },
-      {
-        $lookup: {
-          from: "postvotes",
-          let: { post: "$_id" },
-          pipeline: [
-            {
-              // Finding comments related to the postId
-              $match: {
-                $expr: {
-                  $eq: ["$post", "$$post"],
-                },
-              },
-            }
-          ],
-          // localField: "_id",
-          // foreignField: "post",
-          as: "postVotes",
-        },
-      },
+      // {
+      //   $lookup: {
+      //     from: "postvotes",
+      //     let: { post: "$_id" },
+      //     pipeline: [
+      //       {
+      //         $match: {
+      //           $expr: {
+      //             $eq: ["$post", "$$post"],
+      //           },
+      //         },
+      //       }
+      //     ],
+      //     // localField: "_id",
+      //     // foreignField: "post",
+      //     as: "postVotes",
+      //   },
+      // },
       {
         $lookup: {
           from: "postvotes",
@@ -1300,15 +1391,15 @@ module.exports.foryoufeed = async (req, res, next) => {
             {
               $lookup: {
                 from: "users",
-                localField: "authorDetails.authorId",
+                localField: "Userauthor",
                 foreignField: "_id",
-                as: "author",
+                as: "Userauthor",
               },
             },
             {
               $lookup: {
                 from: "animals",
-                localField: "authorDetails.authorId",
+                localField: "Animalauthor",
                 foreignField: "_id",
                 as: "Animalauthor",
               },
@@ -1406,14 +1497,21 @@ module.exports.foryoufeed = async (req, res, next) => {
 module.exports.follow = async (req, res, next) => {
   try {
     const { from, to } = req.body;
-    const user = res.locals.user;
-    if (from.toType === "Animal"){
+    let user=undefined;
+    if(req.headers.type=="User")
+     user = res.locals.user
+    else
+     user = res.locals.animal 
+    //  console.log(user._id)
+    if (from.fromType === "Animal"){
       let found = false;
-      for (var i=0; i<user.pets.length;i++){
-        if (user.pets[i].pet == from.fromId){
-          found = true;
-        }
-      }
+      // for (var i=0; i<user.pets.length;i++){
+      //   if (user.pets[i].pet == from.fromId){
+      //     found = true;
+      //   }
+      // }
+      if(from.fromId==user._id.toString())
+        found =true;
       if (!found){
         return res.status(401).send({error: "You are not authorized!"})
       }
@@ -1455,3 +1553,21 @@ module.exports.follow = async (req, res, next) => {
     next(err);
   }
 }
+
+module.exports.retrievePostlikes = async (req, res, next) => {
+  const { postId } = req.body;
+  const user = res.locals.user;
+
+  try {
+    const postlikes = await PostVote.find({ post: postId}).populate('voterDetails.Uservoter','_id name username avatar').populate('voterDetails.Animalvoter','_id name username avatar');
+    if (!postlikes) {
+      return res.status(404).send({
+        error: "Could not find likes with that postid",
+      });
+    }
+  console.log(postId)
+    return res.send({postlikes});
+  } catch (err) {
+    next(err);
+  }
+};

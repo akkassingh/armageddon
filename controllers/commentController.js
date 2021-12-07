@@ -97,12 +97,22 @@ module.exports.createComment = async (req, res, next) => {
 
 module.exports.deleteComment = async (req, res, next) => {
   const { commentId } = req.params;
-  const user = res.locals.user;
+  const user=res.locals.user;
   try {
-    const comment = await Comment.findOne({
-      _id: commentId,
-      author: user._id,
-    });
+    let comment;
+    if(req.headers.type=="User"){
+        comment = await Comment.findOne({
+        _id: commentId,
+        Userauthor: user._id,
+      });
+    }
+    else{
+      comment = await Comment.findOne({
+        _id: commentId,
+        Animalauthor: user._id,
+      });
+
+    }    
     if (!comment) {
       return res.status(404).send({
         error:
@@ -362,6 +372,7 @@ module.exports.retrieveComments = async (req, res, next) => {
   const { postId, exclude } = req.params;
   const {counter = 0} = req.body;
   try {
+  console.log(postId+"loooo", exclude)
     const comments = await retrieveComments(postId, counter*10, exclude);
     return res.send(comments);
   } catch (err) {
