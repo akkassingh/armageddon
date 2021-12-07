@@ -87,6 +87,7 @@ module.exports.requireAuth = async (req, res, next) => {
       return res.status(401).send({ error: err });
     }
   }
+  
   else {
     try {
       let user;
