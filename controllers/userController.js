@@ -22,7 +22,7 @@ const {
   validateBio,
   validateWebsite,
 } = require("../utils/validation");
-const { sendConfirmationEmail } = require("../utils/controllerUtils");
+const { sendConfirmationEmail, formatCloudinaryUrl } = require("../utils/controllerUtils");
 
 module.exports.retrieveUser = async (req, res, next) => {
   const { username } = req.params;
