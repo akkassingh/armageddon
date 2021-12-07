@@ -69,20 +69,8 @@ module.exports.verifyJwtAnimal = (token) => {
 };
 
 module.exports.requireAuth = async (req, res, next) => {
-<<<<<<< HEAD
-<<<<<<< HEAD
-  const { authorization } = req.headers;
+	const { authorization } = req.headers;
   const {type} = req.headers;
-  // console.log(req.body)
-=======
-  const { authorization, type } = req.headers;
-  // const {type} = req.body;
->>>>>>> 00c2292ce662b105d8ae6f21cac0c5ba95880080
-=======
-  const { authorization } = req.headers;
-  const {type} = req.headers;
-  // console.log(req.body)
->>>>>>> f6c3b286d9283673013d139ec5779ebef8a5e33f
   if (!type) {
     return res.status(400).send({error: "Invalid Request Type!"})
   }
