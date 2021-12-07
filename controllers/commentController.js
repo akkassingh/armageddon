@@ -17,14 +17,14 @@ module.exports.createComment = async (req, res, next) => {
   const { message } = req.body;
   let Userauthor,Animalauthor;
   let user=undefined;
-  if(req.body.type=="human"){
+  if(req.headers.type=="User"){
    user = res.locals.user
    Userauthor=user._id
-   authorType="human"
+   authorType="User"
   }
   else{
   user = res.locals.animal  
-  authorType="human"
+  authorType="Animal"
   Animalauthor=user._id
   }
 
@@ -97,7 +97,11 @@ module.exports.createComment = async (req, res, next) => {
 
 module.exports.deleteComment = async (req, res, next) => {
   const { commentId } = req.params;
-  const user=res.locals.user;
+  let user=undefined;
+  if(req.headers.type=="User")
+   user = res.locals.user
+  else
+   user = res.locals.animal
   try {
     let comment;
     if(req.headers.type=="User"){
@@ -172,8 +176,17 @@ module.exports.voteComment = async (req, res, next) => {
 module.exports.createCommentReply = async (req, res, next) => {
   const { parentCommentId } = req.params;
   const { message } = req.body;
-  const user = res.locals.user;
-
+  let user=undefined,Userauthor=undefined, Animalauthor=undefined, authorType=undefined;
+  if(req.headers.type=="User"){
+   user = res.locals.user
+   Userauthor=user._id
+   authorType="User"
+  }
+  else{
+  user = res.locals.animal  
+  authorType="Animal"
+  Animalauthor=user._id
+  }
   if (!message) {
     return res
       .status(400)
@@ -192,18 +205,21 @@ module.exports.createCommentReply = async (req, res, next) => {
         .status(404)
         .send({ error: 'Could not find a parent comment with that id.' });
     }
-    const commentReply = await new CommentReply({
+    const commentReply =  new CommentReply({
       parentComment: parentCommentId,
       message,
-      author: user._id,
-    });
+      Userauthor,
+      Animalauthor,
+      authorType
+     });
 
     await commentReply.save();
-    res.status(201).send({
-      ...commentReply.toObject(),
-      author: { username: user.username, avatar: user.avatar },
-      commentReplyVotes: [],
-    });
+      res.status(201).send({success:true  });
+    // res.status(201).send({
+    //   ...commentReply.toObject(),
+    //   author: { username: Userauthor.username, avatar: Userauthor.avatar },
+    //   commentReplyVotes: [],
+    // });
   } catch (err) {
     next(err);
   }
@@ -234,7 +250,16 @@ module.exports.createCommentReply = async (req, res, next) => {
       message,
       postDocument._id
     );
-
+    sendCommentNotification(
+      req,
+      user,
+      post.Userauthor,
+      post.Animalauthor,
+      image,
+      post.filter,
+      message,
+      post._id
+    );
     sendMentionNotification(req, message, image, postDocument, user);
   } catch (err) {
     console.log(err);
