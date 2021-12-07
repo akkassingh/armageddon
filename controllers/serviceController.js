@@ -318,10 +318,10 @@ module.exports.getmyactiveAppointments = async (req, res, next) => {
       ServiceProvider: res.locals.user._id,
       bookingStatus:{ $lte:1}
     }).populate('bookingDetails','package run1 run2 startDate dayOff paymentDetails numberOfPets').populate('petDetails', 'name username').populate('User','fullName username avatar');
-    console.log(serviceList)
     serviceList = serviceList.filter(function (ele) {
       return ele.bookingDetails.paymentDetails.status == 1;
     });   
+    console.log(serviceList)
     for(let i=0;i<serviceList.length;i++){
       if(serviceList[i].petDetails==null || serviceList[i].petDetails.length==0){
         let pet={
@@ -342,6 +342,7 @@ module.exports.getmyactiveAppointments = async (req, res, next) => {
         serviceList[i].petDetails.push(pet)
       }
     }
+
     return res.status(200).json({serviceList:serviceList});
   } catch (err) {
     console.log(err);
@@ -390,7 +391,7 @@ module.exports.changeAppointmentstatus = async (req, res, next) => {
       { bookingStatus: req.body.bookingStatus},
       { new: true });
     if(req.body.bookingStatus==1){
-      await ServiceAppointment.deleteMany({ _id: { $nin: [ObjectId(req.body.appointmentId)] } })
+      await ServiceAppointment.deleteMany({ _id: { $nin: [ObjectId(req.body.appointmentId)] }, bookingDetails:serviceList.bookingDetails})
       await bookingDetails.findByIdAndUpdate({_id:serviceList.bookingDetails},{status:1})
     }
     //if booking status =3 =>servicestatus=2
