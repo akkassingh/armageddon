@@ -191,8 +191,12 @@ module.exports.retrievePosts = async (req, res, next) => {
 
 module.exports.bookmarkPost = async (req, res, next) => {
   const { postId } = req.params;
-  const user = res.locals.user;
-
+  let user=undefined;
+  let userRemoveBookmarkUpdate;
+  if(req.headers.type=="User")
+   user = res.locals.user
+  else
+   user = res.locals.animal
   try {
     const post = await Post.findById(postId);
     if (!post) {
@@ -200,24 +204,42 @@ module.exports.bookmarkPost = async (req, res, next) => {
         .status(404)
         .send({ error: "Could not find a post with that id." });
     }
-
-    const userBookmarkUpdate = await User.updateOne(
-      {
-        _id: user._id,
-        "bookmarks.post": { $ne: postId },
-      },
-      { $push: { bookmarks: { post: postId } } }
-    );
+    if(req.headers.type=="User"){
+       userBookmarkUpdate = await User.updateOne(
+        {
+          _id: user._id,
+          "bookmarks.post": { $ne: postId },
+        },
+        { $push: { bookmarks: { post: postId } } }
+      );
+    }
+    else{
+       userBookmarkUpdate = await Animal.updateOne(
+        {
+          _id: user._id,
+          "bookmarks.post": { $ne: postId },
+        },
+        { $push: { bookmarks: { post: postId } } }
+      );
+    }
     if (!userBookmarkUpdate.nModified) {
       if (!userBookmarkUpdate.ok) {
         return res.status(500).send({ error: "Could not bookmark the post." });
       }
       // The above query did not modify anything meaning that the user has already bookmarked the post
       // Remove the bookmark instead
-      const userRemoveBookmarkUpdate = await User.updateOne(
-        { _id: user._id },
-        { $pull: { bookmarks: { post: postId } } }
-      );
+      if(req.headers.type=="User"){
+         userRemoveBookmarkUpdate = await User.updateOne(
+          { _id: user._id },
+          { $pull: { bookmarks: { post: postId } } }
+        );
+      }
+      else{
+         userRemoveBookmarkUpdate = await Animal.updateOne(
+          { _id: user._id },
+          { $pull: { bookmarks: { post: postId } } }
+        );
+      }
       if (!userRemoveBookmarkUpdate.nModified) {
         return res.status(500).send({ error: "Could not bookmark the post." });
       }
