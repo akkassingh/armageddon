@@ -99,7 +99,7 @@ module.exports.retrieveNotifications = async (req, res, next) => {
       },
     ]);
     console.log(notifications)
-    return res.send(notifications);
+    return res.send({notifications:notifications});
   } catch (err) {
     next(err);
   }

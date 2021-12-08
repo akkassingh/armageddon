@@ -1083,16 +1083,22 @@ module.exports.becomeGuardian = async (req, res, next) => {
 
 module.exports.getUserDetails = async (req, res, next) => {
   const user = res.locals.user;
-  const { idPet } = req.body;
+  // const { idPet } = req.body;
   try {
     let user_details = await User.findById(user._id).populate("pets.pet", '_id name avatar category');
     if (!user_details)
       return res.status(404).send({ error: "No such user exists!" });
-      for(let i=0;i<user_details.pets.length;i++){
-       let animal_token= jwt.encode({ id: user_details.pets[i].pet._id }, process.env.JWT_SECRET)
-       user_details.pets[i].pet.category=animal_token;
+      // console.log(user_details)
+if(user_details.pets)
+    for(let i=0;i<user_details.pets.length;i++){
+      if(user_details.pets[i].pet){
+        let animal_token= jwt.encode({ id: user_details.pets[i].pet._id }, process.env.JWT_SECRET)
+        user_details.pets[i].pet.category=animal_token;
       }
-    const animal_details = await Animal.find({ "guardians.user": user._id }, 'username name avatar');
+
+    }
+
+    // const animal_details = await Animal.find({ "guardians.user": user._id }, 'username name avatar');
     // let newAnimalArr = [];
     // if (animal_details.length > 0) {
     //   for (let a1 of animal_details) {
@@ -1162,7 +1168,6 @@ module.exports.getUserDetails = async (req, res, next) => {
         $count: "totalFollowers",
       },
     ]);
-
     let totalFollowers =
       followersCount.length == 0 ? 0 : followersCount[0].totalFollowers;
 
@@ -1209,6 +1214,7 @@ module.exports.getUserDetails = async (req, res, next) => {
     });
   } catch (err) {
     logger.info(err);
+    console.log('loooooooooppppppp')
     res.status(400).send({ error: err });
   }
 };
