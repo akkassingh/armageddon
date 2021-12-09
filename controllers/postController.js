@@ -1280,7 +1280,7 @@ module.exports.foryoufeed = async (req, res, next) => {
       //   },
       // },
       { $sort: { date: -1 } },
-      { $skip: Number(counter)*5 },
+      { $skip: Number(counter)*20 },
       { $limit: 20 },
       {
         $lookup: {
