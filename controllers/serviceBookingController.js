@@ -361,8 +361,8 @@ module.exports.getscrollAppointmentstatus = async (req, res, next) => {
          // }
         }
       }
-    // return res.status(200).send({resp:resp});
-    return res.status(200).send({resp: 1});
+    return res.status(200).send({resp:resp});
+    // return res.status(200).send({resp: 1});
   } catch (err) {
     console.log(err);
     next(err);
