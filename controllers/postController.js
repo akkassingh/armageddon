@@ -820,6 +820,7 @@ for(let i=0;i<followingDocument.length;i++){
 }
 // following =[]
 //  following.push(ObjectId('618a0d66e443a1dcaf4e4d8c'))
+following.push(ObjectId('6197b8b854bb630004ed1387'))
     // Fields to not include on the user object
     // console.log(following)
     const unwantedUserFields = [
