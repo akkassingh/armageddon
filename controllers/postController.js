@@ -839,7 +839,7 @@ following.push(ObjectId('6197b8b854bb630004ed1387'))
       "Animalauthor.mating",
       "Animalauthor.adoption",
       "Animalauthor.playBuddies",
-      "Animalauthor.username",
+      // "Animalauthor.username",
       "Animalauthor.category",
       "Animalauthor.animal_type",
       "Animalauthor.location",
