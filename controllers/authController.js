@@ -617,6 +617,7 @@ module.exports.facebookLoginAuthentication = async (req, res, next) => {
             email: userDocument.email,
             username: userDocument.username,
             avatar: userDocument.avatar,
+            confirmed: true,
           },
           isNewUser,
           token: jwt.encode({ id: userDocument._id }, process.env.JWT_SECRET),
@@ -637,6 +638,7 @@ module.exports.facebookLoginAuthentication = async (req, res, next) => {
           id : user._id,
           email: user.email,
           username: user.username,
+          confirmed: true,
         },
         isNewUser: true,
         token: jwt.encode({ id: user._id }, process.env.JWT_SECRET),
@@ -678,12 +680,16 @@ module.exports.facebookLoginAuthentication = async (req, res, next) => {
         if (userDocument.avatar || userDocument.googleUserId || userDocument.faceBookUserId){
           isNewUser = false;
         }
+        if (!userDocument.confirmed){
+          await User.findOneAndUpdate({ _id: userDocument._id}, { confirmed: true });
+        }
         return res.status(200).send({
           user: {
             _id: userDocument._id,
             email: userDocument.email,
             username: userDocument.username,
             avatar: userDocument.avatar,
+            confirmed: true,
           },
           isNewUser,
           token: jwt.encode({ id: userDocument._id }, process.env.JWT_SECRET),
