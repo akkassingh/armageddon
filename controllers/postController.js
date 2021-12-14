@@ -1111,12 +1111,20 @@ module.exports.retrieveSuggestedPosts = async (req, res, next) => {
 
 module.exports.retrievMyPosts = async (req, res, next) => {
   const { counter = 0 } = req.body;
-
+  let obj = {}
+  if(req.headers.type=="User"){
+    user = res.locals.user
+    obj = {'Userauthor' : user._id}
+  }
+  else
+  {
+    user = res.locals.animal
+    obj = {'Animalauthor' : user._id}
+  }
   try {
-    // const authorId = ObjectId(res.locals.user._id);
-    const authorId = res.locals.user._id;
+    const authorId = user._id;
     const posts = await Post.aggregate([
-      { $match: { author: authorId } },
+      { $match: obj},
       {
         $sort: { date: -1 },
       },
