@@ -17,6 +17,7 @@ const Notification = require("../models/Notification");
 const socketHandler = require("../handlers/socketHandler");
 const fs = require("fs");
 const ObjectId = require("mongoose").Types.ObjectId;
+const jwt = require("jwt-simple");
 
 const {
   retrieveComments,
@@ -1497,6 +1498,12 @@ module.exports.foryoufeed = async (req, res, next) => {
         $unset: [...unwantedUserFields, "comments", "commentCount"],
       },
     ]);
+    for (var i=0;i<posts.length;i++){
+      if (posts[i].authorType == "Animal"){
+        const animal_token = jwt.encode({ id: posts[i].Animalauthor._id}, process.env.JWT_SECRET);
+        posts[i]['Animalauthor'][0]['category'] = animal_token;
+      }
+    }
     return res.send({posts:posts});
   } catch (err) {
     next(err);
