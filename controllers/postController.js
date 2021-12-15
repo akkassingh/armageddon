@@ -162,16 +162,16 @@ module.exports.retrievePost = async (req, res, next) => {
   try {
     // Retrieve the post and the post's votes
     const unwantedUserFields = [
-      "author.password",
-      "author.private",
-      "author.confirmed",
-      "author.bookmarks",
-      "author.email",
-      "author.website",
-      "author.bio",
-      "author.githubId",
-      "author.pets",
-      "author.googleUserId"
+      "Userauthor.password",
+      "Userauthor.private",
+      "Userauthor.confirmed",
+      "Userauthor.bookmarks",
+      "Userauthor.email",
+      "Userauthor.website",
+      "Userauthor.bio",
+      "Userauthor.githubId",
+      "Userauthor.pets",
+      "Userauthor.googleUserId"
     ];
     const unwantedAnimalFields = [
       "Animalauthor.mating",
@@ -1079,6 +1079,12 @@ following.push(ObjectId('6197b8b854bb630004ed1387'))
         $unset: [...unwantedUserFields, "comments", "commentCount"],
       },
     ]);
+    for (var i=0;i<posts.length;i++){
+      if (posts[i].authorType == "Animal"){
+        const animal_token = jwt.encode({ id: posts[i].Animalauthor._id}, process.env.JWT_SECRET);
+        posts[i]['Animalauthor'][0]['category'] = animal_token;
+      }
+    }
     return res.send({posts:posts});
   } catch (err) {
     next(err);
