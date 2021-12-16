@@ -1120,6 +1120,7 @@ module.exports.retrieveSuggestedPosts = async (req, res, next) => {
 module.exports.retrievMyPosts = async (req, res, next) => {
   const { counter = 0 } = req.body;
   let obj = {}
+  let user=undefined
   if(req.headers.type=="User"){
     user = res.locals.user
     obj = {'Userauthor' : user._id}
@@ -1132,7 +1133,12 @@ module.exports.retrievMyPosts = async (req, res, next) => {
   try {
     const authorId = user._id;
     const posts = await Post.aggregate([
-      { $match: obj},
+      // { $match: obj},
+      {
+        $match: {
+          $or: [{ Userauthor: ObjectId(user._id)}, { Animalauthor:  ObjectId(user._id)}],
+        },
+      },
       {
         $sort: { date: -1 },
       },
@@ -1143,7 +1149,7 @@ module.exports.retrievMyPosts = async (req, res, next) => {
         $limit: 20,
       },
     ]);
-
+    console.log(posts)
     for (let p1 of posts) {
       let getPostVoteresp = await PostVote.aggregate([
         {

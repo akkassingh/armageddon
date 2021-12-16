@@ -2,8 +2,12 @@ const Notification = require('../models/Notification');
 const ObjectId = require('mongoose').Types.ObjectId;
 
 module.exports.retrieveNotifications = async (req, res, next) => {
-  const user = res.locals.user;
-  const notification = await Notification.find({receiver:user._id})
+  let user=undefined;
+  if(req.headers.type=="User")
+   user = res.locals.user
+  else
+   user = res.locals.animal
+   const notification = await Notification.find({receiver:user._id})
   console.log(notification)
 
   try {
@@ -14,6 +18,7 @@ module.exports.retrieveNotifications = async (req, res, next) => {
       {
         $match: {
           $or: [{ Userreceiver: user._id  }, { Animalreceiver: user._id }],
+          $and: [{ read: false  }],
         },
       },
       {
@@ -106,10 +111,17 @@ module.exports.retrieveNotifications = async (req, res, next) => {
 };
 
 module.exports.readNotifications = async (req, res, next) => {
-  const user = res.locals.user;
+  let user=undefined;
 
   try {
-    await Notification.updateMany({ receiver: user._id }, { read: true });
+    if(req.headers.type=="User"){
+    user = res.locals.user
+    await Notification.updateMany({ Userreceiver: user._id }, { read: true });
+  }
+   else{
+    user = res.locals.animal
+    await Notification.updateMany({ Animalreceiver: user._id }, { read: true });
+  }
     return res.send();
   } catch (err) {
     next(err);
