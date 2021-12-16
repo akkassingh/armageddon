@@ -55,7 +55,7 @@ module.exports.verifyJwtAnimal = (token) => {
       const id = jwt.decode(token, process.env.JWT_SECRET).id;
       const animal = await Animal.findOne(
         { _id: id },
-        "name username avatar guardians relatedAnimals"
+        "name username avatar guardians relatedAnimals bookmarks"
       );
       if (animal) {
         return resolve(animal);
