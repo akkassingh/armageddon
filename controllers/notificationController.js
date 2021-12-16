@@ -122,7 +122,7 @@ module.exports.readNotifications = async (req, res, next) => {
     user = res.locals.animal
     await Notification.updateMany({ Animalreceiver: user._id }, { read: true });
   }
-    return res.send();
+    return res.send({"success" : true});
   } catch (err) {
     next(err);
   }
