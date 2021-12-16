@@ -17,6 +17,7 @@ const Notification = require("../models/Notification");
 const socketHandler = require("../handlers/socketHandler");
 const fs = require("fs");
 const ObjectId = require("mongoose").Types.ObjectId;
+const jwt = require("jwt-simple");
 
 const {
   retrieveComments,
@@ -161,16 +162,16 @@ module.exports.retrievePost = async (req, res, next) => {
   try {
     // Retrieve the post and the post's votes
     const unwantedUserFields = [
-      "author.password",
-      "author.private",
-      "author.confirmed",
-      "author.bookmarks",
-      "author.email",
-      "author.website",
-      "author.bio",
-      "author.githubId",
-      "author.pets",
-      "author.googleUserId"
+      "Userauthor.password",
+      "Userauthor.private",
+      "Userauthor.confirmed",
+      "Userauthor.bookmarks",
+      "Userauthor.email",
+      "Userauthor.website",
+      "Userauthor.bio",
+      "Userauthor.githubId",
+      "Userauthor.pets",
+      "Userauthor.googleUserId"
     ];
     const unwantedAnimalFields = [
       "Animalauthor.mating",
@@ -820,6 +821,8 @@ for(let i=0;i<followingDocument.length;i++){
 }
 // following =[]
 //  following.push(ObjectId('618a0d66e443a1dcaf4e4d8c'))
+following.push(user._id)
+following.push(ObjectId('6197b8b854bb630004ed1387'))
     // Fields to not include on the user object
     // console.log(following)
     const unwantedUserFields = [
@@ -838,7 +841,7 @@ for(let i=0;i<followingDocument.length;i++){
       "Animalauthor.mating",
       "Animalauthor.adoption",
       "Animalauthor.playBuddies",
-      "Animalauthor.username",
+      // "Animalauthor.username",
       "Animalauthor.category",
       "Animalauthor.animal_type",
       "Animalauthor.location",
@@ -1077,6 +1080,12 @@ for(let i=0;i<followingDocument.length;i++){
         $unset: [...unwantedUserFields, "comments", "commentCount"],
       },
     ]);
+    for (var i=0;i<posts.length;i++){
+      if (posts[i].authorType == "Animal"){
+        const animal_token = jwt.encode({ id: posts[i].Animalauthor._id}, process.env.JWT_SECRET);
+        posts[i]['Animalauthor'][0]['category'] = animal_token;
+      }
+    }
     return res.send({posts:posts});
   } catch (err) {
     next(err);
@@ -1109,22 +1118,25 @@ module.exports.retrieveSuggestedPosts = async (req, res, next) => {
 };
 
 module.exports.retrievMyPosts = async (req, res, next) => {
-  let user=undefined;
-  if(req.headers.type=="User")
-   user = res.locals.user
+  const { counter = 0 } = req.body;
+  let obj = {}
+  let user=undefined
+  if(req.headers.type=="User"){
+    user = res.locals.user
+    obj = {'Userauthor' : user._id}
+  }
   else
-   user = res.locals.animal
-  const { counter=0 } = req.body;
-
+  {
+    user = res.locals.animal
+    obj = {'Animalauthor' : user._id}
+  }
   try {
-    // const authorId = ObjectId(res.locals.user._id);
     const authorId = user._id;
-    // console.log(authorId)
     const posts = await Post.aggregate([
-      // { $match: { author: authorId } },
+      // { $match: obj},
       {
         $match: {
-          $or: [{ Userauthor: ObjectId(authorId)}, { Animalauthor: ObjectId(authorId)}, { author: ObjectId(user._id) }],
+          $or: [{ Userauthor: ObjectId(user._id)}, { Animalauthor:  ObjectId(user._id)}],
         },
       },
       {
@@ -1245,16 +1257,16 @@ module.exports.foryoufeed = async (req, res, next) => {
   try {
 
     const unwantedUserFields = [
-      "author.password",
-      "author.private",
-      "author.confirmed",
-      "author.bookmarks",
-      "author.email",
-      "author.website",
-      "author.bio",
-      "author.githubId",
-      "author.pets",
-      "author.googleUserId"
+      "Userauthor.password",
+      "Userauthor.private",
+      "Userauthor.confirmed",
+      "Userauthor.bookmarks",
+      "Userauthor.email",
+      "Userauthor.website",
+      "Userauthor.bio",
+      "Userauthor.githubId",
+      "Userauthor.pets",
+      "Userauthor.googleUserId"
     ];
     const unwantedAnimalFields = [
       "Animalauthor.mating",
@@ -1291,7 +1303,7 @@ module.exports.foryoufeed = async (req, res, next) => {
       //   },
       // },
       { $sort: { date: -1 } },
-      { $skip: Number(counter)*5 },
+      { $skip: Number(counter)*20 },
       { $limit: 20 },
       {
         $lookup: {
@@ -1499,6 +1511,12 @@ module.exports.foryoufeed = async (req, res, next) => {
         $unset: [...unwantedUserFields, "comments", "commentCount"],
       },
     ]);
+    for (var i=0;i<posts.length;i++){
+      if (posts[i].authorType == "Animal"){
+        const animal_token = jwt.encode({ id: posts[i].Animalauthor._id}, process.env.JWT_SECRET);
+        posts[i]['Animalauthor'][0]['category'] = animal_token;
+      }
+    }
     return res.send({posts:posts});
   } catch (err) {
     next(err);
