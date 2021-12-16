@@ -15,6 +15,14 @@ const AnimalSchema = new Schema({
     lowercase: true,
     minlength: 3,
   },
+  bookmarks: [
+    {
+      post: {
+        type: Schema.ObjectId,
+        ref: "Post",
+      },
+    },
+  ],
   avatar: String,
   guardians: [
     {

@@ -1086,6 +1086,43 @@ following.push(ObjectId('6197b8b854bb630004ed1387'))
         posts[i]['Animalauthor'][0]['category'] = animal_token;
       }
     }
+    if (req.headers.type=="User"){
+      for (var i=0;i<posts.length;i++){
+        const like = await PostVote.find({
+            'post' : ObjectId(posts[i]._id.toString()),
+            'voterDetails.Uservoter' : ObjectId(user._id.toString())
+        })
+        if (like){
+          posts[i].isLiked = true;
+        }
+        else{
+          posts[i].isLiked = false;
+        }
+        const isBookmark = user.bookmarks.some((e) => {
+          return e.post == posts[i]._id.toString()
+        })
+        posts[i].isBookmarked = isBookmark
+      }
+    }
+    if (req.headers.type=="Animal"){
+      for (var i=0;i<posts.length;i++){
+        const like = await PostVote.find({
+            'post' : ObjectId(posts[i]._id.toString()),
+            'voterDetails.Animalvoter' : ObjectId(user._id.toString())
+        })
+        if (like){
+          posts[i].isLiked = 1;
+        }
+        else{
+          posts[i].isLiked = 0;
+        }
+        const isBookmark = user.bookmarks.some((e) => {
+          return e.post == posts[i]._id.toString()
+        })
+        posts[i].isBookmarked = isBookmark
+      }
+    }
+    console.log(user.bookmarks)
     return res.send({posts:posts});
   } catch (err) {
     next(err);
@@ -1191,6 +1228,39 @@ module.exports.retrievMyPosts = async (req, res, next) => {
     //   },
     //   ...populatePostsPipeline,
     // ]);
+    if (req.headers.type=="User"){
+      for (var i=0;i<posts.length;i++){
+        const like = await PostVote.find({
+            'post' : ObjectId(posts[i]._id.toString()),
+            'voterDetails.Uservoter' : ObjectId(user._id.toString())
+        })
+        if (like){
+          posts[i].isLiked = true;
+        }
+        else{
+          posts[i].isLiked = false;
+        }
+        const isBookmark = user.bookmarks.includes(posts[i]._id.toString())
+        posts[i].isBookmarked = isBookmark
+      }
+    }
+    if (req.headers.type=="Animal"){
+      for (var i=0;i<posts.length;i++){
+        const like = await PostVote.find({
+            'post' : ObjectId(posts[i]._id.toString()),
+            'voterDetails.Animalvoter' : ObjectId(user._id.toString())
+        })
+        if (like){
+          posts[i].isLiked = 1;
+        }
+        else{
+          posts[i].isLiked = 0;
+        }
+        const isBookmark = user.bookmarks.includes(posts[i]._id.toString())
+        posts[i].isBookmarked = isBookmark
+      }
+    }
+    
     return res.send({"posts" : posts});
   } catch (err) {
     console.log(err);
