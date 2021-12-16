@@ -35,6 +35,12 @@ module.exports.createPost = async (req, res, next) => {
   else
    user = res.locals.animal
   const { caption, filter: filterName, Animalauthor, Userauthor, authorType } = req.body;
+  if (authorType == "Animal" && !Animalauthor){
+    res.status(400).send("Invalid Request");
+  }
+  if (authorType == "User" && !Userauthor){
+    res.status(400).send("invalid Request!")
+  }
   let post = undefined;
   const filterObject = filters.find((filter) => filter.name === filterName);
   const hashtags = [];
