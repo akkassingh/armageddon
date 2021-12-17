@@ -8,7 +8,6 @@ const RequestError = require("../errorTypes/RequestError");
 const UserSchema = new Schema({
   email: {
     type: String,
-    required: true,
     unique: true,
     lowercase: true,
     validate: (value) => {
@@ -75,6 +74,7 @@ const UserSchema = new Schema({
       },
     },
   ],
+  phoneNumber : String,
 });
 
 // UserSchema.pre('save', function (next) {
