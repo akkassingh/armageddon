@@ -7,6 +7,7 @@ const ConfirmationToken = require("../models/ConfirmationToken");
 const bcrypt = require("bcrypt");
 const axios = require("axios");
 const logger = require("../logger/logger");
+const validator = require("validator")
 
 const {
   sendConfirmationEmail,
@@ -1331,5 +1332,78 @@ module.exports.resendOTP = async (req, res, next) => {
   }
 };
 
+module.exports.sendOTPtoPhoneNumber = async (req, res, next) => {
+  let {phoneNumber, countryCode} = req.body
+  if (phoneNumber.length != 10){
+    return res.status(400).send({"message" : 'Please give your 10 digit mobile number'})
+  }
+  if (countryCode[0] == '+'){
+    countryCode = countryCode.substring(1)
+  }
+  let mobileNumber = countryCode + phoneNumber
+  try{
+    const response = await axios.get(
+      `https://api.msg91.com/api/v5/otp?template_id=${process.env.MSG91_TEMPLATE_ID}&mobile=${mobileNumber}&authkey=${process.env.MSG91_API_KEY}&otp_length=6&otp_expiry=10`,
+      {
+        headers: { "Content-Type" : "application/json"},
+      }
+    );
+    if (response.data.type == 'success'){
+      return res.status(201).send({"message" : "OTP sent!"})
+    }
+    else{
+      return res.status(500).send({"message" : response.data.message})
+    }
+    
+  }
+  catch (err){
+    console.log(err)
+    next(err)
+  }
+}
 
+module.exports.verifyMobileOTP = async (req, res, next) => {
+  let {phoneNumber, countryCode, otp} = req.body
+  if (phoneNumber.length != 10){
+    return res.status(400).send({"message" : 'Please give your 10 digit mobile number'})
+  }
+  if (countryCode[0] == '+'){
+    countryCode = countryCode.substring(1)
+  }
+  let mobileNumber = countryCode + phoneNumber
+  try {
+    const response = await axios.get
+    (
+      `https://api.msg91.com/api/v5/otp/verify?authkey=${process.env.MSG91_API_KEY}&mobile=${mobileNumber}&otp=${otp}&otp_expiry=10`,
+    )
+    console.log(response.data)
+    if (response.data.type == 'success'){
+      const userDocument = await User.findOne({phoneNumber}, '_id username');
+      if (userDocument){ // Old user
+        return res.status(200).send({
+          "message" : "OTP verified successfully!",
+          "user" : {
+            'username' : userDocument.username,
+            'phoneNumber' : mobileNumber,
+            'confirmed' : true,
+          },
+          "isNewUser": false,
+          "token": jwt.encode({ id: userDocument._id }, process.env.JWT_SECRET) 
+        })
+      }
+      else{ // New user
+        const user = new User({
+          
+        })
+      }
+    }
+    else{
+      return res.status(400).send({"message" : response.data.message})
+    }
+  }
+  catch (err){
+    console.log(err)
+    next(err)
+  }
+}
 

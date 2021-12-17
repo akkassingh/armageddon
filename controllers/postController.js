@@ -89,16 +89,28 @@ module.exports.createPost = async (req, res, next) => {
       true
     );
     fs.unlinkSync(req.file.path);
-    post = new Post({
-      image: response.secure_url,
-      thumbnail: thumbnailUrl,
-      filter: filterObject ? filterObject.filter : "",
-      caption,
-      hashtags,
-      Animalauthor:Animalauthor,
-      Userauthor:Userauthor,
-      authorType:authorType
-    });
+    if (req.headers.type=="User"){
+      post = new Post({
+        image: response.secure_url,
+        thumbnail: thumbnailUrl,
+        filter: filterObject ? filterObject.filter : "",
+        caption,
+        hashtags,
+        Userauthor,
+        authorType
+      });
+    }
+    if (req.headers.type=="Animal"){
+      post = new Post({
+        image: response.secure_url,
+        thumbnail: thumbnailUrl,
+        filter: filterObject ? filterObject.filter : "",
+        caption,
+        hashtags,
+        Animalauthor,
+        authorType
+      });
+    }
     const postVote = new PostVote({
       post: post._id,
     });
@@ -114,29 +126,29 @@ module.exports.createPost = async (req, res, next) => {
     next(err);
   }
 
-  try {
-    // Updating followers feed with post
-    const followersDocument = await Followers.find({ 'user.id': user._id });
-    const followers = followersDocument[0].followers;
-    const postObject = {
-      ...post.toObject(),
-      author: { username: user.username, avatar: user.avatar },
-      commentData: { commentCount: 0, comments: [] },
-      postVotes: [],
-    };
+  // try {
+  //   // Updating followers feed with post
+  //   const followersDocument = await Followers.find({ 'user.id': user._id });
+  //   const followers = followersDocument[0].followers;
+  //   const postObject = {
+  //     ...post.toObject(),
+  //     author: { username: user.username, avatar: user.avatar },
+  //     commentData: { commentCount: 0, comments: [] },
+  //     postVotes: [],
+  //   };
 
-    // socketHandler.sendPost(req, postObject, user._id);
-    followers.forEach((follower) => {
-      socketHandler.sendPost(
-        req,
-        // Since the post is new there is no need to look up any fields
-        postObject,
-        follower.user
-      );
-    });
-  } catch (err) {
-    console.log(err);
-  }
+  //   // socketHandler.sendPost(req, postObject, user._id);
+  //   followers.forEach((follower) => {
+  //     socketHandler.sendPost(
+  //       req,
+  //       // Since the post is new there is no need to look up any fields
+  //       postObject,
+  //       follower.user
+  //     );
+  //   });
+  // } catch (err) {
+  //   console.log(err);
+  // }
 };
 
 module.exports.deletePost = async (req, res, next) => {
