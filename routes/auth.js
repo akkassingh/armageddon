@@ -16,7 +16,8 @@ const {
   verifyResetPasswordOTP,
   resendOTP,
   sendOTPtoPhoneNumber,
-  verifyMobileOTP
+  verifyMobileOTP,
+  resendMobileOTP
 } = require('../controllers/authController');
 const { sendPasswordResetLink } = require('../utils/controllerUtils');
 
@@ -36,5 +37,6 @@ authRouter.patch('/update-password/', requireAuth, updatePassword);
 authRouter.post('/resendotp/:path', requireAuth, resendOTP)
 authRouter.post('/sendMobileOTP',sendOTPtoPhoneNumber);
 authRouter.post('/verifyMobileOTP', verifyMobileOTP);
+authRouter.post('/resendMobileOTP', resendMobileOTP);
 
 module.exports = authRouter;
