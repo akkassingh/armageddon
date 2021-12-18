@@ -26,6 +26,46 @@ const {
   sendPostVotenotification
 } = require("../utils/controllerUtils");
 const filters = require("../utils/filters");
+const unwantedUserFields = [
+  "Userauthor.password",
+  "Userauthor.private",
+  "Userauthor.confirmed",
+  "Userauthor.bookmarks",
+  "Userauthor.email",
+  "Userauthor.website",
+  "Userauthor.bio",
+  "Userauthor.githubId",
+  "Userauthor.pets",
+  "Userauthor.googleUserId"
+];
+const unwantedAnimalFields = [
+  "Animalauthor.mating",
+  "Animalauthor.adoption",
+  "Animalauthor.playBuddies",
+  // "Animalauthor.username",
+  "Animalauthor.category",
+  "Animalauthor.animal_type",
+  "Animalauthor.location",
+  "Animalauthor.guardians",
+  "Animalauthor.pets",
+  "Animalauthor.bio",
+  "Animalauthor.animalType",
+  "Animalauthor.gender",
+  "Animalauthor.breed",
+  "Animalauthor.age",
+  "Animalauthor.playFrom",
+  "Animalauthor.playTo",
+  "Animalauthor.servicePet",
+  "Animalauthor.spayed",
+  "Animalauthor.friendlinessWithHumans",
+  "Animalauthor.friendlinessWithAnimals",
+  "Animalauthor.favouriteThings",
+  "Animalauthor.thingsDislikes",
+  "Animalauthor.uniqueHabits",
+  "Animalauthor.eatingHabits",
+  "Animalauthor.relatedAnimals",
+  "Animalauthor.registeredWithKennelClub"
+];
 
 module.exports.createPost = async (req, res, next) => {
   let user=undefined;
@@ -179,46 +219,6 @@ module.exports.retrievePost = async (req, res, next) => {
   const { postId } = req.params;
   try {
     // Retrieve the post and the post's votes
-    const unwantedUserFields = [
-      "Userauthor.password",
-      "Userauthor.private",
-      "Userauthor.confirmed",
-      "Userauthor.bookmarks",
-      "Userauthor.email",
-      "Userauthor.website",
-      "Userauthor.bio",
-      "Userauthor.githubId",
-      "Userauthor.pets",
-      "Userauthor.googleUserId"
-    ];
-    const unwantedAnimalFields = [
-      "Animalauthor.mating",
-      "Animalauthor.adoption",
-      "Animalauthor.playBuddies",
-      "Animalauthor.username",
-      "Animalauthor.category",
-      "Animalauthor.animal_type",
-      "Animalauthor.location",
-      "Animalauthor.guardians",
-      "Animalauthor.pets",
-      "Animalauthor.bio",
-      "Animalauthor.animalType",
-      "Animalauthor.gender",
-      "Animalauthor.breed",
-      "Animalauthor.age",
-      "Animalauthor.playFrom",
-      "Animalauthor.playTo",
-      "Animalauthor.servicePet",
-      "Animalauthor.spayed",
-      "Animalauthor.friendlinessWithHumans",
-      "Animalauthor.friendlinessWithAnimals",
-      "Animalauthor.favouriteThings",
-      "Animalauthor.thingsDislikes",
-      "Animalauthor.uniqueHabits",
-      "Animalauthor.eatingHabits",
-      "Animalauthor.relatedAnimals",
-      "Animalauthor.registeredWithKennelClub"
-    ];
     const post = await Post.aggregate([
       { $match: { _id: ObjectId(postId) } },
       {
@@ -843,46 +843,6 @@ following.push(user._id)
 following.push(ObjectId('6197b8b854bb630004ed1387'))
     // Fields to not include on the user object
     // console.log(following)
-    const unwantedUserFields = [
-      "Userauthor.password",
-      "Userauthor.private",
-      "Userauthor.confirmed",
-      "Userauthor.bookmarks",
-      "Userauthor.email",
-      "Userauthor.website",
-      "Userauthor.bio",
-      "Userauthor.githubId",
-      "Userauthor.pets",
-      "Userauthor.googleUserId"
-    ];
-    const unwantedAnimalFields = [
-      "Animalauthor.mating",
-      "Animalauthor.adoption",
-      "Animalauthor.playBuddies",
-      // "Animalauthor.username",
-      "Animalauthor.category",
-      "Animalauthor.animal_type",
-      "Animalauthor.location",
-      "Animalauthor.guardians",
-      "Animalauthor.pets",
-      "Animalauthor.bio",
-      "Animalauthor.animalType",
-      "Animalauthor.gender",
-      "Animalauthor.breed",
-      "Animalauthor.age",
-      "Animalauthor.playFrom",
-      "Animalauthor.playTo",
-      "Animalauthor.servicePet",
-      "Animalauthor.spayed",
-      "Animalauthor.friendlinessWithHumans",
-      "Animalauthor.friendlinessWithAnimals",
-      "Animalauthor.favouriteThings",
-      "Animalauthor.thingsDislikes",
-      "Animalauthor.uniqueHabits",
-      "Animalauthor.eatingHabits",
-      "Animalauthor.relatedAnimals",
-      "Animalauthor.registeredWithKennelClub"
-    ];
     const posts = await Post.aggregate([
       {
         $match: {
@@ -1203,6 +1163,28 @@ module.exports.retrievMyPosts = async (req, res, next) => {
       {
         $limit: 20,
       },
+      {
+        $lookup: {
+          from: "users",
+          localField: "Userauthor",
+          foreignField: "_id",
+          as: "Userauthor",
+        },
+      },
+      {
+        $unset: unwantedUserFields,
+      },     
+      {
+        $lookup: {
+          from: "animals",
+          localField: "Animalauthor",
+          foreignField: "_id",
+          as: "Animalauthor",
+        },
+      },
+      {
+        $unset: unwantedAnimalFields,
+      },
     ]);
     console.log(posts)
     for (let p1 of posts) {
@@ -1343,47 +1325,6 @@ module.exports.foryoufeed = async (req, res, next) => {
   const { counter } = req.body;
 
   try {
-
-    const unwantedUserFields = [
-      "Userauthor.password",
-      "Userauthor.private",
-      "Userauthor.confirmed",
-      "Userauthor.bookmarks",
-      "Userauthor.email",
-      "Userauthor.website",
-      "Userauthor.bio",
-      "Userauthor.githubId",
-      "Userauthor.pets",
-      "Userauthor.googleUserId"
-    ];
-    const unwantedAnimalFields = [
-      "Animalauthor.mating",
-      "Animalauthor.adoption",
-      "Animalauthor.playBuddies",
-      "Animalauthor.username",
-      "Animalauthor.category",
-      "Animalauthor.animal_type",
-      "Animalauthor.location",
-      "Animalauthor.guardians",
-      "Animalauthor.pets",
-      "Animalauthor.bio",
-      "Animalauthor.animalType",
-      "Animalauthor.gender",
-      "Animalauthor.breed",
-      "Animalauthor.age",
-      "Animalauthor.playFrom",
-      "Animalauthor.playTo",
-      "Animalauthor.servicePet",
-      "Animalauthor.spayed",
-      "Animalauthor.friendlinessWithHumans",
-      "Animalauthor.friendlinessWithAnimals",
-      "Animalauthor.favouriteThings",
-      "Animalauthor.thingsDislikes",
-      "Animalauthor.uniqueHabits",
-      "Animalauthor.eatingHabits",
-      "Animalauthor.relatedAnimals",
-      "Animalauthor.registeredWithKennelClub"
-    ];
     const posts = await Post.aggregate([
       // {
       //   $match: {

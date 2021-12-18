@@ -8,7 +8,7 @@ const RequestError = require("../errorTypes/RequestError");
 const ServiceProviderSchema = new Schema({
   email: {
     type: String,
-    required: true,
+    sparse: true,
     unique: [true, "A user with this email already exists"],
     lowercase: true,
     validate: (value) => {
@@ -103,7 +103,8 @@ ServiceProviderSchema.pre("save", async function (next) {
   if (this.isNew) {
     try {
       const document = await ServiceProvider.findOne({
-        $or: [{ email: this.email }, { username: this.username }],
+        $or: [{ username: this.username }],
+        // $or: [{ email: this.email }, { username: this.username }],
       });
       if (document) {
         console.log(document);
