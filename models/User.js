@@ -9,6 +9,7 @@ const UserSchema = new Schema({
   email: {
     type: String,
     unique: true,
+    sparse: true,
     lowercase: true,
     validate: (value) => {
       if (!validator.isEmail(value)) {
@@ -100,7 +101,8 @@ UserSchema.pre("save", async function (next) {
   if (this.isNew) {
     try {
       const document = await User.findOne({
-        $or: [{ email: this.email }, { username: this.username }],
+        $or: [{ username: this.username }],
+        // $or: [{ email: this.email }, { username: this.username }],
       });
       if (document)
         return next(

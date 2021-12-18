@@ -509,7 +509,7 @@ module.exports.getUniquePetName = async (req, res, next) => {
   try {
     while (!uniqueUsername) {
       const username = dogNames.allRandom() + Math.floor(Math.random(1000) * 9999 + 1);
-      const user = await Animal.findOne({username});
+      const user = await Animal.findOne({username},'_id');
       if (!user) {
         uniqueUsername = username;
       }
