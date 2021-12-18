@@ -1336,7 +1336,7 @@ module.exports.sendOTPtoPhoneNumber = async (req, res, next) => {
   // let {phoneNumber, countryCode} = req.body
   let {phoneNumber} = req.body
   if (phoneNumber.length != 10){
-    return res.status(400).send({"message" : 'Please give your 10 digit mobile number'})
+    return res.status(400).send({"message" : 'Please give your 10 digit mobile number', "success" : false})
   }
   // if (countryCode[0] == '+'){
   //   countryCode = countryCode.substring(1)
@@ -1350,10 +1350,10 @@ module.exports.sendOTPtoPhoneNumber = async (req, res, next) => {
       }
     );
     if (response.data.type == 'success'){
-      return res.status(201).send({"message" : "OTP sent!"})
+      return res.status(201).send({"message" : "OTP sent!", "success" : true})
     }
     else{
-      return res.status(500).send({"message" : response.data.message})
+      return res.status(500).send({"message" : response.data.message, "success" : false})
     }
     
   }
@@ -1418,7 +1418,7 @@ module.exports.verifyMobileOTP = async (req, res, next) => {
       }
     }
     else{
-      return res.status(400).send({"message" : response.data.message})
+      return res.status(400).send({"message" : response.data.message, "success" : false})
     }
   }
   catch (err){
@@ -1427,3 +1427,17 @@ module.exports.verifyMobileOTP = async (req, res, next) => {
   }
 }
 
+module.exports.resendMobileOTP = async (req, res, next) => {
+  const {type, phoneNumber} = req.body;
+  let mobileNumber = "91" + phoneNumber
+  // type should be either Voice or text
+  const response = await axios.get(
+    `https://api.msg91.com/api/v5/otp/retry?authkey=${process.env.MSG91_API_KEY}&retrytype=${type}&mobile=${mobileNumber}`
+  )
+  if (response.data.type == 'success'){
+    return res.status(201).send({"message" : 'OTP has been sent again!', "success" : true})
+  }
+  else{
+    return res.status(500).send({"message" : response.data.message, "success" : false})
+  }
+}
