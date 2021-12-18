@@ -7,7 +7,7 @@ const ConfirmationToken = require("../models/ConfirmationToken");
 const bcrypt = require("bcrypt");
 const axios = require("axios");
 const logger = require("../logger/logger");
-const validator = require("validator")
+const dogNames = require('dog-names');
 
 const {
   sendConfirmationEmail,
@@ -142,7 +142,7 @@ module.exports.loginAuthentication = async (req, res, next) => {
       try {
         const user = await this.verifyJwt(authorization, type);
         let isNewUser = true;
-        if (user.avatar) {
+        if (user.fullName) {
           isNewUser = false;
         }
         if (!user.confirmed) {
@@ -216,7 +216,7 @@ module.exports.loginAuthentication = async (req, res, next) => {
         });
       }
       let isNewUser = true;
-      if (user.avatar) {
+      if (user.fullName) {
         isNewUser = false;
       }
       if (!user.confirmed) {
@@ -260,7 +260,7 @@ module.exports.loginAuthentication = async (req, res, next) => {
       try {
         const user = await this.verifyJwt(authorization);
         let isNewUser = true;
-        if (user.avatar) {
+        if (user.fullName) {
           isNewUser = false;
         }
         if (!user.confirmed) {
@@ -336,7 +336,7 @@ module.exports.loginAuthentication = async (req, res, next) => {
         });
       }
       let isNewUser = true;
-      if (user.avatar) {
+      if (user.fullName) {
         isNewUser = false;
       }
       if (!user.confirmed) {
@@ -1333,14 +1333,15 @@ module.exports.resendOTP = async (req, res, next) => {
 };
 
 module.exports.sendOTPtoPhoneNumber = async (req, res, next) => {
-  let {phoneNumber, countryCode} = req.body
+  // let {phoneNumber, countryCode} = req.body
+  let {phoneNumber} = req.body
   if (phoneNumber.length != 10){
     return res.status(400).send({"message" : 'Please give your 10 digit mobile number'})
   }
-  if (countryCode[0] == '+'){
-    countryCode = countryCode.substring(1)
-  }
-  let mobileNumber = countryCode + phoneNumber
+  // if (countryCode[0] == '+'){
+  //   countryCode = countryCode.substring(1)
+  // }
+  let mobileNumber = "91" + phoneNumber
   try{
     const response = await axios.get(
       `https://api.msg91.com/api/v5/otp?template_id=${process.env.MSG91_TEMPLATE_ID}&mobile=${mobileNumber}&authkey=${process.env.MSG91_API_KEY}&otp_length=6&otp_expiry=10`,
@@ -1363,22 +1364,23 @@ module.exports.sendOTPtoPhoneNumber = async (req, res, next) => {
 }
 
 module.exports.verifyMobileOTP = async (req, res, next) => {
-  let {phoneNumber, countryCode, otp} = req.body
+  // let {phoneNumber, countryCode, otp} = req.body
+  let {phoneNumber, otp} = req.body
   if (phoneNumber.length != 10){
     return res.status(400).send({"message" : 'Please give your 10 digit mobile number'})
   }
-  if (countryCode[0] == '+'){
-    countryCode = countryCode.substring(1)
-  }
-  let mobileNumber = countryCode + phoneNumber
+  // if (countryCode[0] == '+'){
+  //   countryCode = countryCode.substring(1)
+  // }
+  // let mobileNumber = countryCode + phoneNumber
+  let mobileNumber = "91" + phoneNumber
   try {
     const response = await axios.get
     (
       `https://api.msg91.com/api/v5/otp/verify?authkey=${process.env.MSG91_API_KEY}&mobile=${mobileNumber}&otp=${otp}&otp_expiry=10`,
     )
-    console.log(response.data)
     if (response.data.type == 'success'){
-      const userDocument = await User.findOne({phoneNumber}, '_id username');
+      const userDocument = await User.findOne({mobileNumber}, '_id username');
       if (userDocument){ // Old user
         return res.status(200).send({
           "message" : "OTP verified successfully!",
@@ -1386,15 +1388,33 @@ module.exports.verifyMobileOTP = async (req, res, next) => {
             'username' : userDocument.username,
             'phoneNumber' : mobileNumber,
             'confirmed' : true,
+            'avatar' : userDocument.avatar,
           },
           "isNewUser": false,
           "token": jwt.encode({ id: userDocument._id }, process.env.JWT_SECRET) 
         })
       }
       else{ // New user
+        let uniqueUsername = undefined;
+        while (!uniqueUsername) {
+          const username = dogNames.allRandom() + Math.floor(Math.random(1000) * 9999 + 1);
+          const user_ = await User.findOne({username},'_id').lean();
+          if (!user_) {
+            uniqueUsername = username;
+          }
+        }
         const user = new User({
-          
+          phoneNumber : mobileNumber,
+          username : uniqueUsername,
+          confirmed : true,
         })
+        const isNewUser = true;
+        await user.save();
+        return res.status(201).send({
+          user,
+          isNewUser,
+          token : jwt.encode({ id:user._id}, process.env.JWT_SECRET)
+        });
       }
     }
     else{
