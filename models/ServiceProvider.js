@@ -20,7 +20,7 @@ const ServiceProviderSchema = new Schema({
   phoneNumber: {
     type: String,
     required: false,
-    // unique: [true, "A user with this email already exists"],
+    unique: [true, "A user with this phone number already exists"],
     length: 20,
   },
   username: {
