@@ -1380,7 +1380,7 @@ module.exports.verifyMobileOTP = async (req, res, next) => {
       `https://api.msg91.com/api/v5/otp/verify?authkey=${process.env.MSG91_API_KEY}&mobile=${mobileNumber}&otp=${otp}&otp_expiry=10`,
     )
     if (response.data.type == 'success'){
-      const userDocument = await User.findOne({mobileNumber}, '_id username');
+      const userDocument = await User.findOne({phoneNumber: mobileNumber}, '_id username');
       if (userDocument){ // Old user
         return res.status(200).send({
           "message" : "OTP verified successfully!",
