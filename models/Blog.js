@@ -21,13 +21,13 @@ const BlogSchema = new Schema({
     likes: {
         type: Number,
         default: 0,
-    }
+    },
     peopleLiked: [
         {
-            id:{
+            person:{
                type: Schema.ObjectId,
-               refPath: 'personType'
-            }
+               refPath: 'peopleLiked.personType'
+            },
             personType:{
                 type: String,
                 enum: ["Animal", "User"]
