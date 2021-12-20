@@ -1365,7 +1365,7 @@ module.exports.sendOTPtoPhoneNumber = async (req, res, next) => {
 
 module.exports.verifyMobileOTP = async (req, res, next) => {
   // let {phoneNumber, countryCode, otp} = req.body
-  let {phoneNumber, otp} = req.body
+  let {phoneNumber, otp, type} = req.body
   if (phoneNumber.length != 10){
     return res.status(400).send({"message" : 'Please give your 10 digit mobile number'})
   }
@@ -1380,41 +1380,81 @@ module.exports.verifyMobileOTP = async (req, res, next) => {
       `https://api.msg91.com/api/v5/otp/verify?authkey=${process.env.MSG91_API_KEY}&mobile=${mobileNumber}&otp=${otp}&otp_expiry=10`,
     )
     if (response.data.type == 'success'){
-      const userDocument = await User.findOne({phoneNumber: mobileNumber}, '_id username');
-      if (userDocument){ // Old user
-        return res.status(200).send({
-          "message" : "OTP verified successfully!",
-          "user" : {
-            'username' : userDocument.username,
-            'phoneNumber' : mobileNumber,
-            'confirmed' : true,
-            'avatar' : userDocument.avatar,
-          },
-          "isNewUser": false,
-          "token": jwt.encode({ id: userDocument._id }, process.env.JWT_SECRET) 
-        })
-      }
-      else{ // New user
-        let uniqueUsername = undefined;
-        while (!uniqueUsername) {
-          const username = dogNames.allRandom() + Math.floor(Math.random(1000) * 9999 + 1);
-          const user_ = await User.findOne({username},'_id').lean();
-          if (!user_) {
-            uniqueUsername = username;
-          }
+      if (type && type == "sp"){
+        const userDocument = await ServiceProvider.findOne({phoneNumber: mobileNumber}, '_id username');
+        if (userDocument){ // Old user
+          return res.status(200).send({
+            "message" : "OTP verified successfully!",
+            "user" : {
+              'username' : userDocument.username,
+              'phoneNumber' : mobileNumber,
+              'confirmed' : true,
+              'avatar' : userDocument.avatar,
+            },
+            "isNewUser": false,
+            "token": jwt.encode({ id: userDocument._id }, process.env.JWT_SECRET) 
+          })
         }
-        const user = new User({
-          phoneNumber : mobileNumber,
-          username : uniqueUsername,
-          confirmed : true,
-        })
-        const isNewUser = true;
-        await user.save();
-        return res.status(201).send({
-          user,
-          isNewUser,
-          token : jwt.encode({ id:user._id}, process.env.JWT_SECRET)
-        });
+        else{ // New user
+          let uniqueUsername = undefined;
+          while (!uniqueUsername) {
+            const username = dogNames.allRandom() + Math.floor(Math.random(1000) * 9999 + 1);
+            const user_ = await ServiceProvider.findOne({username},'_id').lean();
+            if (!user_) {
+              uniqueUsername = username;
+            }
+          }
+          const user = new ServiceProvider({
+            phoneNumber : mobileNumber,
+            username : uniqueUsername,
+            confirmed : true,
+          })
+          const isNewUser = true;
+          await user.save();
+          return res.status(201).send({
+            user,
+            isNewUser,
+            token : jwt.encode({ id:user._id}, process.env.JWT_SECRET)
+          });
+        }
+      }
+      else{
+        const userDocument = await User.findOne({phoneNumber: mobileNumber}, '_id username');
+        if (userDocument){ // Old user
+          return res.status(200).send({
+            "message" : "OTP verified successfully!",
+            "user" : {
+              'username' : userDocument.username,
+              'phoneNumber' : mobileNumber,
+              'confirmed' : true,
+              'avatar' : userDocument.avatar,
+            },
+            "isNewUser": false,
+            "token": jwt.encode({ id: userDocument._id }, process.env.JWT_SECRET) 
+          })
+        }
+        else{ // New user
+          let uniqueUsername = undefined;
+          while (!uniqueUsername) {
+            const username = dogNames.allRandom() + Math.floor(Math.random(1000) * 9999 + 1);
+            const user_ = await User.findOne({username},'_id').lean();
+            if (!user_) {
+              uniqueUsername = username;
+            }
+          }
+          const user = new User({
+            phoneNumber : mobileNumber,
+            username : uniqueUsername,
+            confirmed : true,
+          })
+          const isNewUser = true;
+          await user.save();
+          return res.status(201).send({
+            user,
+            isNewUser,
+            token : jwt.encode({ id:user._id}, process.env.JWT_SECRET)
+          });
+        }
       }
     }
     else{
