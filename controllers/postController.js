@@ -151,11 +151,11 @@ module.exports.createPost = async (req, res, next) => {
         authorType
       });
     }
-    const postVote = new PostVote({
-      post: post._id,
-    });
+    // const postVote = new PostVote({
+    //   post: post._id,
+    // });
     await post.save();
-    await postVote.save();
+    // await postVote.save();
     res.status(201).json({
       post,
       postVotes: [],
@@ -1089,10 +1089,10 @@ following.push(ObjectId('6197b8b854bb630004ed1387'))
             'voterDetails.Animalvoter' : ObjectId(user._id.toString())
         })
         if (like){
-          posts[i].isLiked = 1;
+          posts[i].isLiked = true;
         }
         else{
-          posts[i].isLiked = 0;
+          posts[i].isLiked = false;
         }
         const isBookmark = user.bookmarks.some((e) => {
           return e.post == posts[i]._id.toString()
@@ -1251,10 +1251,10 @@ module.exports.retrievMyPosts = async (req, res, next) => {
             'voterDetails.Animalvoter' : ObjectId(user._id.toString())
         })
         if (like){
-          posts[i].isLiked = 1;
+          posts[i].isLiked = true;
         }
         else{
-          posts[i].isLiked = 0;
+          posts[i].isLiked = false;
         }
         const isBookmark = user.bookmarks.includes(posts[i]._id.toString())
         posts[i].isBookmarked = isBookmark
@@ -1542,6 +1542,7 @@ module.exports.foryoufeed = async (req, res, next) => {
     ]);
     for (var i=0;i<posts.length;i++){
       if (posts[i].authorType == "Animal"){
+        console.log(posts[i])
         const animal_token = jwt.encode({ id: posts[i].Animalauthor._id}, process.env.JWT_SECRET);
         posts[i]['Animalauthor'][0]['category'] = animal_token;
       }
@@ -1570,10 +1571,10 @@ module.exports.foryoufeed = async (req, res, next) => {
             'voterDetails.Animalvoter' : ObjectId(user._id.toString())
         })
         if (like){
-          posts[i].isLiked = 1;
+          posts[i].isLiked = true;
         }
         else{
-          posts[i].isLiked = 0;
+          posts[i].isLiked = false;
         }
         const isBookmark = user.bookmarks.includes(posts[i]._id.toString())
         posts[i].isBookmarked = isBookmark
@@ -1662,3 +1663,121 @@ module.exports.retrievePostlikes = async (req, res, next) => {
     next(err);
   }
 };
+
+module.exports.deleteNullPostVotes = async (req, res, next) => {
+  try{
+    const result = await PostVote.deleteMany({"voterDetails" : null});
+    return res.status(200).send({ success: true });
+  }
+  catch(err){
+    console.log(err);
+    next(err)
+  }
+}
+
+module.exports.getPostsById = async (req, res, next) => {
+    const {id,type, counter = 0} = req.body;
+    let user = null;
+    if (type == "User"){
+      user = await User.findById(id, '_id bookmarks')
+    }
+    else{
+      user = await Animal.findById(id, '_id bookmarks')
+    }
+    const posts = await Post.aggregate([
+      {
+        $match: {
+          $or: [{ Userauthor: ObjectId(user._id)}, { Animalauthor:  ObjectId(user._id)}],
+        },
+      },
+      {
+        $sort: { date: -1 },
+      },
+      {
+        $skip: Number(counter*20),
+      },
+      {
+        $limit: 20,
+      },
+      {
+        $lookup: {
+          from: "users",
+          localField: "Userauthor",
+          foreignField: "_id",
+          as: "Userauthor",
+        },
+      },
+      {
+        $unset: unwantedUserFields,
+      },     
+      {
+        $lookup: {
+          from: "animals",
+          localField: "Animalauthor",
+          foreignField: "_id",
+          as: "Animalauthor",
+        },
+      },
+      {
+        $unset: unwantedAnimalFields,
+      },
+    ]);
+    for (let p1 of posts) {
+      let getPostVoteresp = await PostVote.aggregate([
+        {
+          $match: { post: p1._id },
+        },
+        {
+          $count: "totalVotes",
+        },
+      ]);
+      let getTotalCommentsResp = await Comment.aggregate([
+        {
+          $match: { post: p1._id },
+        },
+        {
+          $count: "totalComments",
+        },
+      ]);
+      p1.totalVotes =
+        getPostVoteresp.length == 0 ? 0 : getPostVoteresp[0].totalVotes;
+      p1.totalComments =
+        getTotalCommentsResp.length == 0
+          ? 0
+          : getTotalCommentsResp[0].totalComments;
+    }
+    if (req.headers.type=="User"){
+      for (var i=0;i<posts.length;i++){
+        const like = await PostVote.findOne({
+            'post' : ObjectId(posts[i]._id.toString()),
+            'voterDetails.Uservoter' : ObjectId(user._id.toString())
+        })
+        if (like){
+          posts[i].isLiked = true;
+        }
+        else{
+          posts[i].isLiked = false;
+        }
+        const isBookmark = user.bookmarks.includes(posts[i]._id.toString())
+        posts[i].isBookmarked = isBookmark
+      }
+    }
+    if (req.headers.type=="Animal"){
+      for (var i=0;i<posts.length;i++){
+        const like = await PostVote.findOne({
+            'post' : ObjectId(posts[i]._id.toString()),
+            'voterDetails.Animalvoter' : ObjectId(user._id.toString())
+        })
+        if (like){
+          posts[i].isLiked = true;
+        }
+        else{
+          posts[i].isLiked = false;
+        }
+        const isBookmark = user.bookmarks.includes(posts[i]._id.toString())
+        posts[i].isBookmarked = isBookmark
+      }
+    }
+    
+    return res.send({"posts" : posts});
+}

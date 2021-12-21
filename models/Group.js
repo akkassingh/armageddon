@@ -7,6 +7,7 @@ const GroupSchema = new Schema({
         type: String,
         required : true,
     },
+    coverPhoto : String,
     description: String,
     size :  Number,
     avatar: String,
