@@ -1185,6 +1185,136 @@ module.exports.retrievMyPosts = async (req, res, next) => {
       {
         $unset: unwantedAnimalFields,
       },
+      {
+        $lookup: {
+          from: "postvotes",
+          let: { post: "$_id" },
+          pipeline: [
+            {
+              $match: {
+                $expr: {
+                  $eq: ["$post", "$$post"],
+                },
+              },
+            },
+            {
+              $group: { _id: null, count: { $sum: 1 } },
+            },
+            {
+              $project: {
+                _id: false,
+              },
+            },
+          ],
+          as: "votesCount",
+        },
+      },
+      {
+        $lookup: {
+          from: "comments",
+          let: { postId: "$_id" },
+          pipeline: [
+            {
+              // Finding comments related to the postId
+              $match: {
+                $expr: {
+                  $eq: ["$post", "$$postId"],
+                },
+              },
+            },
+            { $sort: { date: -1 } },
+            { $limit: 3 },
+            // Populating the author field
+            {
+              $lookup: {
+                from: "users",
+                localField: "Userauthor",
+                foreignField: "_id",
+                as: "Userauthor",
+              },
+            },
+            {
+              $lookup: {
+                from: "animals",
+                localField: "Animalauthor",
+                foreignField: "_id",
+                as: "Animalauthor",
+              },
+            },
+            {
+              $unset: unwantedAnimalFields,
+            },
+            {
+              $lookup: {
+                from: "commentvotes",
+                localField: "_id",
+                foreignField: "comment",
+                as: "commentVotes",
+              },
+            },
+            // {
+            //   $unwind: "$author",
+            // },
+            {
+              $unwind: {
+                path: "$commentVotes",
+                preserveNullAndEmptyArrays: true,
+              },
+            },
+            {
+              $unset: unwantedUserFields,
+            },
+            {
+              $addFields: {
+                commentVotes: "$commentVotes.votes",
+              },
+            },
+          ],
+          as: "comments",
+        },
+      },
+      {
+        $lookup: {
+          from: "comments",
+          let: { postId: "$_id" },
+          pipeline: [
+            {
+              $match: {
+                $expr: {
+                  $eq: ["$post", "$$postId"],
+                },
+              },
+            },
+            {
+              $group: { _id: null, count: { $sum: 1 } },
+            },
+            {
+              $project: {
+                _id: false,
+              },
+            },
+          ],
+          as: "commentCount",
+        },
+      },
+      {
+        $unwind: {
+          path: "$commentCount",
+          preserveNullAndEmptyArrays: true,
+        },
+      },
+      {
+        $addFields: {
+          // postVotes: "$postVotes.votes",
+          commentData: {
+            comments: "$comments",
+            commentCount: "$commentCount.count",
+          },
+        },
+      },
+      {
+        $unset: [...unwantedUserFields, "comments", "commentCount"],
+      },
     ]);
     console.log(posts)
     for (let p1 of posts) {
