@@ -81,9 +81,9 @@ module.exports.retrieveComments = async (postId, offset, exclude = 0) => {
             // Skip the comments we do not want
             // This is desireable in the even that a comment has been created
             // and stored locally, we'd not want duplicate comments
-            { $skip: Number(exclude) },
+            { $skip: Number(exclude*10) },
             // Re-sort the comments to an ascending order
-            { $sort: { date: 1 } },
+            // { $sort: { date: 1 } },
             { $skip: Number(offset) },
             { $limit: 10 },
             {
