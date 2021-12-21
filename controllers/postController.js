@@ -191,29 +191,29 @@ module.exports.createPost = async (req, res, next) => {
   // }
 };
 
-module.exports.deletePost = async (req, res, next) => {
-  const { postId } = req.body;
-  const user = res.locals.user;
+// module.exports.deletePost = async (req, res, next) => {
+//   const { postId } = req.body;
+//   const user = res.locals.user;
 
-  try {
-    const post = await Post.findOne({ _id: postId, author: user._id });
-    if (!post) {
-      return res.status(404).send({
-        error: "Could not find a post with that id associated with the user.",
-      });
-    }
-    // This uses pre hooks to delete everything associated with this post i.e comments
-    const postDelete = await Post.deleteOne({
-      _id: postId,
-    });
-    if (!postDelete.deletedCount) {
-      return res.status(500).send({ error: "Could not delete the post." });
-    }
-    res.status(204).send();
-  } catch (err) {
-    next(err);
-  }
-};
+//   try {
+//     const post = await Post.findOne({ _id: postId, author: user._id });
+//     if (!post) {
+//       return res.status(404).send({
+//         error: "Could not find a post with that id associated with the user.",
+//       });
+//     }
+//     // This uses pre hooks to delete everything associated with this post i.e comments
+//     const postDelete = await Post.deleteOne({
+//       _id: postId,
+//     });
+//     if (!postDelete.deletedCount) {
+//       return res.status(500).send({ error: "Could not delete the post." });
+//     }
+//     res.status(204).send();
+//   } catch (err) {
+//     next(err);
+//   }
+// };
 
 module.exports.retrievePost = async (req, res, next) => {
   const { postId } = req.params;
@@ -1910,4 +1910,49 @@ module.exports.getPostsById = async (req, res, next) => {
     }
     
     return res.send({"posts" : posts});
+}
+
+module.exports.deletePost = async (req, res, next) => {
+  const {postId} = req.body;
+  let user = null;
+  try{
+    if (req.headers.type=="User")
+      user = res.locals.user;
+    else
+      user = res.locals.animal
+    const post = await Post.findById(postId, 'authorType Animalauthor Userauthor');
+    console.log(post)
+    if (!post){
+      return res.status(404).send({"message" : "No such post found!" , "success" : false});
+    }
+    if (post.authorType != req.headers.type){
+      return res.status(403).send({"message" : "You dont have required permissions", "success" : false});
+    }
+    if (req.headers.type==post.authorType){
+      console.log(user._id)
+      if (post.authorType == "User"){
+        if (user._id.toString() == post.Userauthor.toString()){
+          await Post.deleteOne({"_id" : ObjectId(postId)});
+          return res.status(200).send({"message" : "Post was deleted successfully!", "success" : true})
+        }
+        else{
+          return res.status(403).send({"message" : "You dont have required permissions", "success" : false});
+        }
+      }
+      if (post.authorType == "Animal"){
+        if (user._id.toString() == post.Animalauthor.toString()){
+          await Post.deleteOne({"_id" : ObjectId(postId)});
+          return res.status(200).send({"message" : "Post was deleted successfully!", "success" : true})
+        }
+        else{
+          return res.status(403).send({"message" : "You dont have required permissions", "success" : false});
+        }
+      }
+    }
+    return res.status(400).send({"message" : "Something went wrong!", "success" : false});
+  }
+  catch (err){
+    console.log(err)
+    next(err)
+  }
 }
