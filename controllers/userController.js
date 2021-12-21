@@ -1289,21 +1289,24 @@ module.exports.getPendingGuardianRequests = async (req, res, next) => {
 module.exports.getUserDetailsById = async (req, res, next) => {
   const { id, type } = req.body;
   let user = {};
+  let getPosts = null;
   try {
     if (type == "User"){
       user = await User.findById(id).populate("pets.pet", '_id name avatar');
       if (!user)
         return res.status(404).send({ error: "No such user exists!" });
+      getPosts = await Post.find({"Userauthor": ObjectId(id)}, '_id');
     }
     else {
       user = await Animal.findById(id , 'username name avatar');
       if (!user)
         return res.status(404).send({ error: "No such user exists!" });
+      getPosts = await Post.find({"Animalauthor": ObjectId(id)}, '_id');
     }
     
     const followersCount = await Followers.aggregate([
       {
-        $match: { "user.id": id },
+        $match: { "user.id": ObjectId(id) },
       },
       {
         $count: "totalFollowers",
@@ -1315,7 +1318,7 @@ module.exports.getUserDetailsById = async (req, res, next) => {
 
     const followingCount = await Following.aggregate([
       {
-        $match: { "user.id": id },
+        $match: { "user.id": ObjectId(id) },
       },
       {
         $count: "totalFollowing",
@@ -1325,9 +1328,7 @@ module.exports.getUserDetailsById = async (req, res, next) => {
     let totalFollowings =
       followingCount.length == 0 ? 0 : followingCount[0].totalFollowing;
 
-    const getPosts = await Post.find({
-      "postOwnerDetails.postOwnerId": id,
-    });
+    
 
     let totalLikes = 0;
     let totalPosts = 0;
