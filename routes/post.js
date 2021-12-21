@@ -55,7 +55,7 @@ postRouter.post("/feed", requireAuth, retrievePostFeed);
 postRouter.post("/hashtag/:hashtag", requireAuth, retrieveHashtagPosts);
 postRouter.post("/getPostsById", requireAuth, getPostsById);
 
-postRouter.delete("/post", requireAuth, deletePost);
+postRouter.delete("/deletePost", requireAuth, deletePost);
 
 //------------COMMENTS-------------------------------------
 postRouter.post("/comment", requireAuth, postComment);

@@ -37,7 +37,7 @@ const PostSchema = new Schema({
 PostSchema.pre("deleteOne", async function (next) {
   const postId = this.getQuery()["_id"];
   try {
-    await mongoose.model("PostVote").deleteOne({ post: postId });
+    await mongoose.model("PostVote").deleteMany({ post: postId });
     await mongoose.model("Comment").deleteMany({ post: postId });
     next();
   } catch (err) {
