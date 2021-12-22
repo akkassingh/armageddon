@@ -1083,6 +1083,7 @@ module.exports.becomeGuardian = async (req, res, next) => {
 
 module.exports.getUserDetails = async (req, res, next) => {
   const user = res.locals.user;
+  const getPosts = await Post.find({"Userauthor" : ObjectId(user._id)}, '_id');
   // const { idPet } = req.body;
   try {
     let user_details = await User.findById(user._id).populate("pets.pet", '_id name avatar category');
@@ -1162,7 +1163,7 @@ if(user_details.pets)
 
     const followersCount = await Followers.aggregate([
       {
-        $match: { "user.id": user._id },
+        $match: { "user.id": ObjectId(user._id) },
       },
       {
         $count: "totalFollowers",
@@ -1173,7 +1174,7 @@ if(user_details.pets)
 
     const followingCount = await Following.aggregate([
       {
-        $match: { "user.id": user._id },
+        $match: { "user.id": ObjectId(user._id) },
       },
       {
         $count: "totalFollowing",
@@ -1183,9 +1184,6 @@ if(user_details.pets)
     let totalFollowings =
       followingCount.length == 0 ? 0 : followingCount[0].totalFollowing;
 
-    const getPosts = await Post.find({
-      "postOwnerDetails.postOwnerId": user._id.toString(),
-    });
 
     let totalLikes = 0;
     let totalPosts = 0;
