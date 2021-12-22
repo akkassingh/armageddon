@@ -1672,7 +1672,7 @@ module.exports.foryoufeed = async (req, res, next) => {
     ]);
     for (var i=0;i<posts.length;i++){
       if (posts[i].authorType == "Animal"){
-        console.log(posts[i])
+        // console.log(posts[i])
         const animal_token = jwt.encode({ id: posts[i].Animalauthor._id}, process.env.JWT_SECRET);
         posts[i]['Animalauthor'][0]['category'] = animal_token;
       }
@@ -1683,7 +1683,7 @@ module.exports.foryoufeed = async (req, res, next) => {
             'post' : ObjectId(posts[i]._id.toString()),
             'voterDetails.Uservoter' : ObjectId(user._id.toString())
         })
-        console.log(like)
+        // console.log(like)
         if (like){
           posts[i].isLiked = true;
         }
