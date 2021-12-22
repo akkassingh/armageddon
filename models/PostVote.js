@@ -5,15 +5,18 @@ const PostVoteSchema = new Schema({
   post: {
     type: Schema.ObjectId,
     ref: "Post",
+    index : true,
   },
   voterDetails: {
     Animalvoter:  {
       type: Schema.ObjectId,
       ref: "Animal",
+      index: true,
     },
     Uservoter:  {
       type: Schema.ObjectId,
       ref: "User",
+      index: true,
     },
     voterType:String,
   },

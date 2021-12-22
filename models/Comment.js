@@ -9,16 +9,19 @@ const CommentSchema = new Schema({
   message: String,
   Animalauthor:  {
     type: Schema.ObjectId,
+    index : true,
     ref: "Animal",
   },
   Userauthor:  {
     type: Schema.ObjectId,
     ref: "User",
+    index : true,
   },
   authorType:String,
   post: {
     type: Schema.ObjectId,
     ref: "Post",
+    index : true,
   },
 });
 
