@@ -26,7 +26,8 @@ const { requireAuth, requireAuthAnimal } = require("../controllers/authControlle
 
 animalRouter.post("/register", upload, requireAuth, registerPet); //ok
 animalRouter.post("/addGuardian", addGuardian); //ok
-animalRouter.post("/getPetDetails", requireAuth, getPetDetails); //ok
+// animalRouter.post("/getPetDetails", requireAuth, getPetDetails); //ok
+animalRouter.post("/getPetDetails", getPetDetails); //ok
 animalRouter.put("/editPet", upload, requireAuth, editPet); //ok
 animalRouter.post("/editPetHabits", requireAuth, editPetHabits); //ok
 animalRouter.get('/getGuardians', requireAuth, getGuardians); //ok
