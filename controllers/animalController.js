@@ -448,7 +448,7 @@ module.exports.getPetDetails = async (req, res, next) => {
 
 module.exports.getGuardians = async (req, res, next) => {
   try {
-    const guardians = await Animal.findOne({_id: req.body.animalId}, {guardians: 1, _id: 0}).populate('guardians.user', 'username email avatar confirmed');
+    const guardians = await Animal.findOne({_id: req.body.animalId}, {guardians: 1, _id: 0}).populate('guardians.user', 'username email avatar');
     if (!guardians) return res.status(404).send({ error: "No such pet exists!" });
     return res.status(201).send(guardians);
   }
@@ -465,9 +465,9 @@ module.exports.getRelations = async (req, res, next) => {
     return res.status(400).send({"error": "Invalid Request!"})
   }
   try {
-    const animal = await Animal.findById(animalId, 'relatedAnimals');
+    const animal = await Animal.findById(animalId, 'relatedAnimals').populate('relatedAnimals.animal', 'username name avatar');
     if (!animal) {
-      return res.status(404).send({"error" : "Fuck off!"});
+      return res.status(404).send({"error" : "Invalid request!"});
     }
     var relations = animal.relatedAnimals.filter(function(check)
     {
