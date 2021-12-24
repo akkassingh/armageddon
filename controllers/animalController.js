@@ -547,3 +547,52 @@ module.exports.editPetMainDetails = async (req, res, next) => {
     console.log(err);
   }
 }
+
+module.exports.confirmGuardian = async (req, res, next) => {
+  const {animalId} = req.body;
+  const user = res.locals.user;
+  if (!user)
+  {
+    return res.status(400).send({"message" : "Invalid user!", "success" : false});
+  }
+  try{
+    const animal = await Animal.findById(animalId, 'guardians');
+    if (!animal){
+      return res.status(404).send({"message" : "Pet does not exist!", "success" : false});
+    }
+    const guardians = animal.guardians;
+    const pets = user.pets;
+    let found  = false; let found_g = false;
+    let confirmed = null; let confirmed_g = null;
+    let idx = -1; let idx_g = -1;
+    for (var i=0;i<guardians.length;i++){
+      if (guardians[i].user.toString() == user._id.toString()){
+        found_g = true;
+        confirmed_g = guardians[i].confirmed;
+        idx_g = i;
+      }
+    }
+    for (var i=0;i<pets.length;i++){
+      if (pets[i].pet.toString() == animalId){
+        found = true;
+        confirmed = pets[i].confirmed;
+        idx = i;
+      }
+    }
+    if (!found || !found_g){
+      return res.status(404).send({"message" : "No pet request exist!", "success" : false});
+    }
+    if (confirmed || confirmed_g){
+      return res.status(200).send({"message" : "You are already a guardian of your pet!", "success" : false});
+    }
+    pets[idx].confirmed = true;
+    guardians[idx_g].confirmed = true;
+    await User.updateOne({ _id: user._id}, {pets : pets});
+    await Animal.updateOne({_id : animalId},{guardians: guardians});
+    return res.status(201).send({"message" : "Request Accepted!", "success" : true});
+  }
+  catch (err){
+    console.log(err);
+    next(err);
+  }
+}

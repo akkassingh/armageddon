@@ -19,7 +19,8 @@ const {
   getRelations,
   getRelationRequests,
   getUniquePetName,
-  editPetMainDetails
+  editPetMainDetails,
+  confirmGuardian
 } = require("../controllers/animalController");
 
 const { requireAuth, requireAuthAnimal } = require("../controllers/authController");
@@ -38,3 +39,4 @@ animalRouter.post('/getRelationRequests', getRelationRequests); //ok
 animalRouter.get('/getUniquePetName', getUniquePetName);
 animalRouter.patch('/editPetMainDetails' ,requireAuth, editPetMainDetails);
 module.exports = animalRouter;
+animalRouter.post('/confirmGuardian', requireAuth, confirmGuardian);
