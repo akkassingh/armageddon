@@ -48,6 +48,7 @@ const AnimalSchema = new Schema({
         ref: "Animal",
       },
       status: Number //  0 , 1 , -1 
+      // 0 means outgoing, 1 means incoming and -1 means relation has been accepted
     },
   ],
   //TODO: make a different schema of category
