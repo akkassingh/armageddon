@@ -1458,7 +1458,7 @@ module.exports.verifyMobileOTP = async (req, res, next) => {
       }
     }
     else{
-      return res.status(400).send({"message" : response.data.message, "success" : false})
+      return res.status(400).send({"message" : "Wrong OTP entered!", "success" : false})
     }
   }
   catch (err){
@@ -1478,6 +1478,7 @@ module.exports.resendMobileOTP = async (req, res, next) => {
     return res.status(201).send({"message" : 'OTP has been sent again!', "success" : true})
   }
   else{
-    return res.status(500).send({"message" : response.data.message, "success" : false})
+    console.log(response.data.message)
+    return res.status(500).send({"message" : "Something went wrong! Please try again later", "success" : false})
   }
 }
