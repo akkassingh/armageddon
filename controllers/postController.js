@@ -36,7 +36,8 @@ const unwantedUserFields = [
   "Userauthor.bio",
   "Userauthor.githubId",
   "Userauthor.pets",
-  "Userauthor.googleUserId"
+  "Userauthor.googleUserId",
+  "Userauthor.__v"
 ];
 const unwantedAnimalFields = [
   "Animalauthor.mating",
@@ -64,7 +65,9 @@ const unwantedAnimalFields = [
   "Animalauthor.uniqueHabits",
   "Animalauthor.eatingHabits",
   "Animalauthor.relatedAnimals",
-  "Animalauthor.registeredWithKennelClub"
+  "Animalauthor.registeredWithKennelClub",
+  "Animalauthor.bookmarks",
+  "Animalauthor.__v"
 ];
 
 module.exports.createPost = async (req, res, next) => {
@@ -1060,7 +1063,7 @@ following.push(ObjectId('6197b8b854bb630004ed1387'))
     ]);
     for (var i=0;i<posts.length;i++){
       if (posts[i].authorType == "Animal"){
-        const animal_token = jwt.encode({ id: posts[i].Animalauthor._id}, process.env.JWT_SECRET);
+        const animal_token = jwt.encode({ id: posts[i].Animalauthor[0]._id}, process.env.JWT_SECRET);
         posts[i]['Animalauthor'][0]['category'] = animal_token;
       }
     }
@@ -1673,7 +1676,7 @@ module.exports.foryoufeed = async (req, res, next) => {
     for (var i=0;i<posts.length;i++){
       if (posts[i].authorType == "Animal"){
         // console.log(posts[i])
-        const animal_token = jwt.encode({ id: posts[i].Animalauthor._id}, process.env.JWT_SECRET);
+        const animal_token = jwt.encode({ id: posts[i].Animalauthor[0]._id}, process.env.JWT_SECRET);
         posts[i]['Animalauthor'][0]['category'] = animal_token;
       }
     }
