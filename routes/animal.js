@@ -30,11 +30,11 @@ animalRouter.post("/addGuardian", addGuardian); //ok
 animalRouter.post("/getPetDetails", getPetDetails); //ok
 animalRouter.put("/editPet", upload, requireAuth, editPet); //ok
 animalRouter.post("/editPetHabits", requireAuth, editPetHabits); //ok
-animalRouter.get('/getGuardians', requireAuth, getGuardians); //ok
-animalRouter.get("/getRelations",getRelations); //ok
+animalRouter.post('/getGuardians', requireAuth, getGuardians); //ok
+animalRouter.post("/getRelations",getRelations); //ok
 animalRouter.post('/confirmRelation', confirmRelation); //ok
 animalRouter.post('/sendRelationRequest', addRelatedAnimals);
-animalRouter.get('/getRelationRequests', getRelationRequests); //ok
+animalRouter.post('/getRelationRequests', getRelationRequests); //ok
 animalRouter.get('/getUniquePetName', getUniquePetName);
 animalRouter.patch('/editPetMainDetails' ,requireAuth, editPetMainDetails);
 module.exports = animalRouter;

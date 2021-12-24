@@ -27,7 +27,7 @@ const {
 } = require("../controllers/userController");
 const { requireAuth, optionalAuth } = require("../controllers/authController");
 
-userRouter.get("/getPendingGuardianRequests",requireAuth,getPendingGuardianRequests)
+userRouter.post("/getPendingGuardianRequests",requireAuth,getPendingGuardianRequests)
 userRouter.get("/userDetails", requireAuth, getUserDetails);
 userRouter.post("/getUserDetailsById", getUserDetailsById);
 userRouter.post('/showPeopleToFollow',requireAuth, showPeopleToFollow);
