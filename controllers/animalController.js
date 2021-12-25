@@ -469,10 +469,11 @@ module.exports.getRelations = async (req, res, next) => {
     if (!animal) {
       return res.status(404).send({"error" : "Invalid request!"});
     }
-    var relations = animal.relatedAnimals.filter(function(check)
-    {
-      return check.confirmed == true;
-    });
+    // var relations = animal.relatedAnimals.filter(function(check)
+    // {
+    //   return check.confirmed == true;
+    // });
+    var relations = animal.relatedAnimals;
     return res.status(200).send({"relatives":relations});
   }
   catch (err){
