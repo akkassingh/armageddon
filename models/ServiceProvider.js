@@ -8,8 +8,8 @@ const RequestError = require("../errorTypes/RequestError");
 const ServiceProviderSchema = new Schema({
   email: {
     type: String,
-    sparse: true,
     unique: [true, "A user with this email already exists"],
+    sparse: true,
     lowercase: true,
     validate: (value) => {
       if (!validator.isEmail(value)) {
