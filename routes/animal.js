@@ -21,7 +21,8 @@ const {
   getUniquePetName,
   editPetMainDetails,
   confirmGuardian,
-  rejectRelation
+  rejectRelation,
+  rejectGuardian
 } = require("../controllers/animalController");
 
 const { requireAuth, requireAuthAnimal } = require("../controllers/authController");
@@ -39,8 +40,9 @@ animalRouter.post('/sendRelationRequest', addRelatedAnimals);
 animalRouter.post('/getRelationRequests', getRelationRequests); //ok
 animalRouter.get('/getUniquePetName', getUniquePetName);
 animalRouter.patch('/editPetMainDetails' ,requireAuth, editPetMainDetails);
-animalRouter.post('/rejectRelation', requireAuth, rejectRelation); // always animal token and type
+animalRouter.post('/rejectRelation', requireAuth, rejectRelation);
 animalRouter.post('/confirmGuardian', requireAuth, confirmGuardian);
+animalRouter.post('/rejectGuardian', requireAuth, rejectGuardian);
 
 
 
