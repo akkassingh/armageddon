@@ -537,6 +537,66 @@ module.exports.rejectRelation = async (req, res, next) => {
 
 }
 
+module.exports.rejectGuardian = async (req, res, next) => {
+  const {animalId} = req.body;
+  let user = null;
+  if (req.headers.type=="User"){
+    user = res.locals.user
+  }
+  if (!user){
+    return res.status(403).send({"message" : "Not authorized!", "success" : false})
+  }
+  try{
+    const animal = await Animal.findById(animalId, 'guardians');
+    if (!animal){
+      return res.status(400).send({"message" : "Invalid Request!"})
+    }
+    const guardians = animal.guardians;
+    let idx = -1;
+    let confirmed = null;
+    for (var i=0; i<guardians.length;i++){
+      if (guardians[i].user.toString() == user._id.toString()){
+        idx = i;
+        confirmed = guardians[i].confirmed;
+      }
+    }
+    if (idx == -1){
+      return res.status(404).send({"message" : "No pet found!", "success" : false});
+    }
+    if (confirmed){
+      return res.status(400).send({"message" : "Already a pet!", "success" : false});
+    }
+    idx = -1;
+    confirmed = null;
+    const pets = user.pets;
+    for (var i=0;i<pets.length;i++){
+      if (pets[i].pet.toString() == animalId){
+        idx = i;
+        confirmed = pets[i].confirmed;
+      }
+    }
+    if (idx == -1){
+      return res.status(404).send({"message" : "No pet found!", "success" : false});
+    }
+    if (confirmed){
+      return res.status(400).send({"message" : "Already a pet!", "success" : false});
+    }
+    const newPets = pets.filter(function (ele){
+      return ele.pet.toString() != animalId
+    })
+    const newGuardian = guardians.filter(function (ele){
+      return ele.user.toString() != user._id.toString()
+    })
+    await User.updateOne({id : user._id}, {pets : newPets});
+    await Animal.updateOne({id : animalId}, {guardians : newGuardian});
+    return res.status(201).send({"message" : "Request rejected successfully!", "success" : true});
+  }
+  catch (err){
+    console.log(err)
+    next(err)
+  }
+}
+
 module.exports.getRelationRequests = async (req, res, next) => {
   const {animalId, type} = req.body;
   // type will be of 2 types, either incoming or outgoing
