@@ -1384,16 +1384,16 @@ module.exports.verifyMobileOTP = async (req, res, next) => {
         const userDocument = await ServiceProvider.findOne({phoneNumber: mobileNumber}, '_id username');
         if (userDocument){ // Old user
           return res.status(200).send({
-            "message" : "OTP verified successfully!",
-            "user" : {
-              'username' : userDocument.username,
-              'phoneNumber' : mobileNumber,
-              'confirmed' : true,
-              'avatar' : userDocument.avatar,
+            message : "OTP verified successfully!",
+            user : {
+              username : userDocument.username,
+              phoneNumber : mobileNumber,
+              confirmed : true,
+              avatar : userDocument.avatar,
             },
-            "isNewUser": false,
-            "token": jwt.encode({ id: userDocument._id }, process.env.JWT_SECRET) 
-          })
+            isNewUser: false,
+            token: jwt.encode({ id: userDocument._id }, process.env.JWT_SECRET) 
+          });
         }
         else{ // New user
           let uniqueUsername = undefined;
