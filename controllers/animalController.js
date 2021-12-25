@@ -481,6 +481,61 @@ module.exports.getRelations = async (req, res, next) => {
   }
 };
 
+module.exports.rejectRelation = async (req, res, next) => {
+  const {animalId, id} = req.body;
+  let user = null;
+  if (req.headers.type!="User"){
+    return res.status(403).send({"message" : "Not authorized", "success" : false })
+  }
+  user = await Animal.findById(id, '_id relatedAnimals');
+  const relation = user.relatedAnimals;
+  let idx = -1;
+  let confirmed = undefined;
+  // we are looking in user now
+  for (var i=0;i<relation.length;i++){
+    if (relation[i].animal.toString() == animalId.toString()){
+      idx = i;
+      confirmed = relation[i].confirmed;
+    }
+  }
+  if (idx == -1){
+    return res.status(404).send({"message" : "No relation found between the two animals", "success" : false});
+  }
+  if (confirmed){
+    return res.status(400).send({"message" : "Invalid Request!", "success" : false});
+  }
+  var newRelationSelf = relation.filter(function (ele){
+    return ele.animal.toString() != animalId.toString()
+  })
+  console.log('Self Related_Animals', newRelationSelf);
+  //we are looking in other animal now
+  let relationAnimal = await Animal.findById(animalId, 'relatedAnimals');
+  let animalRelations = relationAnimal.relatedAnimals;
+  idx = -1;
+  confirmed = undefined;
+  for (var i=0; i<animalRelations.length;i++){
+    if (animalRelations[i].animal.toString() == user._id.toString()){
+      idx = i;
+      confirmed = animalRelations[i].confirmed;
+    }
+  }
+  if (idx == -1){
+    return res.status(404).send({"message" : "No relation found between the two animals", "success" : false});
+  }
+  if (confirmed){
+    return res.status(400).send({"message" : "Invalid Request!", "success" : false});
+  }
+  var newRelationsAnimal = animalRelations.filter(function (ele){
+    return ele.animal.toString() != user._id.toString()
+  })
+  console.log('Opposite Related_Animals', newRelationsAnimal);
+
+  await Animal.updateOne({_id : user._id},{relatedAnimals : newRelationSelf});
+  await Animal.updateOne({_id : animalId}, {relatedAnimals : newRelationsAnimal});
+  return res.status(200).send({"message" : "Request Declined successfully!", "success" : true});
+
+}
+
 module.exports.getRelationRequests = async (req, res, next) => {
   const {animalId, type} = req.body;
   // type will be of 2 types, either incoming or outgoing
