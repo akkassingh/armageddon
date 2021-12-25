@@ -43,6 +43,8 @@ const bookingDetailsSchema = new Schema({
     state: String,
     city: String,
     pinCode: String,
+    lat : Schema.Types.Decimal128,
+    long : Schema.Types.Decimal128,
   },
 
   //to be added below code
