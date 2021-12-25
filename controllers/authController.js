@@ -1471,14 +1471,20 @@ module.exports.resendMobileOTP = async (req, res, next) => {
   const {type, phoneNumber} = req.body;
   let mobileNumber = "91" + phoneNumber
   // type should be either Voice or text
-  const response = await axios.get(
-    `https://api.msg91.com/api/v5/otp/retry?authkey=${process.env.MSG91_API_KEY}&retrytype=${type}&mobile=${mobileNumber}`
-  )
-  if (response.data.type == 'success'){
-    return res.status(201).send({"message" : 'OTP has been sent again!', "success" : true})
+  try{
+    const response = await axios.get(
+      `https://api.msg91.com/api/v5/otp/retry?authkey=${process.env.MSG91_API_KEY}&retrytype=${type}&mobile=${mobileNumber}`
+    )
+    if (response.data.type == 'success'){
+      return res.status(201).send({"message" : 'OTP has been sent again!', "success" : true})
+    }
+    else{
+      console.log(response.data.message)
+      return res.status(500).send({"message" : "Something went wrong! Please try again later", "success" : false})
+    }
   }
-  else{
-    console.log(response.data.message)
-    return res.status(500).send({"message" : "Something went wrong! Please try again later", "success" : false})
+  catch (err){
+    console.log(err)
+    next(err)
   }
 }
