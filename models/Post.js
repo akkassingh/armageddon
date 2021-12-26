@@ -24,7 +24,11 @@ const PostSchema = new Schema({
     type: Schema.ObjectId,
     ref: "User",
   },
-  authorType:String
+  authorType:String,
+  group : {
+    type : Schema.ObjectId,
+    ref : "Group",
+  }
   // postOwnerDetails: {
   //   postOwnerId: String,
   //   postOwnerType: {
