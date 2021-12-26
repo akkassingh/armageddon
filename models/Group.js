@@ -8,45 +8,36 @@ const GroupSchema = new Schema({
         required : true,
     },
     coverPhoto : String,
-    description: String,
-    size :  Number,
+    description: {
+        type : String,
+        default : "",
+    },
+    members :  {
+        type : Number,
+        default : 1
+    },
     avatar: String,
     date: {
         type: Date,
         default: Date.now,
-    }
-    admin : [{
-        person : {
-            type: Schema.ObjectId,
-            refPath: "admin.personType"
-        },
-        personType:{
-            type: String,
-            enum: ["Animal", "User"]
-        },
-    }],
-    members: [{
-        person : {
-            type: Schema.ObjectId,
-            refPath: "members.personType"
-        },
-        personType:{
-            type: String,
-            enum: ["Animal", "User"]
-        },
-    }],
-    moderators: [{
-        person : {
-            type: Schema.ObjectId,
-            refPath: "moderators.personType"
-        },
-        personType:{
-            type: String,
-            enum: ["Animal", "User"]
-        },
-    }],
+    },
+    hashtags: [String],
     private: {
         type: Boolean,
         default: false,
     },
-})
+});
+
+GroupSchema.pre("deleteOne", async function (next) {
+    const groupId = this.getQuery()["_id"];
+    try {
+      await mongoose.model("GroupMember").deleteMany({ group: groupId });
+      next();
+    } catch (err) {
+      next(err);
+    }
+});
+  
+
+const Group = mongoose.model("Group", GroupSchema);
+module.exports = Group;
