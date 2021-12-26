@@ -149,7 +149,7 @@ module.exports.getBlogs = async (req, res, next) => {
     try{
         const blogs = await Blog.find({}).populate('peopleLiked.person', 'username avatar email phoneNumber').limit(10).skip(10*counter).lean();
         console.log(blogs)
-        return res.send(blogs)
+        return res.send({"blogs" : blogs})
     }
     catch (err){
         console.log(err)
