@@ -485,9 +485,6 @@ module.exports.getRelations = async (req, res, next) => {
 module.exports.rejectRelation = async (req, res, next) => {
   const {animalId, id} = req.body;
   let user = null;
-  if (req.headers.type!="User"){
-    return res.status(403).send({"message" : "Not authorized", "success" : false })
-  }
   user = await Animal.findById(id, '_id relatedAnimals');
   const relation = user.relatedAnimals;
   let idx = -1;
