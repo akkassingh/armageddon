@@ -197,11 +197,12 @@ module.exports.changeDescription = async (req, res, next) => {
     }
     try{
         const isMember = await GroupMember.findOne({
-            "user" : ObjectId(user._id),
-            "group" : ObjectId(groupId),
-            "confirmed" : true
-        }, 'isAdmin');
-        if (!isMember || !isMember.confirmed ||!isMember.isAdmin){
+            user : ObjectId(user._id.toString()),
+            group : ObjectId(groupId),
+            confirmed : true
+        }, 'isAdmin confirmed');
+        console.log('TEST',isMember)
+        if (!isMember || !isMember.confirmed || !isMember.isAdmin){
             return res.status(403).send({"message" : "You dont have required permissions", "success" : false});
         }
         else{
