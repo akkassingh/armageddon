@@ -40,7 +40,7 @@ animalRouter.post('/sendRelationRequest', addRelatedAnimals);
 animalRouter.post('/getRelationRequests', getRelationRequests); //ok
 animalRouter.get('/getUniquePetName', getUniquePetName);
 animalRouter.patch('/editPetMainDetails' ,requireAuth, editPetMainDetails);
-animalRouter.post('/rejectRelation', requireAuth, rejectRelation);
+animalRouter.post('/rejectRelation',rejectRelation);
 animalRouter.post('/confirmGuardian', requireAuth, confirmGuardian);
 animalRouter.post('/rejectGuardian', requireAuth, rejectGuardian);
 
