@@ -18,6 +18,7 @@ const {
     getAllGroups,
     retrieveGroupFeed,
     createGroupPost,
+    getGroupDetails
 } = require("../controllers/communityController")
 
 const { requireAuth} = require('../controllers/authController');
@@ -41,6 +42,7 @@ communityRouter.post('/deleteGroup', requireAuth, deleteGroup);
 communityRouter.post('/getAllGroups', requireAuth, getAllGroups); //ok
 communityRouter.post('/retrieveGroupFeed', requireAuth, retrieveGroupFeed);
 communityRouter.post('/createGroupPost', requireAuth, createGroupPost);
+communityRouter.post('/getGroupDetails',requireAuth, getGroupDetails);
 
 
 module.exports = communityRouter;

@@ -719,3 +719,42 @@ module.exports.createGroupPost = async (req, res, next) => {
         next(err);
     }
 }
+
+module.exports.getGroupDetails = async (req, res, next) => {
+    const {groupId} = req.body;
+    let user = null
+    if (req.headers.type=="User")
+        user = res.locals.user
+    else
+        user = res.locals.animal
+    try{
+        const group = await Group.findById(groupId, 'name coverPhoto members description avatar hashtags').lean();
+        if (!group){
+            return res.status(404).send({"message" : "No such group exists!", "success": false});
+        }
+        const isMember = await GroupMember.findOne({
+            group : ObjectId(groupId),
+            user : ObjectId(user._id.toString()),
+            confirmed : true,
+        }, 'isAdmin')
+        console.log(isMember)
+        if (isMember){
+            group['isMember'] = true
+            if (isMember.isAdmin){
+                group['isAdmin'] = true
+            }
+            else{
+                group['isAdmin'] = false
+            }
+        }
+        else{
+            group['isMember'] = false;
+            group['isAdmin'] = false;
+        }
+        return res.status(200).send({group});
+    }
+    catch(err){
+        console.log(err)
+        next(err)
+    }
+}
