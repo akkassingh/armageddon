@@ -708,7 +708,7 @@ module.exports.retrieveGroupFeed = async (req, res, next) => {
         next(err)
     }
 }
-//TODO : createGroupPost is pending
+//TODO : createGroupPost is pending --- idea --- just pass groupId in createPost API present in postController.js
 module.exports.createGroupPost = async (req, res, next) => {
     const {groupId} = req.body;
     try{
@@ -756,5 +756,54 @@ module.exports.getGroupDetails = async (req, res, next) => {
     catch(err){
         console.log(err)
         next(err)
+    }
+}
+
+module.exports.getMembers = async (req, res, next) => {
+    const {groupId,counter} = req.body;
+    try{
+        const members = await GroupMember.find({group: groupId},'user isAdmin userType').populate('user', 'username name fullName avatar').limit(20).skip(20*counter);
+        
+        return res.status(200).send({members})
+    }
+    catch (err) {
+        console.log(err)
+        next(err)
+    }
+}
+
+module.exports.removeMember = async (req, res, next) => {
+    const {groupId,userId} = req.body;
+    let user = null
+    if (req.headers.type=="User")
+        user = res.locals.user
+    else
+        user = res.locals.animal
+    try{
+        const group = await Group.findById(groupId, 'members');
+        const isMember = await GroupMember.findOne({
+            group : ObjectId(groupId),
+            user : ObjectId(user._id.toString()),
+            confirmed : true,
+        }, 'isAdmin');
+        if (!isMember || !isMember.isAdmin){
+            return res.status(403).send({"message" : "Only Group Admins can remove members from the group!", "success" : false});
+        }
+        const userIsMember = await GroupMember.findOne({
+            group : ObjectId(groupId),
+            user : ObjectId(userId),
+            confirmed: true
+        });
+        if (!userIsMember){
+            return res.status(404).send({"message" : "User is not a member of this group!"});
+        }
+        let newSize = group.members + 1;
+        await GroupMember.deleteOne({_id : userIsMember._id});
+        await Group.updateOne({ _id: groupId}, {members : newSize});
+        return res.status(200).send({"message" : 'Member removed successfully!', "success" : true});
+    }
+    catch(err){
+        console.log(err)
+        next(err);
     }
 }

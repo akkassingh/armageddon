@@ -77,7 +77,7 @@ module.exports.createPost = async (req, res, next) => {
    user = res.locals.user
   else
    user = res.locals.animal
-  const { caption, filter: filterName, Animalauthor, Userauthor, authorType } = req.body;
+  const { caption, filter: filterName, Animalauthor, Userauthor, authorType, group } = req.body;
   if (authorType == "Animal" && !Animalauthor){
     res.status(400).send("Invalid Request");
   }
@@ -140,7 +140,8 @@ module.exports.createPost = async (req, res, next) => {
         caption,
         hashtags,
         Userauthor,
-        authorType
+        authorType,
+        group
       });
     }
     if (req.headers.type=="Animal"){
@@ -151,7 +152,8 @@ module.exports.createPost = async (req, res, next) => {
         caption,
         hashtags,
         Animalauthor,
-        authorType
+        authorType,
+        group
       });
     }
     // const postVote = new PostVote({
