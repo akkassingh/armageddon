@@ -808,8 +808,8 @@ module.exports.removeMember = async (req, res, next) => {
     }
 }
 
-module.exports.editGroupNameAndAvatar = async (req, res, next) => {
-    const {groupId,name,avatar} = req.body;
+module.exports.editGroupDetails = async (req, res, next) => {
+    const {groupId,name,avatar, description, hashtags} = req.body;
     let user = null;
     if (req.headers.type=="User")
         user = res.locals.user
@@ -824,7 +824,7 @@ module.exports.editGroupNameAndAvatar = async (req, res, next) => {
         if (!isMember || !isMember.isAdmin){
             return res.status(403).send({"message" : "You dont have required permissions", "success" : false});
         }
-        await Group.updateOne({ _id: ObjectId(groupId)}, {name, avatar});
+        await Group.updateOne({ _id: ObjectId(groupId)}, {name, avatar, description, hashtags});
         return res.status(201).send({"message" : 'Details updated successfully!' , "success" : true});
     }
     catch (err) {
