@@ -808,15 +808,52 @@ module.exports.removeMember = async (req, res, next) => {
     }
 }
 
-// module.exports.editGroupNameAndAvatar = async (req, res, next) => {
-//     const {groupId,name,avatar} = req.body;
-//     let user = null;
-//     if (req.headers.type=="User")
-//         user = res.locals.user
-//     else
-//         user = res.locals.animal
-//     try{
-        
-//     }
+module.exports.editGroupNameAndAvatar = async (req, res, next) => {
+    const {groupId,name,avatar} = req.body;
+    let user = null;
+    if (req.headers.type=="User")
+        user = res.locals.user
+    else
+        user = res.locals.animal
+    try{
+        const isMember = await GroupMember.findOne({
+            group : ObjectId(groupId),
+            user : ObjectId(user._id.toString()),
+            confirmed : true,
+        }, 'isAdmin');
+        if (!isMember || !isMember.isAdmin){
+            return res.status(403).send({"message" : "You dont have required permissions", "success" : false});
+        }
+        await Group.updateOne({ _id: ObjectId(groupId)}, {name, avatar});
+        return res.status(201).send({"message" : 'Details updated successfully!' , "success" : true});
+    }
+    catch (err) {
+        console.log(err)
+        next(err)
+    }
+}
 
-// }
+module.exports.editCoverPhoto = async (req, res, next) => {
+    const {groupId,name,coverPhoto} = req.body;
+    let user = null;
+    if (req.headers.type=="User")
+        user = res.locals.user
+    else
+        user = res.locals.animal
+    try{
+        const isMember = await GroupMember.findOne({
+            group : ObjectId(groupId),
+            user : ObjectId(user._id.toString()),
+            confirmed : true,
+        }, 'isAdmin');
+        if (!isMember || !isMember.isAdmin){
+            return res.status(403).send({"message" : "You dont have required permissions", "success" : false});
+        }
+        await Group.updateOne({ _id : ObjectId(groupId)}, {coverPhoto});
+        return res.status(201).send({"message" : 'Details updated successfully!' , "success" : true});
+    }
+    catch (err){
+        console.log(err)
+        next(err)
+    }
+}
