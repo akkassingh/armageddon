@@ -21,7 +21,8 @@ const {
     getMembers,
     removeMember,
     editGroupDetails,
-    editCoverPhoto
+    editCoverPhoto,
+    getAdminGroups
 } = require("../controllers/communityController")
 
 const { requireAuth} = require('../controllers/authController');
@@ -49,5 +50,6 @@ communityRouter.post('/getMembers', requireAuth, getMembers);
 communityRouter.post('/removeMember',requireAuth, removeMember);
 communityRouter.post('/editCoverPhoto', requireAuth, editCoverPhoto);
 communityRouter.post('/editGroupDetails', requireAuth, editGroupDetails);
+communityRouter.post('/getAdminGroups', requireAuth, getAdminGroups);
 
 module.exports = communityRouter;

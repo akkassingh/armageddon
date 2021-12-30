@@ -477,7 +477,7 @@ module.exports.getAllGroups = async (req, res, next) => {
     else
         user = res.locals.animal
     try{
-        const groups = await Group.find({}, 'name avatar coverPhoto').sort([['members', -1]]).limit(10).lean();
+        const groups = await Group.find({}, 'name avatar coverPhoto members').sort([['members', -1]]).limit(10).lean();
         for (var i=0;i<groups.length;i++){
             const isMember = await GroupMember.findOne({group : groups[i]._id, user : user._id}, 'confirmed')
             if (!isMember || !isMember.confirmed){
@@ -845,5 +845,24 @@ module.exports.editCoverPhoto = async (req, res, next) => {
     catch (err){
         console.log(err)
         next(err)
+    }
+}
+
+module.exports.getAdminGroups = async (req, res, next) => {
+    let user = null
+    if (req.headers.type=="User")
+        user = res.locals.user
+    else
+        user = res.locals.animal
+    try{
+        const groups = await GroupMember.find({
+            user : ObjectId(user._id.toString()),
+            isAdmin : true,
+        },'group').populate('group','name members avatar description coverPhoto');
+        return res.status(200).send({groups});
+    }
+    catch(err){
+        console.log(err)
+        next(err);
     }
 }
