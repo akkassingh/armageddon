@@ -807,3 +807,16 @@ module.exports.removeMember = async (req, res, next) => {
         next(err);
     }
 }
+
+// module.exports.editGroupNameAndAvatar = async (req, res, next) => {
+//     const {groupId,name,avatar} = req.body;
+//     let user = null;
+//     if (req.headers.type=="User")
+//         user = res.locals.user
+//     else
+//         user = res.locals.animal
+//     try{
+        
+//     }
+
+// }
