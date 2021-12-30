@@ -1,5 +1,6 @@
 const User = require("../models/User");
 const Animal = require("../models/Animal");
+const Group = require("../models/Group");
 const Post = require("../models/Post");
 const ServiceProvider = require("../models/ServiceProvider");
 const PostVote = require("../models/PostVote");
@@ -544,6 +545,36 @@ searchAnimal = async(username,counter,type) => {
   return users;
 };
 
+searchGroup = async(username,counter) => {
+  let lim = 10;
+  const users = await Group.aggregate([
+    {
+      $match: {
+        name: { $regex: new RegExp(username,"i")}
+      },
+    },
+    {
+      $sort: { members: -1 },
+    },
+    {
+      $skip: Number(counter*10),
+    },
+    {
+      $limit: lim,
+    },
+    {
+      $project: {
+        _id: true,
+        name: true,
+        avatar: true,
+        coverPhoto: true,
+        members : true,
+        description : true,
+      },
+    },
+  ]);
+  return users;
+};
 
 
 module.exports.searchUsers = async (req, res, next) => {
@@ -576,6 +607,15 @@ module.exports.searchUsers = async (req, res, next) => {
       }
       return res.status(200).send({"profiles" : users});
 
+    }
+    else if (type == "Group"){
+      const users = await searchGroup(username,counter)
+      if (users.length === 0) {
+        return res
+          .status(404)
+          .send({ error: "Could not find any users matching the criteria." });
+      }
+      return res.status(200).send({"profiles" : users});
     }
     else if (type=== "Both"){
       const humans = await searchHuman(username,counter,type);

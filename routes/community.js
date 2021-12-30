@@ -17,7 +17,6 @@ const {
     deleteGroup,
     getAllGroups,
     retrieveGroupFeed,
-    createGroupPost,
     getGroupDetails,
     getMembers,
     removeMember,
@@ -45,7 +44,6 @@ communityRouter.post('/makeAdmin', requireAuth, makeAdmin); //not handling anima
 communityRouter.post('/deleteGroup', requireAuth, deleteGroup);
 communityRouter.post('/getAllGroups', requireAuth, getAllGroups); //ok
 communityRouter.post('/retrieveGroupFeed', requireAuth, retrieveGroupFeed);
-communityRouter.post('/createGroupPost', requireAuth, createGroupPost);
 communityRouter.post('/getGroupDetails',requireAuth, getGroupDetails);
 communityRouter.post('/getMembers', requireAuth, getMembers);
 communityRouter.post('/removeMember',requireAuth, removeMember);
