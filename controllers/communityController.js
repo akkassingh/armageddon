@@ -3,6 +3,7 @@ const User = require("../models/User");
 const Animal = require("../models/Animal");
 const Group = require('../models/Group');
 const GroupMember = require('../models/GroupMember');
+const Post = require('../models/Post')
 const ObjectId = require("mongoose").Types.ObjectId;
 const unwantedUserFields = [
     "Userauthor.password",
@@ -701,22 +702,11 @@ module.exports.retrieveGroupFeed = async (req, res, next) => {
             }
           }
           console.log(user.bookmarks)
-          return res.status(200).send({"message":posts, "success" : true});
+          return res.status(200).send({posts, "success" : true});
     }
     catch (err) {
         console.log(err);
         next(err)
-    }
-}
-//TODO : createGroupPost is pending --- idea --- just pass groupId in createPost API present in postController.js
-module.exports.createGroupPost = async (req, res, next) => {
-    const {groupId} = req.body;
-    try{
-        return res.status(200).send({"message" : "OK"});
-    }
-    catch (err){
-        console.log(err)
-        next(err);
     }
 }
 
