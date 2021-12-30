@@ -101,7 +101,10 @@ const AnimalSchema = new Schema({
     type: String,
     maxlength: 130,
   },
-  location: String,
+  location: {
+    lat : Schema.Types.Decimal128,
+    long : Schema.Types.Decimal128,
+  },
   registeredWithKennelClub:Boolean
 });
 
