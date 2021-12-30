@@ -866,3 +866,37 @@ module.exports.getAdminGroups = async (req, res, next) => {
         next(err);
     }
 }
+
+module.exports.removeAdmin = async (req, res, next) => {
+    let user = null;
+    if (req.headers.type=="User")
+        user = res.locals.user
+    else
+        user = res.locals.animal
+    const {groupId,userId} = req.body;
+    try{
+        const isMember = await GroupMember.findOne({
+            group : ObjectId(groupId),
+            user : ObjectId(userId),
+            confirmed: true
+        }, 'isAdmin');
+        if (!isMember || !isMember.isAdmin){
+            return res.status(404).send({"message" :"Person is not an Admin of this group!", "success":false});
+        }
+        const userIsAdmin = await GroupMember.findOne({
+            group : ObjectId(groupId),
+            user : ObjectId(user._id.toString()),
+            confirmed : true,
+            isAdmin : true
+        }, '_id');
+        if (!userIsAdmin){
+            return res.status(403).send({"message" : "You dont have required permissions", "success" : false});
+        }
+        await GroupMember.updateOne({_id : isMember._id}, {isAdmin : false});
+        return res.status(200).send({"message" : "Removed from Admin position!", "success":true});
+    }
+    catch(err){
+        console.log(err)
+        next(err);
+    }
+}
