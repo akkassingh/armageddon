@@ -2,6 +2,7 @@ const User = require("../models/User");
 const Animal = require("../models/Animal");
 const Group = require("../models/Group");
 const Post = require("../models/Post");
+const GroupMember = require("../models/GroupMember");
 const ServiceProvider = require("../models/ServiceProvider");
 const PostVote = require("../models/PostVote");
 const Followers = require("../models/Followers");
@@ -579,6 +580,11 @@ searchGroup = async(username,counter) => {
 
 module.exports.searchUsers = async (req, res, next) => {
   const {username, counter = 0, type} = req.body;
+  let user = null;
+  if (req.headers.type=="User")
+    user = res.locals.user
+  else
+    user = res.locals.animal
   //type will be of 3 types
   // "Both" will mean both User and Animal
   // "Animal" will mean only Animal
@@ -614,6 +620,21 @@ module.exports.searchUsers = async (req, res, next) => {
         return res
           .status(404)
           .send({ error: "Could not find any users matching the criteria." });
+      }
+      for (var i=0;i<users.length;i++){
+        const isMember = await GroupMember.findOne({
+          user : user._id,
+          group : ObjectId(users[i]._id),
+          confirmed : true,
+        }, 'isAdmin confirmed');
+        if (isMember){
+          users[i]['isMember'] = true;
+          users[i]['isAdmin'] = isMember.isAdmin;
+        }
+        else{
+          users[i]['isMember'] = false;
+          users[i]['isAdmin'] = false;
+        }
       }
       return res.status(200).send({"profiles" : users});
     }

@@ -36,7 +36,7 @@ userRouter.get("/:username", optionalAuth, retrieveUser);
 userRouter.post("/:username/posts", retrievePosts);
 userRouter.post("/following", requireAuth, retrieveFollowing);
 userRouter.post("/followers", requireAuth, retrieveFollowers);
-userRouter.post("/search", searchUsers);
+userRouter.post("/search",requireAuth, searchUsers);
 
 userRouter.put("/confirm", requireAuth, confirmUser);
 userRouter.put(
