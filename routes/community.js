@@ -25,7 +25,8 @@ const {
     getAdminGroups,
     removeAdmin,
     leaveGroup,
-    declineInvitation
+    declineInvitation,
+    getStrays,
 } = require("../controllers/communityController")
 
 const { requireAuth} = require('../controllers/authController');
@@ -58,4 +59,8 @@ communityRouter.post('/removeAdmin', requireAuth, removeAdmin);
 communityRouter.post('/leaveGroup', requireAuth, leaveGroup);
 communityRouter.post('/declineInvitation', requireAuth, declineInvitation);
 //one search grp API present in user controllers;
+
+// ---------------------------------------- STRAYS ---------------------------------------------
+communityRouter.post('/getStrays', requireAuth, getStrays);
+
 module.exports = communityRouter;
