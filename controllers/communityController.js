@@ -933,6 +933,27 @@ module.exports.leaveGroup = async (req, res, next) => {
     }
 }
 
+module.exports.declineInvitation = async (req, res, next) => {
+    let user = null
+    if (req.headers.type=="User")
+        user = res.locals.user
+    else
+        user = res.locals.animal
+    const {groupId} = req.body;
+    try{
+        await GroupMember.deleteOne({
+            group : ObjectId(groupId),
+            user : user._id,
+            confirmed : false,
+        });
+        return res.status(201).send({"message" : "Invitation declined successfully", "success" : true});
+    }
+    catch (err){
+        console.log(err)
+        next(err);
+    }
+}
+
 // ---------------------------------------- STRAYS ---------------------------------------------
 
 // module.exports.getStrays = async (req, res, next) => {
