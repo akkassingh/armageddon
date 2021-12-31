@@ -956,13 +956,30 @@ module.exports.declineInvitation = async (req, res, next) => {
 
 // ---------------------------------------- STRAYS ---------------------------------------------
 
-// module.exports.getStrays = async (req, res, next) => {
-//     let user = null
-//     if (req.headers.type=="User")
-//         user = res.locals.user
-//     else
-//         user = res.locals.animal
-//     const {lat, long} = req.body;
-//     const animals = await Animal.find({category : 'Stray'}).sort()
-
-// }
+module.exports.getStrays = async (req, res, next) => {
+    let user = null
+    if (req.headers.type=="User")
+        user = res.locals.user
+    else
+        user = res.locals.animal
+    const {lat, long, counter} = req.body;
+    try{
+        const animals = await Animal.find({
+            category : 'Stray',
+            location : {
+                $near : {
+                    $maxDistance : 100000,
+                    $geometry : {
+                        type : "Point",
+                        coordinates : [long,lat]
+                    },
+                },
+            }
+        }, 'name username guardians avatar').skip(20*counter).limit(20);
+        return res.status(200).send({animals})
+    }
+    catch (err) {
+        console.log(err)
+        next(err)
+    }
+}
