@@ -754,7 +754,7 @@ module.exports.getGroupDetails = async (req, res, next) => {
 module.exports.getMembers = async (req, res, next) => {
     const {groupId,counter} = req.body;
     try{
-        const members = await GroupMember.find({group: groupId},'user isAdmin userType').populate('user', 'username name fullName avatar').limit(20).skip(20*counter);
+        const members = await GroupMember.find({group: groupId},'user isAdmin userType confirmed').populate('user', 'username name fullName avatar').limit(20).skip(20*counter);
         
         return res.status(200).send({members})
     }
@@ -789,7 +789,7 @@ module.exports.removeMember = async (req, res, next) => {
         if (!userIsMember){
             return res.status(404).send({"message" : "User is not a member of this group!"});
         }
-        let newSize = group.members + 1;
+        let newSize = group.members - 1;
         await GroupMember.deleteOne({_id : userIsMember._id});
         await Group.updateOne({ _id: groupId}, {members : newSize});
         return res.status(200).send({"message" : 'Member removed successfully!', "success" : true});
@@ -900,6 +900,36 @@ module.exports.removeAdmin = async (req, res, next) => {
     catch(err){
         console.log(err)
         next(err);
+    }
+}
+
+module.exports.leaveGroup = async (req, res, next) => {
+    let user = null
+    if (req.headers.type=="User")
+        user = res.locals.user
+    else
+        user = res.locals.animal
+    const {groupId} = req.body;
+    try{
+        const group = await Group.findById(groupId, 'members');
+        const newSize = group.members - 1;
+        const isMember = await GroupMember.findOne({
+            user : user._id,
+            group : ObjectId(groupId),
+            confirmed : true
+        }, '_id');
+        if (!isMember){
+            return res.status(403).send({"message" : "You are not a member of this group!", "success" : false});
+        }
+        await GroupMember.deleteOne({_id : isMember._id})
+        if (newSize)
+            await Group.updateOne({_id : ObjectId(groupId)}, {members : newSize});
+        else
+            await Group.deleteOne({ _id: ObjectId(groupId)});
+        return res.status(200).send({"message" : "Group left successfully!", "success" : true});
+    }
+    catch  (err) {
+
     }
 }
 
