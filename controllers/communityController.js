@@ -375,10 +375,12 @@ module.exports.joinGroup = async (req, res, next) => {
                 return res.status(201).send({"message" : "Group was joined successfully!", "success" : true});
         }
         else{
+            let type = req.headers.type;
             const newMember = new GroupMember({
                 group : ObjectId(groupId),
                 user : ObjectId(user._id.toString()),
                 confirmed: true,
+                userType : type,
             });
             await newMember.save();
             await Group.updateOne({ _id: ObjectId(groupId)}, {members : newSize});
@@ -900,3 +902,16 @@ module.exports.removeAdmin = async (req, res, next) => {
         next(err);
     }
 }
+
+// ---------------------------------------- STRAYS ---------------------------------------------
+
+// module.exports.getStrays = async (req, res, next) => {
+//     let user = null
+//     if (req.headers.type=="User")
+//         user = res.locals.user
+//     else
+//         user = res.locals.animal
+//     const {lat, long} = req.body;
+//     const animals = await Animal.find({category : 'Stray'}).sort()
+
+// }

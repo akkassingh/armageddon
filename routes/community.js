@@ -53,4 +53,5 @@ communityRouter.post('/editCoverPhoto', requireAuth, editCoverPhoto);
 communityRouter.post('/editGroupDetails', requireAuth, editGroupDetails);
 communityRouter.post('/getAdminGroups', requireAuth, getAdminGroups);
 communityRouter.post('/removeAdmin', requireAuth, removeAdmin);
+//one search grp API present in user controllers;
 module.exports = communityRouter;
