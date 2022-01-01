@@ -1074,13 +1074,45 @@ module.exports.getAdoption = async (req, res, next) => {
                     },
                 },
             }
-        }, 'name username guardians avatar location').populate('guardians.user', 'fullName avatar username').skip(20*counter).lean();
+        }, 'name username guardians avatar location').populate('guardians.user', 'fullName avatar username').skip(20*counter).limit(20).lean();
         for (var i=0;i<animals.length;i++){
             animals[i]['distance'] = Math.round(haversineDistance(lat,long,animals[i].location.coordinates[1], animals[i].location.coordinates[0])*10)/10;
         }
         return res.status(200).send({animals});
     }
     catch (err){
+        console.log(err)
+        next(err);
+    }
+}
+
+// ---------------------------------------- MATING ---------------------------------------------
+module.exports.getMating = async (req, res, next) => {
+    let user = null
+    if (req.headers.type=="User")
+        user = res.locals.user
+    else
+        user = res.locals.animal
+    const {lat,long,counter} = req.body;
+    try {
+        const animals = await Animal.find({
+            mating : true,
+            location : {
+                $near : {
+                    $maxDistance : 100000,
+                    $geometry : {
+                        type : "Point",
+                        coordinates : [long,lat]
+                    },
+                },
+            }
+        }, 'name username guardians avatar location').populate('guardians.user', 'fullName avatar username').skip(20*counter).limit(20).lean();
+        for (var i=0;i<animals.length;i++){
+            animals[i]['distance'] = Math.round(haversineDistance(lat,long,animals[i].location.coordinates[1], animals[i].location.coordinates[0])*10)/10;
+        }
+        return res.status(200).send({animals});
+    }
+    catch (err) {
         console.log(err)
         next(err);
     }
