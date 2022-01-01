@@ -111,6 +111,7 @@ module.exports.editPet = async (req, res, next) => {
     animalId,
     name,
     username,
+    avatar,
     category,
     bio,
     animalType,
@@ -124,12 +125,6 @@ module.exports.editPet = async (req, res, next) => {
     playTo,
     servicePet,
     spayed,
-    friendlinessWithHumans,
-    friendlinessWithAnimals,
-    favouriteThings,
-    thingsDislikes,
-    uniqueHabits,
-    eatingHabits,
     location,
     registeredWithKennelClub,
   } = req.body;
@@ -143,6 +138,7 @@ module.exports.editPet = async (req, res, next) => {
     const animal = await Animal.findById(animalId,'guardians')
     let animalObj = {
       name,
+      username,      
       avatar: fileArr.length > 0 ? fileArr[0] : req.body.avatar,
       category,
       bio,
@@ -157,15 +153,8 @@ module.exports.editPet = async (req, res, next) => {
       playTo,
       servicePet,
       spayed,
-      friendlinessWithHumans,
-      friendlinessWithAnimals,
-      favouriteThings,
-      thingsDislikes,
-      uniqueHabits,
-      eatingHabits,
       location,
       registeredWithKennelClub,
-      guardians: animal.guardians,
     };
     await Animal.findByIdAndUpdate(
       { _id: ObjectId(animalId) },
