@@ -31,7 +31,7 @@ animalRouter.post("/register", upload, requireAuth, registerPet); //ok
 animalRouter.post("/addGuardian", addGuardian); //ok
 // animalRouter.post("/getPetDetails", requireAuth, getPetDetails); //ok
 animalRouter.post("/getPetDetails", getPetDetails); //ok
-animalRouter.put("/editPet", upload, requireAuth, editPet); //ok
+animalRouter.post("/editPet", upload, requireAuth, editPet); //ok
 animalRouter.post("/editPetHabits", requireAuth, editPetHabits); //ok
 animalRouter.post('/getGuardians', requireAuth, getGuardians); //ok
 animalRouter.post("/getRelations",getRelations); //ok

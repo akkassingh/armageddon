@@ -27,6 +27,8 @@ const {
     leaveGroup,
     declineInvitation,
     getStrays,
+    getPlayBuddies,
+    getAdoption
 } = require("../controllers/communityController")
 
 const { requireAuth} = require('../controllers/authController');
@@ -63,4 +65,9 @@ communityRouter.post('/declineInvitation', requireAuth, declineInvitation);
 // ---------------------------------------- STRAYS ---------------------------------------------
 communityRouter.post('/getStrays', requireAuth, getStrays);
 
+// ---------------------------------------- PLAYBUDDIES ---------------------------------------------
+communityRouter.post('/getPlayBuddies', requireAuth, getPlayBuddies);
+
+// ---------------------------------------- ADOPTION ---------------------------------------------
+communityRouter.post('/getAdoption', requireAuth, getAdoption);
 module.exports = communityRouter;
