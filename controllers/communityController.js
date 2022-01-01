@@ -512,7 +512,7 @@ module.exports.getAllGroups = async (req, res, next) => {
     else
         user = res.locals.animal
     try{
-        const groups = await Group.find({}, 'name avatar coverPhoto members').sort([['members', -1]]).limit(10).lean();
+        const groups = await Group.find({}, 'name avatar coverPhoto members').sort([['members', -1]]).skip(10*counter).limit(10).lean();
         for (var i=0;i<groups.length;i++){
             const isMember = await GroupMember.findOne({group : groups[i]._id, user : user._id}, 'confirmed')
             if (!isMember || !isMember.confirmed){
