@@ -140,7 +140,7 @@ module.exports.editPet = async (req, res, next) => {
       fileArr.push(response.secure_url);
       fs.unlinkSync(fl.path);
     }
-
+    const animal = await Animal.findById(animalId,'guardians')
     let animalObj = {
       name,
       avatar: fileArr.length > 0 ? fileArr[0] : req.body.avatar,
@@ -165,12 +165,9 @@ module.exports.editPet = async (req, res, next) => {
       eatingHabits,
       location,
       registeredWithKennelClub,
-      guardians: {
-        user: user._id,
-        confirmed: true,
-      },
+      guardians: animal.guardians,
     };
-    const animal = await Animal.findByIdAndUpdate(
+    await Animal.findByIdAndUpdate(
       { _id: ObjectId(animalId) },
       animalObj
     );
