@@ -787,7 +787,7 @@ module.exports.getGroupDetails = async (req, res, next) => {
 module.exports.getMembers = async (req, res, next) => {
     const {groupId,counter} = req.body;
     try{
-        const members = await GroupMember.find({group: groupId},'user isAdmin userType confirmed').populate('user', 'username name fullName avatar').limit(20).skip(20*counter);
+        const members = await GroupMember.find({group: groupId, confirmed : true},'user isAdmin userType confirmed').populate('user', 'username name fullName avatar').limit(20).skip(20*counter);
         
         return res.status(200).send({members})
     }
