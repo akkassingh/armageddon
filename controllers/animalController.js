@@ -106,7 +106,11 @@ module.exports.registerPet = async (req, res, next) => {
 };
 
 module.exports.editPet = async (req, res, next) => {
-  const user = res.locals.user;
+  let user = null;
+  if (req.headers.type=="User")
+    user = res.locals.user
+  else
+    user = res.locals.animal
   const {
     animalId,
     name,
@@ -129,36 +133,37 @@ module.exports.editPet = async (req, res, next) => {
     registeredWithKennelClub,
   } = req.body;
   try {
-    let fileArr = [];
-    for (let fl of req.files) {
-      const response = await cloudinary.uploader.upload(fl.path);
-      fileArr.push(response.secure_url);
-      fs.unlinkSync(fl.path);
-    }
-    const animal = await Animal.findById(animalId,'guardians')
-    let animalObj = {
-      name,
-      username,      
-      avatar: fileArr.length > 0 ? fileArr[0] : req.body.avatar,
-      category,
-      bio,
-      animalType,
-      gender,
-      breed,
-      age,
-      mating,
-      adoption,
-      playBuddies,
-      playFrom,
-      playTo,
-      servicePet,
-      spayed,
-      location,
-      registeredWithKennelClub,
-    };
-    await Animal.findByIdAndUpdate(
+    // let fileArr = [];
+    // for (let fl of req.files) {
+    //   const response = await cloudinary.uploader.upload(fl.path);
+    //   fileArr.push(response.secure_url);
+    //   fs.unlinkSync(fl.path);
+    // }
+    // avatar: fileArr.length > 0 ? fileArr[0] : req.body.avatar,
+    // const animal = await Animal.findById(animalId,'guardians')
+    // let animalObj = {
+    //   name,
+    //   username,      
+    //   avatar,
+    //   category,
+    //   bio,
+    //   animalType,
+    //   gender,
+    //   breed,
+    //   age,
+    //   mating,
+    //   adoption,
+    //   playBuddies,
+    //   playFrom,
+    //   playTo,
+    //   servicePet,
+    //   spayed,
+    //   location,
+    //   registeredWithKennelClub,
+    // };
+    await Animal.updateOne(
       { _id: ObjectId(animalId) },
-      animalObj
+      {...req.body}
     );
 
     return res.status(200).json({
