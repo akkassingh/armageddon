@@ -28,7 +28,8 @@ const {
     declineInvitation,
     getStrays,
     getPlayBuddies,
-    getAdoption
+    getAdoption,
+    getMating
 } = require("../controllers/communityController")
 
 const { requireAuth} = require('../controllers/authController');
@@ -70,4 +71,9 @@ communityRouter.post('/getPlayBuddies', requireAuth, getPlayBuddies);
 
 // ---------------------------------------- ADOPTION ---------------------------------------------
 communityRouter.post('/getAdoption', requireAuth, getAdoption);
+
+// ---------------------------------------- MATING ---------------------------------------------
+communityRouter.post('/getMating', requireAuth, getMating)
+
+
 module.exports = communityRouter;
