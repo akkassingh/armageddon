@@ -6,6 +6,8 @@ const {
     likeBlog,
     deleteBlog,
     getBlogs,
+    getBlogDetails,
+    getLikeDetails,
     createGroup,
     changeDescription,
     updateHashtags,
@@ -39,6 +41,8 @@ communityRouter.post('/createBlog', requireAuth, createBlog);
 communityRouter.post('/likeBlog', requireAuth, likeBlog);
 communityRouter.delete('/deleteBlog', requireAuth, deleteBlog);
 communityRouter.post('/getBlogs',requireAuth, getBlogs);
+communityRouter.post('/getBlogDetails', requireAuth, getBlogDetails);
+communityRouter.post('/getLikeDetails', requireAuth, getLikeDetails);
 
 // ---------------------------------------- GROUPS ---------------------------------------------
 communityRouter.post('/createGroup', requireAuth, createGroup); //ok
