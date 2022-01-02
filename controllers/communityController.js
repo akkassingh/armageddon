@@ -181,7 +181,7 @@ module.exports.getBlogs = async (req, res, next) => {
         user = res.locals.animal
     const {counter} = req.body;
     try{
-        const blogs = await Blog.find({}).populate('peopleLiked.person', 'username avatar email phoneNumber').limit(10).skip(10*counter).lean();
+        const blogs = await Blog.find({}, 'title likes author authorType thumbnail').limit(10).skip(10*counter).lean();
         console.log(blogs)
         return res.send({"blogs" : blogs})
     }
@@ -190,6 +190,42 @@ module.exports.getBlogs = async (req, res, next) => {
         next(err)
     }
     
+}
+
+module.exports.getBlogDetails = async (req, res, next) => {
+    const {blogId} = req.body;
+    try{
+        const blog = await Blog.findById(blogId, 'title text thumbnail likes author date');
+        if (!blog){
+            return res.status(404).send({"message" : "No such blog exist!", "success" : false});
+        }
+        else{
+            return res.status(200).send({blog});
+        }
+    }
+    catch (err) {
+        console.log(err)
+        next(err);
+    }
+}
+
+module.exports.getLikeDetails = async (req, res, next) => {
+    const {blogId} = req.body;
+    try{
+        const blog = await Blog.findById(blogId, 'peopleLiked').populate('peopleLiked.person', 'name fullName avatar username')
+        console.log(blog)
+        if (!blog){
+            return res.status(404).send({"message" : "No such blog exist!", "success" : false});
+        }
+        else{
+            const like = blog.peopleLiked;
+            return res.status(200).send({like, "success" : true});
+        }
+    }
+    catch (err) {
+        console.log(err)
+        next (err)
+    }
 }
 
 // ---------------------------------------- GROUPS ---------------------------------------------
