@@ -537,6 +537,7 @@ searchAnimal = async(username,counter,type) => {
         username: true,
         avatar: true,
         fullName: true,
+        name : true,
       },
     },
   ]);
