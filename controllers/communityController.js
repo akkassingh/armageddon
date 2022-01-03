@@ -181,8 +181,19 @@ module.exports.getBlogs = async (req, res, next) => {
         user = res.locals.animal
     const {counter} = req.body;
     try{
-        const blogs = await Blog.find({}, 'title likes author authorType thumbnail').limit(10).skip(10*counter).lean();
-        console.log(blogs)
+        const blogs = await Blog.find({}, 'title likes author authorType thumbnail peopleLiked').limit(10).skip(10*counter).lean();
+        console.log(user._id)
+        for (var i=0;i<blogs.length;i++){
+            const found = blogs[i].peopleLiked.findIndex(function (ele) {
+                if (ele.person.toString() == user._id.toString()) return true;
+            })
+            if (found!=-1){
+                blogs[i]['isLiked'] = true
+            }
+            else
+            blogs[i]['isLiked'] = false;
+        }
+        
         return res.send({"blogs" : blogs})
     }
     catch (err){
@@ -193,13 +204,26 @@ module.exports.getBlogs = async (req, res, next) => {
 }
 
 module.exports.getBlogDetails = async (req, res, next) => {
+    let user = null
+    if (req.headers.type=="User")
+        user = res.locals.user
+    else
+        user = res.locals.animal
     const {blogId} = req.body;
     try{
-        const blog = await Blog.findById(blogId, 'title text thumbnail likes author date');
+        const blog = await Blog.findById(blogId, 'title text thumbnail likes author date peopleLiked').lean();
         if (!blog){
             return res.status(404).send({"message" : "No such blog exist!", "success" : false});
         }
         else{
+            const found = blog.peopleLiked.findIndex(function (ele, index) {
+                if (ele.person == user._id) return true;
+            })
+            if (found != -1){
+                blog['isLiked'] = true
+            }
+            else
+            blog['isLiked'] = false;
             return res.status(200).send({blog});
         }
     }
