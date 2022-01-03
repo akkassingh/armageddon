@@ -181,7 +181,7 @@ module.exports.getBlogs = async (req, res, next) => {
         user = res.locals.animal
     const {counter} = req.body;
     try{
-        const blogs = await Blog.find({}, 'title likes author authorType thumbnail peopleLiked').limit(10).skip(10*counter).lean();
+        const blogs = await Blog.find({}, 'title likes author authorType thumbnail peopleLiked date').limit(10).skip(10*counter).lean();
         console.log(user._id)
         for (var i=0;i<blogs.length;i++){
             const found = blogs[i].peopleLiked.findIndex(function (ele) {
@@ -211,7 +211,7 @@ module.exports.getBlogDetails = async (req, res, next) => {
         user = res.locals.animal
     const {blogId} = req.body;
     try{
-        const blog = await Blog.findById(blogId, 'title text thumbnail likes author date peopleLiked').lean();
+        const blog = await Blog.findById(blogId, 'title text thumbnail likes author date peopleLiked date').lean();
         if (!blog){
             return res.status(404).send({"message" : "No such blog exist!", "success" : false});
         }
