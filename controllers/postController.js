@@ -77,7 +77,7 @@ module.exports.createPost = async (req, res, next) => {
    user = res.locals.user
   else
    user = res.locals.animal
-  const { caption, filter: filterName, Animalauthor, Userauthor, authorType, group } = req.body;
+  const { caption, filter: filterName, Animalauthor, Userauthor, authorType, group, image, thumbnail, isGroupPost } = req.body;
   if (authorType == "Animal" && !Animalauthor){
     res.status(400).send("Invalid Request");
   }
@@ -93,68 +93,104 @@ module.exports.createPost = async (req, res, next) => {
     }
   });
 
-  if (!req.file) {
-    return res
-      .status(400)
-      .send({ error: "Please provide the image to upload." });
-  }
+  // if (!req.file) {
+  //   return res
+  //     .status(400)
+  //     .send({ error: "Please provide the image to upload." });
+  // }
 
-  cloudinary.config({
-    cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
-    api_key: process.env.CLOUDINARY_API_KEY,
-    api_secret: process.env.CLOUDINARY_API_SECRET,
-  });
+  // cloudinary.config({
+  //   cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
+  //   api_key: process.env.CLOUDINARY_API_KEY,
+  //   api_secret: process.env.CLOUDINARY_API_SECRET,
+  // });
 
   try {
-    const response = await cloudinary.uploader.upload(req.file.path);
-    const moderationResponse = await axios.get(
-      `https://api.moderatecontent.com/moderate/?key=${process.env.MODERATECONTENT_API_KEY}&url=${response.secure_url}`
-    );
+    // const response = await cloudinary.uploader.upload(req.file.path);
+    // const moderationResponse = await axios.get(
+    //   `https://api.moderatecontent.com/moderate/?key=${process.env.MODERATECONTENT_API_KEY}&url=${response.secure_url}`
+    // );
 
-    if (moderationResponse.data.error) {
-      return res
-        .status(500)
-        .send({ error: "Error moderating image, please try again later." });
-    }
+    // if (moderationResponse.data.error) {
+    //   return res
+    //     .status(500)
+    //     .send({ error: "Error moderating image, please try again later." });
+    // }
 
-    if (moderationResponse.data.rating_index > 2) {
-      return res.status(403).send({
-        error: "The content was deemed too explicit to upload.",
-      });
-    }
+    // if (moderationResponse.data.rating_index > 2) {
+    //   return res.status(403).send({
+    //     error: "The content was deemed too explicit to upload.",
+    //   });
+    // }
 
-    const thumbnailUrl = formatCloudinaryUrl(
-      response.secure_url,
-      {
-        width: 400,
-        height: 400,
-      },
-      true
-    );
-    fs.unlinkSync(req.file.path);
+    // const thumbnailUrl = formatCloudinaryUrl(
+    //   response.secure_url,
+    //   {
+    //     width: 400,
+    //     height: 400,
+    //   },
+    //   true
+    // );
+    // fs.unlinkSync(req.file.path);
     if (req.headers.type=="User"){
-      post = new Post({
-        image: response.secure_url,
-        thumbnail: thumbnailUrl,
-        filter: filterObject ? filterObject.filter : "",
-        caption,
-        hashtags,
-        Userauthor,
-        authorType,
-        group
-      });
+      if (group){
+        console.log("VALUE OF GRP ID IS", group);
+        post = new Post({
+          // image: response.secure_url,
+          image,
+          // thumbnail: thumbnailUrl,
+          thumbnail,
+          filter: filterObject ? filterObject.filter : "",
+          caption,
+          hashtags,
+          Userauthor,
+          authorType,
+          group
+        });
+      }
+      else{
+        post = new Post({
+          // image: response.secure_url,
+          image,
+          // thumbnail: thumbnailUrl,
+          thumbnail,
+          filter: filterObject ? filterObject.filter : "",
+          caption,
+          hashtags,
+          Userauthor,
+          authorType,
+        });
+      }
     }
     if (req.headers.type=="Animal"){
-      post = new Post({
-        image: response.secure_url,
-        thumbnail: thumbnailUrl,
-        filter: filterObject ? filterObject.filter : "",
-        caption,
-        hashtags,
-        Animalauthor,
-        authorType,
-        group
-      });
+      if (group){
+        post = new Post({
+          // image: response.secure_url,
+          // thumbnail: thumbnailUrl,
+          image,
+          thumbnail,
+          filter: filterObject ? filterObject.filter : "",
+          caption,
+          hashtags,
+          Animalauthor,
+          authorType,
+          group
+        });
+      }
+      else{
+        post = new Post({
+          // image: response.secure_url,
+          // thumbnail: thumbnailUrl,
+          image,
+          thumbnail,
+          filter: filterObject ? filterObject.filter : "",
+          caption,
+          hashtags,
+          Animalauthor,
+          authorType,
+        });
+      }
+      
     }
     // const postVote = new PostVote({
     //   post: post._id,

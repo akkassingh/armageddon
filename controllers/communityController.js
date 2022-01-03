@@ -5,6 +5,7 @@ const Group = require('../models/Group');
 const GroupMember = require('../models/GroupMember');
 const Post = require('../models/Post')
 const ObjectId = require("mongoose").Types.ObjectId;
+const PostVote = require("../models/PostVote")
 const unwantedUserFields = [
     "Userauthor.password",
     "Userauthor.private",
@@ -796,7 +797,6 @@ module.exports.retrieveGroupFeed = async (req, res, next) => {
               posts[i].isBookmarked = isBookmark
             }
           }
-          console.log(user.bookmarks)
           return res.status(200).send({posts, "success" : true});
     }
     catch (err) {
