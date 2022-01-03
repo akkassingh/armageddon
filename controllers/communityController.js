@@ -184,7 +184,6 @@ module.exports.getBlogs = async (req, res, next) => {
         const blogs = await Blog.find({}, 'title likes author authorType thumbnail peopleLiked').limit(10).skip(10*counter).lean();
         console.log(user._id)
         for (var i=0;i<blogs.length;i++){
-            console.log(blogs[i].peopleLiked);
             const found = blogs[i].peopleLiked.findIndex(function (ele) {
                 if (ele.person.toString() == user._id.toString()) return true;
             })
