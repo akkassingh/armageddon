@@ -218,7 +218,7 @@ module.exports.getBlogDetails = async (req, res, next) => {
         }
         else{
             const found = blog.peopleLiked.findIndex(function (ele, index) {
-                if (ele.person == user._id) return true;
+                if (ele.person.toString() == user._id.toString()) return true;
             })
             if (found != -1){
                 blog['isLiked'] = true
