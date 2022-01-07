@@ -8,6 +8,7 @@ const bcrypt = require("bcrypt");
 const axios = require("axios");
 const logger = require("../logger/logger");
 const dogNames = require('dog-names');
+const FcmToken = require('../models/FcmToken');
 
 const {
   sendConfirmationEmail,
@@ -1486,5 +1487,29 @@ module.exports.resendMobileOTP = async (req, res, next) => {
   catch (err){
     console.log(err)
     next(err)
+  }
+}
+
+module.exports.registerFCMtoken = async (req, res, next) => {
+  let type = null;
+  if (req.headers.type=="User"){
+    type = "User"
+  }
+  else type = "ServiceProvider";
+  let user = res.locals.user
+  const {token} = req.body;
+  try {
+    if (!token){
+      return res.status(400).send({"message" : "Provide a valid FCM Token", "success" : false});
+    }
+    await FcmToken.updateOne({user: user._id }, {
+        userType : type,
+        token,
+    }, {upsert : true});
+    return res.status(200).send({"message" : "Token updated successfully!", "success" : true});
+  }
+  catch (err) {
+    console.log(err);
+    next(err);
   }
 }
