@@ -384,6 +384,10 @@ module.exports.register = async (req, res, next) => {
   logger.info("*** Register method called *** ");
   const { email, password, type } = req.body;
   if (type && type === "sp") {
+    const alreadyMember = await ServiceProvider.find({email}, '_id');
+    if (alreadyMember){
+      return res.status(400).send({"message" : "This email already has an account on Tamely! PLease try login instead of signup!", "success" : false});
+    }
     let user = null;
     let confirmationToken = null;
 
@@ -439,7 +443,10 @@ module.exports.register = async (req, res, next) => {
   } else {
     let user = null;
     let confirmationToken = null;
-
+    const alreadyMember = await User.find({email}, '_id');
+    if (alreadyMember){
+      return res.status(400).send({"message" : "This email already has an account on Tamely! PLease try login instead of signup!", "success" : false});
+    }
     const emailError = validateEmail(email);
     if (emailError) return res.status(400).send({ error: emailError });
 
