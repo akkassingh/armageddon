@@ -445,7 +445,7 @@ module.exports.register = async (req, res, next) => {
     let confirmationToken = null;
     const alreadyMember = await User.find({email}, '_id');
     if (alreadyMember){
-      return res.status(400).send({"message" : "This email already has an account on Tamely! PLease try login instead of signup!", "success" : false});
+      return res.status(400).send({"message" : "This email already has an account on Tamely! PLease try logging in instead of signing up!", "success" : false});
     }
     const emailError = validateEmail(email);
     if (emailError) return res.status(400).send({ error: emailError });
