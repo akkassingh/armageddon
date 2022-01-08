@@ -18,7 +18,8 @@ const {
   sendOTPtoPhoneNumber,
   verifyMobileOTP,
   resendMobileOTP,
-  registerFCMtoken
+  registerFCMtoken,
+  sendNotification
 } = require('../controllers/authController');
 const { sendPasswordResetLink } = require('../utils/controllerUtils');
 
@@ -40,5 +41,6 @@ authRouter.post('/sendMobileOTP',sendOTPtoPhoneNumber);
 authRouter.post('/verifyMobileOTP', verifyMobileOTP);
 authRouter.post('/resendMobileOTP', resendMobileOTP);
 authRouter.post('/registerFCMtoken', requireAuth, registerFCMtoken);
+authRouter.post('/sendNotification',sendNotification);
 
 module.exports = authRouter;

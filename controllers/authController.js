@@ -9,6 +9,7 @@ const axios = require("axios");
 const logger = require("../logger/logger");
 const dogNames = require('dog-names');
 const FcmToken = require('../models/FcmToken');
+const admin = require("../admin");
 
 const {
   sendConfirmationEmail,
@@ -1517,6 +1518,32 @@ module.exports.registerFCMtoken = async (req, res, next) => {
   }
   catch (err) {
     console.log(err);
+    next(err);
+  }
+}
+const notification_options = {
+  priority: "high",
+  timeToLive: 60 * 60 * 24,
+};
+module.exports.sendNotification = async (req, res, next) => {
+  const {token} = req.body;
+  // const  registrationToken = "cNoE6AneRTS4cPGGI6zaBJ:APA91bHHw_nG1jk9IBLJhapPDZbIPTilLM8DzMSsJvMbj6P3SIc0RRGiIPSXbUXlPM4nrOcQqCdYf-_6H7-r1eK_b0VvjVUAXEP0B-WvAuhr-y_hPCygHiSEKUFlp2z-7i44L5ME8fCR"
+  const registrationToken = token;
+  const message = {
+    notification: {
+       title: "Tamely!",
+       body: "Welcome to Tamely!",
+      },
+    };
+  const options =  notification_options;
+
+  try{
+    const response = await admin.messaging().sendToDevice(registrationToken, message, options);
+    console.log(response);
+    return res.status(200).send({response});
+  }
+  catch(err){
+    console.log(err)
     next(err);
   }
 }
