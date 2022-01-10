@@ -10,6 +10,7 @@ const jwt = require("jwt-simple");
 const fs = require("fs");
 const cloudinary = require("cloudinary").v2;
 const dogNames = require('dog-names');
+const {notifyUser, notifyAnimal} = require("../utils/controllerUtils");
 cloudinary.config({
   cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
   api_key: process.env.CLOUDINARY_API_KEY,
@@ -297,6 +298,15 @@ module.exports.addGuardian = async (req, res, next) => {
       { _id: animal._id },
       { $push : {guardians: userObject} }
     );
+    const n_obj = {
+      body : `${animal.username} has requested you to become the Guardian!`,
+      image : formatCloudinaryUrl(
+        animal.avatar,
+        { height: 256, width: 512, x: '100%', y: '100%' },
+        true
+      ),
+    }
+    notifyUser(n_obj,'tamelyid',idUser);
     return res.status(201).send({message: "Your request has been sent successfully!"});
   } catch (err) {
     logger.info(err);
@@ -314,7 +324,7 @@ module.exports.addRelatedAnimals = async (req, res, next) => {
     return res.status(400).send({error: "Please select a different animal!"});
   }
   try {
-    const animal = await Animal.findById(animalId, 'relatedAnimals');
+    const animal = await Animal.findById(animalId, 'relatedAnimals username avatar');
     const relatedAnimal = await Animal.findById(idRelatedAnimal);
     if (!relatedAnimal) {
       return res.status(404).send({ error: "Invalid animal!" });
@@ -355,6 +365,15 @@ module.exports.addRelatedAnimals = async (req, res, next) => {
       { _id: relatedAnimal._id },
       { $push: { relatedAnimals: objRelatedAnimal } }
     );
+    const n_obj = {
+      body : `${animal.username} requested to be ${relatedAnimal.username}'s ${oppRelation}!`,
+      image : formatCloudinaryUrl(
+        animal.avatar,
+        { height: 256, width: 512, x: '100%', y: '100%' },
+        true
+      ),
+    }
+    notifyAnimal(n_obj,'tamelyid',idRelatedAnimal);
     return res
       .status(201)
       .json({ message: "Your request has been sent successfully!" });
@@ -368,9 +387,9 @@ module.exports.addRelatedAnimals = async (req, res, next) => {
 module.exports.confirmRelation = async (req, res, next) => {
   const { idRelatedAnimal, animalId } = req.body;
   try {
-    const animal = await Animal.findById(animalId, 'relatedAnimals');
+    const animal = await Animal.findById(animalId, 'relatedAnimals username avatar');
     console.log(animal);
-    const relatedAnimal = await Animal.findById(idRelatedAnimal, 'relatedAnimals');
+    const relatedAnimal = await Animal.findById(idRelatedAnimal, 'relatedAnimals username');
     console.log(relatedAnimal)
     if (!relatedAnimal || !animal)
       return res.status(404).send({ error: "Invalid animal!" });
@@ -416,6 +435,15 @@ module.exports.confirmRelation = async (req, res, next) => {
         },
       }
     );
+    const n_obj = {
+      body : `${animal.username} accepted ${relatedAnimal.username}'s relation request!`,
+      image : formatCloudinaryUrl(
+        animal.avatar,
+        { height: 256, width: 512, x: '100%', y: '100%' },
+        true
+      ),
+    };
+    notifyAnima(n_obj,'tamelyid',idRelatedAnimal);
     return res.status(201).send({"message" : "Request Accepted Successfully!"});
   } catch (err) {
     logger.info(err);
@@ -660,7 +688,7 @@ module.exports.confirmGuardian = async (req, res, next) => {
     return res.status(400).send({"message" : "Invalid user!", "success" : false});
   }
   try{
-    const animal = await Animal.findById(animalId, 'guardians');
+    const animal = await Animal.findById(animalId, 'guardians username');
     if (!animal){
       return res.status(404).send({"message" : "Pet does not exist!", "success" : false});
     }
@@ -693,6 +721,15 @@ module.exports.confirmGuardian = async (req, res, next) => {
     guardians[idx_g].confirmed = true;
     await User.updateOne({ _id: user._id}, {pets : pets});
     await Animal.updateOne({_id : animalId},{guardians: guardians});
+    const n_obj = {
+      body : `${user.username} accepted the request to be ${animal.username}'s guardian!`,
+      image : formatCloudinaryUrl(
+        user.avatar,
+        { height: 256, width: 512, x: '100%', y: '100%' },
+        true
+      ),
+    }
+    notifyAnimal(n_obj,'tamelyid',animalId);
     return res.status(201).send({"message" : "Request Accepted!", "success" : true});
   }
   catch (err){
