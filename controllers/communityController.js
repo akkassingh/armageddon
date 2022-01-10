@@ -6,6 +6,7 @@ const GroupMember = require('../models/GroupMember');
 const Post = require('../models/Post')
 const ObjectId = require("mongoose").Types.ObjectId;
 const PostVote = require("../models/PostVote")
+const {notifyUser, notifyAnimal} = require("../utils/controllerUtils");
 const unwantedUserFields = [
     "Userauthor.password",
     "Userauthor.private",
@@ -369,7 +370,7 @@ module.exports.invitePeople = async (req, res, next) => {
             return res.status(400).send({"message" : "Invalid information provided!", "success" : false});
         }
         else{
-            const group = await Group.findById(groupId,'_id');
+            const group = await Group.findById(groupId,'_id name');
             if (!group){
                 return res.status(400).send({"message" : "Invalid information provided!", "success" : false});
             }
@@ -394,7 +395,17 @@ module.exports.invitePeople = async (req, res, next) => {
                 personType: req.headers.type,
                 personInvited : user._id
             }); 
+            const n_obj = {
+                body : `${user.username} invited you to join ${group.name} group.`,
+                image: formatCloudinaryUrl(
+                    user.avatar,
+                    { height: 256, width: 512, x: '100%', y: '100%' },
+                    true
+                  ),
+            }
             await groupMember.save();
+            if (type =="User") notifyUser(n_obj,'tamelyid',userId);
+            else notifyAnimal(n_obj, 'tamelyid', userId);
             return res.status(201).send({"message" : "Invitation was sent successfully!", "success" : true});
         }
     }
@@ -505,6 +516,7 @@ module.exports.makeAdmin = async (req, res, next) => {
         if (!userDocument){
             return res.status(404).send({"message" : "Invalid request!", "success" : false});
         }
+        const group = await Group.findById(groupId, 'name');
         const isMember = await GroupMember.findOne({
             user : user._id,
             group : ObjectId(groupId),
@@ -523,6 +535,16 @@ module.exports.makeAdmin = async (req, res, next) => {
             return res.status(200).send({"message" : `${userDocument.username} is already an Admin!`, "success" : false});
         }
         await GroupMember.updateOne({_id : userIsMember._id}, { isAdmin : true });
+        const n_obj = {
+            body : `You are now an Admin of ${group.name} group.`,
+            image : formatCloudinaryUrl(
+                group.avatar,
+                { height: 256, width: 512, x: '100%', y: '100%' },
+                true
+            ),
+        }
+        if (userType == "User") notifyUser(n_obj, 'tamelyid', userId)
+        else notifyAnimal(n_obj, 'tamelyid', userId);
         return res.status(201).send({"message" : `${userDocument.username} is now an Admin!`, "success" : true});
     }
     catch (err) {

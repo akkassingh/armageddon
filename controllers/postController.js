@@ -18,6 +18,8 @@ const socketHandler = require("../handlers/socketHandler");
 const fs = require("fs");
 const ObjectId = require("mongoose").Types.ObjectId;
 const jwt = require("jwt-simple");
+const {notify, notifyUser, notifyAnimal} = require('../utils/controllerUtils');
+const FcmToken = require("../models/FcmToken");
 
 const {
   retrieveComments,
@@ -428,8 +430,29 @@ module.exports.votePost = async (req, res, next) => {
           post.filter,
           post._id
         );
-          console.log('loooooo')
-    
+        if (post.authorType == "User"){
+            let body = `${user.username} liked your post recently.`
+            let channel = 'tamelyid';
+            let image = formatCloudinaryUrl(
+              post.image,
+              { height: 256, width: 512, x: '100%', y: '100%' },
+              true
+            );
+            const n_obj = {body, image}
+            notifyUser(n_obj,channel,post.Userauthor);
+          
+        }
+        else{
+          let n_obj = {
+            body : `${user.username} liked ${animalDoc.username}'s post recently.`,
+            image : formatCloudinaryUrl(
+              post.image,
+              { height: 256, width: 512, x: '100%', y: '100%' },
+              true
+            ),
+          }
+          notifyAnimal(n_obj,'tamelyid',post.Animalauthor);
+        }
         // Find the username of the post author
         // const postDocument = await Post.findById(post._id).populate('author');
         // image = formatCloudinaryUrl(
@@ -496,7 +519,30 @@ module.exports.postComment = async (req, res, next) => {
       },
     });
     await postComment.save();
-    return res.send({ success: true });
+    res.send({ success: true });
+    const post = await Post.findOne({_id : ObjectId(postId)}, 'authorType Animalauthor Userauthor');
+    if (post.authorType == "User"){
+        let body = `${user.username} commented on your post recently.`
+        let channel = 'tamelyid';
+        let image = formatCloudinaryUrl(
+          post.image,
+          { height: 256, width: 512, x: '100%', y: '100%' },
+          true
+        );
+        const n_obj = {body, image}
+        notifyUser(n_obj,channel,post.Userauthor);
+    }
+    else{
+      let n_obj = {
+        body : `${user.username} commented on ${animalDoc.username}'s post recently.`,
+        image : formatCloudinaryUrl(
+          post.image,
+          { height: 256, width: 512, x: '100%', y: '100%' },
+          true
+        ),
+      }
+      notifyAnimal(n_obj,'tamelyid',post.Animalauthor);
+    }
   } catch (err) {
     next(err);
   }

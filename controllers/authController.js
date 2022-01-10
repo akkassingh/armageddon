@@ -18,6 +18,8 @@ const {
   sendPasswordResetOTP,
   sendOTPEmail,
   hashPassword,
+  notify,
+  notifyUser, notifyAnimal
 } = require("../utils/controllerUtils");
 const { validateEmail, validatePassword } = require("../utils/validation");
 
@@ -1526,21 +1528,16 @@ const notification_options = {
   timeToLive: 60 * 60 * 24,
 };
 module.exports.sendNotification = async (req, res, next) => {
-  const {token} = req.body;
-  // const  registrationToken = "cNoE6AneRTS4cPGGI6zaBJ:APA91bHHw_nG1jk9IBLJhapPDZbIPTilLM8DzMSsJvMbj6P3SIc0RRGiIPSXbUXlPM4nrOcQqCdYf-_6H7-r1eK_b0VvjVUAXEP0B-WvAuhr-y_hPCygHiSEKUFlp2z-7i44L5ME8fCR"
-  const registrationToken = token;
-  const message = {
-    notification: {
-       title: "Tamely!",
-       body: "Welcome to Tamely!",
-      },
-    };
-  const options =  notification_options;
-
+  const {id} = req.body;
   try{
-    const response = await admin.messaging().sendToDevice(registrationToken, message, options);
-    console.log(response);
-    return res.status(200).send({response});
+    const n_obj = {
+      title : 'Tamely',
+      body : 'Welcome to Tamely!',
+      image : ''
+    }
+    notifyUser(obj, 'tamelyid',id);
+    notifyAnimal(obj,'tamelyid',id);
+    return res.status(200).send(true);
   }
   catch(err){
     console.log(err)
