@@ -6,7 +6,7 @@ const GroupMember = require('../models/GroupMember');
 const Post = require('../models/Post')
 const ObjectId = require("mongoose").Types.ObjectId;
 const PostVote = require("../models/PostVote")
-const {notifyUser, notifyAnimal} = require("../utils/controllerUtils");
+const {notifyUser, notifyAnimal, formatCloudinaryUrl} = require("../utils/controllerUtils");
 const unwantedUserFields = [
     "Userauthor.password",
     "Userauthor.private",
@@ -51,8 +51,9 @@ const unwantedUserFields = [
     "Animalauthor.__v"
   ];
 
- /*
-     * Calculates the haversine distance between point A, and B.
+ /**
+     * Function to calculate distance between 2 geo points
+     * @function haversineDistance
      * @param {Number} lat1 point A's latitude
      * @param {Number} lon1 point A's longitude
      * @param {Number} lat2 point B's latitude
@@ -1090,7 +1091,7 @@ module.exports.getStrays = async (req, res, next) => {
                     },
                 },
             }
-        }, 'name username guardians avatar location').populate('guardians.user', 'fullName avatar username').skip(20*counter).limit(20).lean();
+        }, 'name username guardians avatar location gender category breed bio age registeredWithKennelClub').populate('guardians.user', 'fullName avatar username').skip(20*counter).limit(20).lean();
         for (var i=0;i<animals.length;i++){
             animals[i]['distance'] = Math.round(haversineDistance(lat,long,animals[i].location.coordinates[1], animals[i].location.coordinates[0])*10)/10;
         }
@@ -1123,7 +1124,7 @@ module.exports.getPlayBuddies = async (req, res, next) => {
                     },
                 },
             }
-        }, 'name username guardians avatar location').populate('guardians.user', 'fullName avatar username').skip(20*counter).limit(20).lean();
+        }, 'name username guardians avatar location gender category breed bio age registeredWithKennelClub').populate('guardians.user', 'fullName avatar username').skip(20*counter).limit(20).lean();
         for (var i=0;i<animals.length;i++){
             animals[i]['distance'] = Math.round(haversineDistance(lat,long,animals[i].location.coordinates[1], animals[i].location.coordinates[0])*10)/10;
         }
@@ -1156,7 +1157,7 @@ module.exports.getAdoption = async (req, res, next) => {
                     },
                 },
             }
-        }, 'name username guardians avatar location').populate('guardians.user', 'fullName avatar username').skip(20*counter).limit(20).lean();
+        }, 'name username guardians avatar location gender category breed bio age registeredWithKennelClub').populate('guardians.user', 'fullName avatar username').skip(20*counter).limit(20).lean();
         for (var i=0;i<animals.length;i++){
             animals[i]['distance'] = Math.round(haversineDistance(lat,long,animals[i].location.coordinates[1], animals[i].location.coordinates[0])*10)/10;
         }
@@ -1188,7 +1189,7 @@ module.exports.getMating = async (req, res, next) => {
                     },
                 },
             }
-        }, 'name username guardians avatar location').populate('guardians.user', 'fullName avatar username').skip(20*counter).limit(20).lean();
+        }, 'name username guardians avatar location gender category breed bio age registeredWithKennelClub').populate('guardians.user', 'fullName avatar username').skip(20*counter).limit(20).lean();
         for (var i=0;i<animals.length;i++){
             animals[i]['distance'] = Math.round(haversineDistance(lat,long,animals[i].location.coordinates[1], animals[i].location.coordinates[0])*10)/10;
         }

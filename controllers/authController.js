@@ -1533,10 +1533,10 @@ module.exports.sendNotification = async (req, res, next) => {
     const n_obj = {
       title : 'Tamely',
       body : 'Welcome to Tamely!',
-      image : ''
+      image : 'https://res.cloudinary.com/tamely-app/image/upload/v1640976197/wwikfqeapmqxu4xnlffe.jpg'
     }
-    notifyUser(obj, 'tamelyid',id);
-    notifyAnimal(obj,'tamelyid',id);
+    notifyUser(n_obj, 'tamelyid',id);
+    notifyAnimal(n_obj,'tamelyid',id);
     return res.status(200).send(true);
   }
   catch(err){

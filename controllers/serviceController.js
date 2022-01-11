@@ -20,6 +20,7 @@ cloudinary.config({
   api_key: process.env.CLOUDINARY_API_KEY,
   api_secret: process.env.CLOUDINARY_API_SECRET,
 });
+const {notifyUser} = require("../utils/controllerUtils");
 
 module.exports.serviceList = async (req, res, next) => {
   try {
@@ -391,9 +392,16 @@ module.exports.changeAppointmentstatus = async (req, res, next) => {
       { bookingStatus: req.body.bookingStatus},
       { new: true });
     if(req.body.bookingStatus==1){
+      // booking is getting accepted
+      const obj = {
+        body : `Your appointment has been confirmed by our service provider!`,
+        image : '',
+      }
       await ServiceAppointment.deleteMany({ _id: { $nin: [ObjectId(req.body.appointmentId)] }, bookingDetails:serviceList.bookingDetails})
       await bookingDetails.findByIdAndUpdate({_id:serviceList.bookingDetails},{status:1})
+      notifyUser(obj, 'tamelyid',serviceList.User)
     }
+    //TODO : What if booking status = 2 or 3?
     //if booking status =3 =>servicestatus=2
     return res.status(200).send({success:true});
   } catch (err) {
@@ -627,6 +635,11 @@ module.exports.postPayment = async (req, res, next) => {
   if (!bookingId) {
     return res.status(400).send({"error": "Invalid Request!"})
   }
+  const obj = {
+    body : 'Your booking has been successfully booked!🥳',
+    image : ''
+  }
+  notifyUser(obj,'tamelyid',user._id);
   try{
     const bookingStatus = await bookingDetails.findById(bookingId, 'paymentDetails');
     if (!bookingStatus){
