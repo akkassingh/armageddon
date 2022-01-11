@@ -1069,7 +1069,7 @@ module.exports.declineInvitation = async (req, res, next) => {
         next(err);
     }
 }
-
+const searchParams = 'name username guardians avatar location gender category breed bio age registeredWithKennelClub playFrom playTo animalType'
 // ---------------------------------------- STRAYS ---------------------------------------------
 
 module.exports.getStrays = async (req, res, next) => {
@@ -1078,10 +1078,10 @@ module.exports.getStrays = async (req, res, next) => {
         user = res.locals.user
     else
         user = res.locals.animal
-    const {lat, long, counter} = req.body;
+    const {lat, long, counter, type, name} = req.body;
     try{
-        const animals = await Animal.find({
-            category : 'Stray',
+        let find_obj = {
+            mating : true,
             location : {
                 $near : {
                     $maxDistance : 100000,
@@ -1090,8 +1090,15 @@ module.exports.getStrays = async (req, res, next) => {
                         coordinates : [long,lat]
                     },
                 },
-            }
-        }, 'name username guardians avatar location gender category breed bio age registeredWithKennelClub animalType').populate('guardians.user', 'fullName avatar username').skip(20*counter).limit(20).lean();
+            },
+        }; 
+        if (name){
+            find_obj['$or'] = [{username: { $regex: new RegExp(name,"i")}},{name: { $regex: new RegExp(name,"i")}}]
+        }
+        if (type){
+            find_obj['animalType'] = type;
+        }
+        const animals = await Animal.find(find_obj, searchParams).populate('guardians.user', 'fullName avatar username').skip(20*counter).limit(20).lean();
         for (var i=0;i<animals.length;i++){
             animals[i]['distance'] = Math.round(haversineDistance(lat,long,animals[i].location.coordinates[1], animals[i].location.coordinates[0])*10)/10;
         }
@@ -1104,17 +1111,16 @@ module.exports.getStrays = async (req, res, next) => {
 }
 
 // ---------------------------------------- PLAYBUDDIES ---------------------------------------------
-
 module.exports.getPlayBuddies = async (req, res, next) => {
     let user = null
     if (req.headers.type=="User")
         user = res.locals.user
     else
         user = res.locals.animal
-    const {lat, long, counter} = req.body;
+    const {lat, long, counter, type, name} = req.body;
     try{
-        const animals = await Animal.find({
-            playBuddies : true,
+        let find_obj = {
+            mating : true,
             location : {
                 $near : {
                     $maxDistance : 100000,
@@ -1123,8 +1129,15 @@ module.exports.getPlayBuddies = async (req, res, next) => {
                         coordinates : [long,lat]
                     },
                 },
-            }
-        }, 'name username guardians avatar location gender category breed bio age registeredWithKennelClub playFrom playTo animalType').populate('guardians.user', 'fullName avatar username').skip(20*counter).limit(20).lean();
+            },
+        }; 
+        if (name){
+            find_obj['$or'] = [{username: { $regex: new RegExp(name,"i")}},{name: { $regex: new RegExp(name,"i")}}]
+        }
+        if (type){
+            find_obj['animalType'] = type;
+        }
+        const animals = await Animal.find(find_obj, searchParams).populate('guardians.user', 'fullName avatar username').skip(20*counter).limit(20).lean();
         for (var i=0;i<animals.length;i++){
             animals[i]['distance'] = Math.round(haversineDistance(lat,long,animals[i].location.coordinates[1], animals[i].location.coordinates[0])*10)/10;
         }
@@ -1144,10 +1157,10 @@ module.exports.getAdoption = async (req, res, next) => {
         user = res.locals.user
     else
         user = res.locals.animal
-    const {lat, long, counter} = req.body;
+    const {lat, long, counter, type, name} = req.body;
     try{
-        const animals = await Animal.find({
-            adoption : true,
+        let find_obj = {
+            mating : true,
             location : {
                 $near : {
                     $maxDistance : 100000,
@@ -1156,8 +1169,15 @@ module.exports.getAdoption = async (req, res, next) => {
                         coordinates : [long,lat]
                     },
                 },
-            }
-        }, 'name username guardians avatar location gender category breed bio age registeredWithKennelClub animalType').populate('guardians.user', 'fullName avatar username').skip(20*counter).limit(20).lean();
+            },
+        }; 
+        if (name){
+            find_obj['$or'] = [{username: { $regex: new RegExp(name,"i")}},{name: { $regex: new RegExp(name,"i")}}]
+        }
+        if (type){
+            find_obj['animalType'] = type;
+        }
+        const animals = await Animal.find(find_obj, searchParams).populate('guardians.user', 'fullName avatar username').skip(20*counter).limit(20).lean();
         for (var i=0;i<animals.length;i++){
             animals[i]['distance'] = Math.round(haversineDistance(lat,long,animals[i].location.coordinates[1], animals[i].location.coordinates[0])*10)/10;
         }
@@ -1176,9 +1196,9 @@ module.exports.getMating = async (req, res, next) => {
         user = res.locals.user
     else
         user = res.locals.animal
-    const {lat,long,counter} = req.body;
+    const {lat,long,counter, type, name} = req.body;
     try {
-        const animals = await Animal.find({
+        let find_obj = {
             mating : true,
             location : {
                 $near : {
@@ -1188,8 +1208,15 @@ module.exports.getMating = async (req, res, next) => {
                         coordinates : [long,lat]
                     },
                 },
-            }
-        }, 'name username guardians avatar location gender category breed bio age registeredWithKennelClub').populate('guardians.user', 'fullName avatar username animalType').skip(20*counter).limit(20).lean();
+            },
+        }; 
+        if (name){
+            find_obj['$or'] = [{username: { $regex: new RegExp(name,"i")}},{name: { $regex: new RegExp(name,"i")}}]
+        }
+        if (type){
+            find_obj['animalType'] = type;
+        }
+        const animals = await Animal.find(find_obj, searchParams).populate('guardians.user', 'fullName avatar username').skip(20*counter).limit(20).lean();
         for (var i=0;i<animals.length;i++){
             animals[i]['distance'] = Math.round(haversineDistance(lat,long,animals[i].location.coordinates[1], animals[i].location.coordinates[0])*10)/10;
         }
