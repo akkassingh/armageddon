@@ -17,7 +17,7 @@ const ObjectId = require("mongoose").Types.ObjectId;
 const logger = require("../logger/logger");
 const cloudinary = require("cloudinary").v2;
 const fs = require("fs");
-
+const {notifyUser, formatCloudinaryUrl} = require("../utils/controllerUtils");
 const Razorpay = require("razorpay");
 
 const razorPayInstance = new Razorpay({
@@ -173,7 +173,6 @@ module.exports.bookService = async (req, res, next) => {
       resp = await ServiceAppointmentSave.save();
       //console.log(st)
     }
-
     return res.status(200).send({bookingId:ServiceBookingModel._id});
   } catch (err) {
     console.log(err);
