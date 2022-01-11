@@ -1124,7 +1124,7 @@ module.exports.getPlayBuddies = async (req, res, next) => {
                     },
                 },
             }
-        }, 'name username guardians avatar location gender category breed bio age registeredWithKennelClub').populate('guardians.user', 'fullName avatar username').skip(20*counter).limit(20).lean();
+        }, 'name username guardians avatar location gender category breed bio age registeredWithKennelClub playFrom playTo').populate('guardians.user', 'fullName avatar username').skip(20*counter).limit(20).lean();
         for (var i=0;i<animals.length;i++){
             animals[i]['distance'] = Math.round(haversineDistance(lat,long,animals[i].location.coordinates[1], animals[i].location.coordinates[0])*10)/10;
         }
