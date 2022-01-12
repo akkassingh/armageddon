@@ -1834,6 +1834,7 @@ module.exports.follow = async (req, res, next) => {
       await followerDocument.save();
       await followingDocument.save();
       res.send({ success: true });
+      const isUser = User.findOne({_id : toId}, '_id');
       if (isUser){
         let title = 'Tamely'
         let body = `${user.username} just followed you!🥳`
