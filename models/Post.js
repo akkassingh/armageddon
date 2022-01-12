@@ -36,6 +36,9 @@ const PostSchema = new Schema({
   //     enum: ["Animal", "Human"],
   //   },
   // },
+},
+{
+  timestamps: true
 });
 
 PostSchema.pre("deleteOne", async function (next) {

@@ -110,6 +110,9 @@ const AnimalSchema = new Schema({
     type : Boolean,
     default : false,
   }
+},
+{
+  timestamps: true
 });
 
 AnimalSchema.index({ location: "2dsphere" });

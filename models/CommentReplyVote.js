@@ -20,6 +20,9 @@ const CommentReplyVoteSchema = new Schema({
     type: Date,
     default: Date.now,
   },
+},
+{
+  timestamps: true
 });
 
 const commentReplyVoteModel = mongoose.model(

@@ -13,6 +13,9 @@ const FcmTokenSchema = new Schema({
         type : String,
         enum : ['User', 'ServiceProvider'],
     }
+},
+{
+  timestamps: true
 });
 
 

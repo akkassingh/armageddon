@@ -80,6 +80,9 @@ const UserSchema = new Schema({
     required: false,
     unique: [true, "A user with this phone number already exists"],
   }
+},
+{
+  timestamps: true
 });
 
 // UserSchema.pre('save', function (next) {

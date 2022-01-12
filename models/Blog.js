@@ -34,6 +34,9 @@ const BlogSchema = new Schema({
             },
         }
     ]
+},
+{
+  timestamps: true
 });
 
 const Blog = mongoose.model("Blog", BlogSchema);

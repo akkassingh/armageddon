@@ -14,6 +14,9 @@ const ServiceTypeSchema = new Schema({
     type: String,
     required: true,
   },
+},
+{
+  timestamps: true
 });
 
 const ServiceType = mongoose.model("ServiceType", ServiceTypeSchema);

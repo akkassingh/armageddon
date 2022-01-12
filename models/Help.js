@@ -11,6 +11,9 @@ const HelpSchema = new Schema({
         type: Schema.ObjectId,
         ref: 'User'
     }
+},
+{
+  timestamps: true
 });
 
 const Help = mongoose.model("Help", HelpSchema);

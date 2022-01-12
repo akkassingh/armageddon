@@ -10,6 +10,9 @@ const QuickbloxSchema = new Schema({
     partnerChatID: Number,
     dialogID: String,
    
+},
+{
+  timestamps: true
 });
 
 const Quickblox = mongoose.model("Quickblox", QuickbloxSchema);
