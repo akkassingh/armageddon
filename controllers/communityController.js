@@ -5,7 +5,8 @@ const Group = require('../models/Group');
 const GroupMember = require('../models/GroupMember');
 const Post = require('../models/Post')
 const ObjectId = require("mongoose").Types.ObjectId;
-const PostVote = require("../models/PostVote")
+const PostVote = require("../models/PostVote");
+const jwt = require("jwt-simple");
 const {notifyUser, notifyAnimal, formatCloudinaryUrl} = require("../utils/controllerUtils");
 const unwantedUserFields = [
     "Userauthor.password",
@@ -1101,6 +1102,8 @@ module.exports.getStrays = async (req, res, next) => {
         const animals = await Animal.find(find_obj, searchParams).populate('guardians.user', 'fullName avatar username').skip(20*counter).limit(20).lean();
         for (var i=0;i<animals.length;i++){
             animals[i]['distance'] = Math.round(haversineDistance(lat,long,animals[i].location.coordinates[1], animals[i].location.coordinates[0])*10)/10;
+            const token = jwt.encode({ id: animals[i]._id}, process.env.JWT_SECRET);
+            animals[i]['token'] = token;
         }
         return res.status(200).send({animals})
     }
@@ -1140,6 +1143,8 @@ module.exports.getPlayBuddies = async (req, res, next) => {
         const animals = await Animal.find(find_obj, searchParams).populate('guardians.user', 'fullName avatar username').skip(20*counter).limit(20).lean();
         for (var i=0;i<animals.length;i++){
             animals[i]['distance'] = Math.round(haversineDistance(lat,long,animals[i].location.coordinates[1], animals[i].location.coordinates[0])*10)/10;
+            const token = jwt.encode({ id: animals[i]._id}, process.env.JWT_SECRET);
+            animals[i]['token'] = token;
         }
         return res.status(200).send({animals})
     }
@@ -1180,6 +1185,7 @@ module.exports.getAdoption = async (req, res, next) => {
         const animals = await Animal.find(find_obj, searchParams).populate('guardians.user', 'fullName avatar username').skip(20*counter).limit(20).lean();
         for (var i=0;i<animals.length;i++){
             animals[i]['distance'] = Math.round(haversineDistance(lat,long,animals[i].location.coordinates[1], animals[i].location.coordinates[0])*10)/10;
+            animals[i]['token'] = jwt.encode({ id: animals[i]._id}, process.env.JWT_SECRET);
         }
         return res.status(200).send({animals});
     }
@@ -1219,6 +1225,7 @@ module.exports.getMating = async (req, res, next) => {
         const animals = await Animal.find(find_obj, searchParams).populate('guardians.user', 'fullName avatar username').skip(20*counter).limit(20).lean();
         for (var i=0;i<animals.length;i++){
             animals[i]['distance'] = Math.round(haversineDistance(lat,long,animals[i].location.coordinates[1], animals[i].location.coordinates[0])*10)/10;
+            animals[i]['token'] = jwt.encode({ id: animals[i]._id}, process.env.JWT_SECRET);
         }
         return res.status(200).send({animals});
     }

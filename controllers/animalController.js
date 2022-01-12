@@ -737,3 +737,16 @@ module.exports.confirmGuardian = async (req, res, next) => {
     next(err);
   }
 }
+
+module.exports.setAmbassador = async (req, res, next) => {
+  try{
+    const animal = await Animal.find({}, '_id');
+    for (var i=0; i< animal.length;i++){
+      await Animal.updateOne({_id : ObjectId(animal[i]._id)}, {isBrandAmbassador : false});
+    }
+    return res.status(200).send(true);
+  }
+  catch (err){
+    console.log(err)
+  }
+}

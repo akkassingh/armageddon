@@ -685,7 +685,7 @@ module.exports.facebookLoginAuthentication = async (req, res, next) => {
       console.log(fbUser.data);
       const primaryEmail = fbUser.data.email;
       const facebookId = fbUser.data.id;
-      const userDocument = await User.findOne({$or: [{ faceBookUserId: facebookId }, {email: primaryEmail}]}, '_id email username avatar googleUserId facebookUserId');
+      const userDocument = await User.findOne({$or: [{ faceBookUserId: facebookId }, {email: primaryEmail}]}, '_id email username avatar googleUserId faceBookUserId');
       console.log(userDocument, "userDoc")
       let isNewUser = true;
       if (userDocument) {
