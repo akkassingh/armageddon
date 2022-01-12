@@ -395,7 +395,7 @@ module.exports.changeAppointmentstatus = async (req, res, next) => {
       // booking is getting accepted
       const obj = {
         body : `Your appointment has been confirmed by our service provider!`,
-        image : '',
+        image : 'https://res.cloudinary.com/tamely-app/image/upload/v1640976197/wwikfqeapmqxu4xnlffe.jpg',
       }
       await ServiceAppointment.deleteMany({ _id: { $nin: [ObjectId(req.body.appointmentId)] }, bookingDetails:serviceList.bookingDetails})
       await bookingDetails.findByIdAndUpdate({_id:serviceList.bookingDetails},{status:1})
@@ -637,7 +637,7 @@ module.exports.postPayment = async (req, res, next) => {
   }
   const obj = {
     body : 'Your booking has been successfully booked!🥳',
-    image : ''
+    image : 'https://res.cloudinary.com/tamely-app/image/upload/v1640976197/wwikfqeapmqxu4xnlffe.jpg'
   }
   notifyUser(obj,'tamelyid',user._id);
   try{

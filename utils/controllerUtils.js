@@ -37,7 +37,7 @@ module.exports.notify = async(notif, channel) => {
       },
   };
   try{
-    admin.messaging().sendToDevice(notif.token, message, options);
+    await admin.messaging().sendToDevice(notif.token, message, options);
     return true;
     //  "failureCount": 0,
     //  "successCount": 1,
