@@ -10,6 +10,7 @@ const {
   formatCloudinaryUrl,
   sendCommentNotification,
   sendMentionNotification,
+  notifyUser, notifyAnimal
 } = require('../utils/controllerUtils');
 
 module.exports.createComment = async (req, res, next) => {
@@ -62,6 +63,29 @@ module.exports.createComment = async (req, res, next) => {
   }
 
   try {
+    if (post.authorType == "User"){
+      let body = `${user.username} liked your post recently.`
+      let channel = 'tamelyid';
+      let image = formatCloudinaryUrl(
+        post.image,
+        { height: 256, width: 512, x: '100%', y: '100%' },
+        true
+      );
+      const n_obj = {body, image}
+      notifyUser(n_obj,channel,post.Userauthor);
+    
+    }
+    else{
+      let n_obj = {
+        body : `${user.username} liked ${animalDoc.username}'s post recently.`,
+        image : formatCloudinaryUrl(
+          post.image,
+          { height: 256, width: 512, x: '100%', y: '100%' },
+          true
+        ),
+      }
+      notifyAnimal(n_obj,'tamelyid',post.Animalauthor);
+    }
     // Sending comment notification
     let image = formatCloudinaryUrl(
       post.image,

@@ -740,11 +740,8 @@ module.exports.confirmGuardian = async (req, res, next) => {
 
 module.exports.setAmbassador = async (req, res, next) => {
   try{
-    const animal = await Animal.find({}, '_id');
-    for (var i=0; i< animal.length;i++){
-      await Animal.updateOne({_id : ObjectId(animal[i]._id)}, {isBrandAmbassador : false});
-    }
-    return res.status(200).send(true);
+    const token = jwt.encode({id : req.body.id},process.env.JWT_SECRET);
+    res.send(token);
   }
   catch (err){
     console.log(err)
