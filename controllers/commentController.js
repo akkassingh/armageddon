@@ -64,7 +64,7 @@ module.exports.createComment = async (req, res, next) => {
 
   try {
     if (post.authorType == "User"){
-      let body = `${user.username} liked your post recently.`
+      let body = `${user.username} commented on your post recently.`
       let channel = 'tamelyid';
       let image = formatCloudinaryUrl(
         post.image,
@@ -77,7 +77,7 @@ module.exports.createComment = async (req, res, next) => {
     }
     else{
       let n_obj = {
-        body : `${user.username} liked ${animalDoc.username}'s post recently.`,
+        body : `${user.username} commented on ${animalDoc.username}'s post recently.`,
         image : formatCloudinaryUrl(
           post.image,
           { height: 256, width: 512, x: '100%', y: '100%' },
