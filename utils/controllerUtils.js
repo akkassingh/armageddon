@@ -11,8 +11,91 @@ require("linkifyjs/plugins/mention")(linkify);
 const fs = require("fs");
 const ConfirmationToken = require("../models/ConfirmationToken");
 const bcrypt = require("bcrypt");
-
+const admin = require("../admin");
+const FcmToken = require('../models/FcmToken');
 const socketHandler = require("../handlers/socketHandler");
+
+/**
+ * Function to send notification with given parameters
+ * @function notify
+ * @param {Object}  notif The object comprising of body, image and token (title is not required)
+ * @param {string} channel The channel in which we want to send notification
+ * @return {string} Response -- with successCount and failureCount
+ */
+
+module.exports.notify = async(notif, channel) => {
+  const options = {
+    priority: "high",
+    timeToLive: 60 * 60 * 24,
+  };
+  const message = {
+    data: {
+       title: 'Tamely',
+       body : notif.body,
+       android_channel_id: channel,
+       image: notif.image,
+      },
+  };
+  try{
+    await admin.messaging().sendToDevice(notif.token, message, options);
+    return true;
+    //  "failureCount": 0,
+    //  "successCount": 1,
+  }
+  catch (err){
+    console.log(err)
+    next(err);
+  }
+}
+
+/**
+ * Function to send notification to a user with given userId
+ * @function notifyUser
+ * @param {Object}  notif The object comprising of title,body and image
+ * @param {string} channel The channel in which we want to send notification
+ * @param {string} userId The id of user to whom we want to send notification
+ * @return {string} Response -- none
+ */
+
+module.exports.notifyUser = async(notif, channel, userId) => {
+  try{
+    const fcmtoken = await FcmToken.findOne({user : ObjectId(userId)});
+    if (fcmtoken){
+      notif = {...notif, token: fcmtoken.token};
+      this.notify(notif,channel);
+    }
+  }
+  catch (err) {
+    console.log(err)
+  }
+}
+/**
+ * Function to send notification to a guardians of given animal
+ * @function notifyAnimal
+ * @param {Object}  notif The object comprising of title,body and image and token
+ * @param {string} channel The channel in which we want to send notification
+ * @param {string} animalId The id of animal to whose guardians we want to send notification
+ * @return {string} Response -- none
+ */
+module.exports.notifyAnimal = async (notif, channel, animalId) => {
+  try{
+    const animalDoc = await Animal.findOne({_id : ObjectId(animalId)}, 'guardians username');
+    let guardians = null
+    if (animalDoc) guardians = animalDoc.guardians;
+    if (guardians && guardians.length){
+      for (var i=0;i<guardians.length; i++){
+        let fcmtoken = await FcmToken.findOne({user : ObjectId(guardians[i].user)});
+        if (fcmtoken){
+          let obj = {...notif, token : fcmtoken.token};
+          this.notify(obj,'tamelyid');
+        }
+      }
+    }
+  }
+  catch (err) {
+    console.log(err);
+  }
+}
 
 module.exports.hashPassword = async (password, saltRounds) => {
   try {

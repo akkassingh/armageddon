@@ -20,6 +20,7 @@ const cloudinary = require("cloudinary").v2;
 const fs = require("fs");
 var generator = require('generate-password');
 
+const {notifyUser, formatCloudinaryUrl} = require("../utils/controllerUtils");
 const Razorpay = require("razorpay");
 var QB = require('quickblox');
 // var QB = new QuickBlox();

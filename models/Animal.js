@@ -105,7 +105,11 @@ const AnimalSchema = new Schema({
     type : {type : String},
     coordinates : [],
   },
-  registeredWithKennelClub:Boolean
+  registeredWithKennelClub:Boolean,
+  isBrandAmbassador : {
+    type : Boolean,
+    default : false,
+  }
 });
 
 AnimalSchema.index({ location: "2dsphere" });

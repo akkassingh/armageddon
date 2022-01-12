@@ -8,6 +8,8 @@ const bcrypt = require("bcrypt");
 const axios = require("axios");
 const logger = require("../logger/logger");
 const dogNames = require('dog-names');
+const FcmToken = require('../models/FcmToken');
+const admin = require("../admin");
 
 const {
   sendConfirmationEmail,
@@ -16,6 +18,8 @@ const {
   sendPasswordResetOTP,
   sendOTPEmail,
   hashPassword,
+  notify,
+  notifyUser, notifyAnimal
 } = require("../utils/controllerUtils");
 const { validateEmail, validatePassword } = require("../utils/validation");
 
@@ -383,6 +387,10 @@ module.exports.register = async (req, res, next) => {
   logger.info("*** Register method called *** ");
   const { email, password, type } = req.body;
   if (type && type === "sp") {
+    const alreadyMember = await ServiceProvider.find({email}, '_id');
+    if (alreadyMember){
+      return res.status(400).send({"message" : "This email already has an account on Tamely! PLease try login instead of signup!", "success" : false});
+    }
     let user = null;
     let confirmationToken = null;
 
@@ -438,7 +446,10 @@ module.exports.register = async (req, res, next) => {
   } else {
     let user = null;
     let confirmationToken = null;
-
+    const alreadyMember = await User.find({email}, '_id');
+    if (alreadyMember){
+      return res.status(400).send({"message" : "This email already has an account on Tamely! PLease try logging in instead of signing up!", "success" : false});
+    }
     const emailError = validateEmail(email);
     if (emailError) return res.status(400).send({ error: emailError });
 
@@ -674,7 +685,7 @@ module.exports.facebookLoginAuthentication = async (req, res, next) => {
       console.log(fbUser.data);
       const primaryEmail = fbUser.data.email;
       const facebookId = fbUser.data.id;
-      const userDocument = await User.findOne({$or: [{ faceBookUserId: facebookId }, {email: primaryEmail}]}, '_id email username avatar googleUserId facebookUserId');
+      const userDocument = await User.findOne({$or: [{ faceBookUserId: facebookId }, {email: primaryEmail}]}, '_id email username avatar googleUserId faceBookUserId');
       console.log(userDocument, "userDoc")
       let isNewUser = true;
       if (userDocument) {
@@ -1486,5 +1497,50 @@ module.exports.resendMobileOTP = async (req, res, next) => {
   catch (err){
     console.log(err)
     next(err)
+  }
+}
+
+module.exports.registerFCMtoken = async (req, res, next) => {
+  let type = null;
+  if (req.headers.type=="User"){
+    type = "User"
+  }
+  else type = "ServiceProvider";
+  let user = res.locals.user
+  const {token} = req.body;
+  try {
+    if (!token){
+      return res.status(400).send({"message" : "Provide a valid FCM Token", "success" : false});
+    }
+    await FcmToken.updateOne({user: user._id }, {
+        userType : type,
+        token,
+    }, {upsert : true});
+    return res.status(200).send({"message" : "Token updated successfully!", "success" : true});
+  }
+  catch (err) {
+    console.log(err);
+    next(err);
+  }
+}
+const notification_options = {
+  priority: "high",
+  timeToLive: 60 * 60 * 24,
+};
+module.exports.sendNotification = async (req, res, next) => {
+  const {id} = req.body;
+  try{
+    const n_obj = {
+      title : 'Tamely',
+      body : 'Welcome to Tamely!',
+      image : 'https://res.cloudinary.com/tamely-app/image/upload/v1640976197/wwikfqeapmqxu4xnlffe.jpg'
+    }
+    notifyUser(n_obj, 'tamelyid',id);
+    notifyAnimal(n_obj,'tamelyid',id);
+    return res.status(200).send(true);
+  }
+  catch(err){
+    console.log(err)
+    next(err);
   }
 }

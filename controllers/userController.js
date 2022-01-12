@@ -17,6 +17,8 @@ const crypto = require("crypto");
 const logger = require("../logger/logger");
 const bcrypt = require("bcrypt");
 const jwt = require("jwt-simple");
+const FcmToken = require("../models/FcmToken");
+const {notify, notifyUser,notifyAnimal} = require("../utils/controllerUtils");
 
 const {
   validateEmail,
@@ -255,7 +257,11 @@ module.exports.bookmarkPost = async (req, res, next) => {
 
 module.exports.followUser = async (req, res, next) => {
   const { userId } = req.params;
-  const user = res.locals.user;
+  let user = null;
+  if (req.headers.type=="User")
+    user = res.locals.user
+  else 
+    user = res.locals.animal
 
   try {
     const userToFollow = await User.findById(userId);
@@ -329,6 +335,32 @@ module.exports.followUser = async (req, res, next) => {
     });
 
     res.send({ success: true, operation: "follow" });
+    const isUser = await User.findOne({id : ObjectId(userId)}, '_id username');
+    if (isUser){
+        let title = 'Tamely'
+        let body = `${user.username} just followed you!🥳`
+        let channel = 'tamelyid';
+        let image = formatCloudinaryUrl(
+          post.image,
+          { height: 256, width: 512, x: '100%', y: '100%' },
+          true
+        );
+        const obj = {title, body, image}
+        notifyUser(obj,channel,userId);
+      
+    }
+    else{
+      let obj = {
+        title : 'Tamely',
+        body : `${user.username} just followed ${animalDoc.username}!🥳`,
+        image : formatCloudinaryUrl(
+          post.image,
+          { height: 256, width: 512, x: '100%', y: '100%' },
+          true
+        ),
+      }
+      notifyAnimal(obj,'tamelyid',userId);   
+    }
   } catch (err) {
     next(err);
   }
@@ -543,6 +575,7 @@ searchAnimal = async(username,counter,type) => {
   ]);
   users.forEach(function (element) {
     element.type = "Animal";
+    element.token = jwt.encode({id : element._id}, process.env.JWT_SECRET);
   });
   return users;
 };

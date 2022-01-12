@@ -22,7 +22,8 @@ const {
   editPetMainDetails,
   confirmGuardian,
   rejectRelation,
-  rejectGuardian
+  rejectGuardian,
+  setAmbassador,
 } = require("../controllers/animalController");
 
 const { requireAuth, requireAuthAnimal } = require("../controllers/authController");
@@ -43,7 +44,7 @@ animalRouter.patch('/editPetMainDetails' ,requireAuth, editPetMainDetails);
 animalRouter.post('/rejectRelation',rejectRelation);
 animalRouter.post('/confirmGuardian', requireAuth, confirmGuardian);
 animalRouter.post('/rejectGuardian', requireAuth, rejectGuardian);
-
+animalRouter.post('/setAmbassador', setAmbassador);
 
 
 module.exports = animalRouter;

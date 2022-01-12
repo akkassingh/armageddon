@@ -5,7 +5,9 @@ const Group = require('../models/Group');
 const GroupMember = require('../models/GroupMember');
 const Post = require('../models/Post')
 const ObjectId = require("mongoose").Types.ObjectId;
-const PostVote = require("../models/PostVote")
+const PostVote = require("../models/PostVote");
+const jwt = require("jwt-simple");
+const {notifyUser, notifyAnimal, formatCloudinaryUrl} = require("../utils/controllerUtils");
 const unwantedUserFields = [
     "Userauthor.password",
     "Userauthor.private",
@@ -50,8 +52,9 @@ const unwantedUserFields = [
     "Animalauthor.__v"
   ];
 
- /*
-     * Calculates the haversine distance between point A, and B.
+ /**
+     * Function to calculate distance between 2 geo points
+     * @function haversineDistance
      * @param {Number} lat1 point A's latitude
      * @param {Number} lon1 point A's longitude
      * @param {Number} lat2 point B's latitude
@@ -369,7 +372,7 @@ module.exports.invitePeople = async (req, res, next) => {
             return res.status(400).send({"message" : "Invalid information provided!", "success" : false});
         }
         else{
-            const group = await Group.findById(groupId,'_id');
+            const group = await Group.findById(groupId,'_id name');
             if (!group){
                 return res.status(400).send({"message" : "Invalid information provided!", "success" : false});
             }
@@ -394,7 +397,17 @@ module.exports.invitePeople = async (req, res, next) => {
                 personType: req.headers.type,
                 personInvited : user._id
             }); 
+            const n_obj = {
+                body : `${user.username} invited you to join ${group.name} group.`,
+                image: formatCloudinaryUrl(
+                    user.avatar,
+                    { height: 256, width: 512, x: '100%', y: '100%' },
+                    true
+                  ),
+            }
             await groupMember.save();
+            if (type =="User") notifyUser(n_obj,'tamelyid',userId);
+            else notifyAnimal(n_obj, 'tamelyid', userId);
             return res.status(201).send({"message" : "Invitation was sent successfully!", "success" : true});
         }
     }
@@ -505,6 +518,7 @@ module.exports.makeAdmin = async (req, res, next) => {
         if (!userDocument){
             return res.status(404).send({"message" : "Invalid request!", "success" : false});
         }
+        const group = await Group.findById(groupId, 'name');
         const isMember = await GroupMember.findOne({
             user : user._id,
             group : ObjectId(groupId),
@@ -523,6 +537,16 @@ module.exports.makeAdmin = async (req, res, next) => {
             return res.status(200).send({"message" : `${userDocument.username} is already an Admin!`, "success" : false});
         }
         await GroupMember.updateOne({_id : userIsMember._id}, { isAdmin : true });
+        const n_obj = {
+            body : `You are now an Admin of ${group.name} group.`,
+            image : formatCloudinaryUrl(
+                group.avatar,
+                { height: 256, width: 512, x: '100%', y: '100%' },
+                true
+            ),
+        }
+        if (userType == "User") notifyUser(n_obj, 'tamelyid', userId)
+        else notifyAnimal(n_obj, 'tamelyid', userId);
         return res.status(201).send({"message" : `${userDocument.username} is now an Admin!`, "success" : true});
     }
     catch (err) {
@@ -1046,7 +1070,7 @@ module.exports.declineInvitation = async (req, res, next) => {
         next(err);
     }
 }
-
+const searchParams = 'name username guardians avatar location gender category breed bio age registeredWithKennelClub playFrom playTo animalType'
 // ---------------------------------------- STRAYS ---------------------------------------------
 
 module.exports.getStrays = async (req, res, next) => {
@@ -1055,10 +1079,10 @@ module.exports.getStrays = async (req, res, next) => {
         user = res.locals.user
     else
         user = res.locals.animal
-    const {lat, long, counter} = req.body;
+    const {lat, long, counter, type, name} = req.body;
     try{
-        const animals = await Animal.find({
-            category : 'Stray',
+        let find_obj = {
+            mating : true,
             location : {
                 $near : {
                     $maxDistance : 100000,
@@ -1067,10 +1091,19 @@ module.exports.getStrays = async (req, res, next) => {
                         coordinates : [long,lat]
                     },
                 },
-            }
-        }, 'name username guardians avatar location').populate('guardians.user', 'fullName avatar username').skip(20*counter).limit(20).lean();
+            },
+        }; 
+        if (name){
+            find_obj['$or'] = [{username: { $regex: new RegExp(name,"i")}},{name: { $regex: new RegExp(name,"i")}}]
+        }
+        if (type){
+            find_obj['animalType'] = type;
+        }
+        const animals = await Animal.find(find_obj, searchParams).populate('guardians.user', 'fullName avatar username').skip(20*counter).limit(20).lean();
         for (var i=0;i<animals.length;i++){
             animals[i]['distance'] = Math.round(haversineDistance(lat,long,animals[i].location.coordinates[1], animals[i].location.coordinates[0])*10)/10;
+            const token = jwt.encode({ id: animals[i]._id}, process.env.JWT_SECRET);
+            animals[i]['token'] = token;
         }
         return res.status(200).send({animals})
     }
@@ -1081,17 +1114,16 @@ module.exports.getStrays = async (req, res, next) => {
 }
 
 // ---------------------------------------- PLAYBUDDIES ---------------------------------------------
-
 module.exports.getPlayBuddies = async (req, res, next) => {
     let user = null
     if (req.headers.type=="User")
         user = res.locals.user
     else
         user = res.locals.animal
-    const {lat, long, counter} = req.body;
+    const {lat, long, counter, type, name} = req.body;
     try{
-        const animals = await Animal.find({
-            playBuddies : true,
+        let find_obj = {
+            mating : true,
             location : {
                 $near : {
                     $maxDistance : 100000,
@@ -1100,10 +1132,19 @@ module.exports.getPlayBuddies = async (req, res, next) => {
                         coordinates : [long,lat]
                     },
                 },
-            }
-        }, 'name username guardians avatar location').populate('guardians.user', 'fullName avatar username').skip(20*counter).limit(20).lean();
+            },
+        }; 
+        if (name){
+            find_obj['$or'] = [{username: { $regex: new RegExp(name,"i")}},{name: { $regex: new RegExp(name,"i")}}]
+        }
+        if (type){
+            find_obj['animalType'] = type;
+        }
+        const animals = await Animal.find(find_obj, searchParams).populate('guardians.user', 'fullName avatar username').skip(20*counter).limit(20).lean();
         for (var i=0;i<animals.length;i++){
             animals[i]['distance'] = Math.round(haversineDistance(lat,long,animals[i].location.coordinates[1], animals[i].location.coordinates[0])*10)/10;
+            const token = jwt.encode({ id: animals[i]._id}, process.env.JWT_SECRET);
+            animals[i]['token'] = token;
         }
         return res.status(200).send({animals})
     }
@@ -1121,10 +1162,10 @@ module.exports.getAdoption = async (req, res, next) => {
         user = res.locals.user
     else
         user = res.locals.animal
-    const {lat, long, counter} = req.body;
+    const {lat, long, counter, type, name} = req.body;
     try{
-        const animals = await Animal.find({
-            adoption : true,
+        let find_obj = {
+            mating : true,
             location : {
                 $near : {
                     $maxDistance : 100000,
@@ -1133,10 +1174,18 @@ module.exports.getAdoption = async (req, res, next) => {
                         coordinates : [long,lat]
                     },
                 },
-            }
-        }, 'name username guardians avatar location').populate('guardians.user', 'fullName avatar username').skip(20*counter).limit(20).lean();
+            },
+        }; 
+        if (name){
+            find_obj['$or'] = [{username: { $regex: new RegExp(name,"i")}},{name: { $regex: new RegExp(name,"i")}}]
+        }
+        if (type){
+            find_obj['animalType'] = type;
+        }
+        const animals = await Animal.find(find_obj, searchParams).populate('guardians.user', 'fullName avatar username').skip(20*counter).limit(20).lean();
         for (var i=0;i<animals.length;i++){
             animals[i]['distance'] = Math.round(haversineDistance(lat,long,animals[i].location.coordinates[1], animals[i].location.coordinates[0])*10)/10;
+            animals[i]['token'] = jwt.encode({ id: animals[i]._id}, process.env.JWT_SECRET);
         }
         return res.status(200).send({animals});
     }
@@ -1153,9 +1202,9 @@ module.exports.getMating = async (req, res, next) => {
         user = res.locals.user
     else
         user = res.locals.animal
-    const {lat,long,counter} = req.body;
+    const {lat,long,counter, type, name} = req.body;
     try {
-        const animals = await Animal.find({
+        let find_obj = {
             mating : true,
             location : {
                 $near : {
@@ -1165,10 +1214,18 @@ module.exports.getMating = async (req, res, next) => {
                         coordinates : [long,lat]
                     },
                 },
-            }
-        }, 'name username guardians avatar location').populate('guardians.user', 'fullName avatar username').skip(20*counter).limit(20).lean();
+            },
+        }; 
+        if (name){
+            find_obj['$or'] = [{username: { $regex: new RegExp(name,"i")}},{name: { $regex: new RegExp(name,"i")}}]
+        }
+        if (type){
+            find_obj['animalType'] = type;
+        }
+        const animals = await Animal.find(find_obj, searchParams).populate('guardians.user', 'fullName avatar username').skip(20*counter).limit(20).lean();
         for (var i=0;i<animals.length;i++){
             animals[i]['distance'] = Math.round(haversineDistance(lat,long,animals[i].location.coordinates[1], animals[i].location.coordinates[0])*10)/10;
+            animals[i]['token'] = jwt.encode({ id: animals[i]._id}, process.env.JWT_SECRET);
         }
         return res.status(200).send({animals});
     }
