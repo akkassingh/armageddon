@@ -75,7 +75,7 @@ const UserSchema = new Schema({
       },
     },
   ],
-  pphoneNumber: {
+  phoneNumber: {
     type: String,
     required: false,
     unique: [true, "A user with this phone number already exists"],
