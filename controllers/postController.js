@@ -1834,28 +1834,29 @@ module.exports.follow = async (req, res, next) => {
       await followerDocument.save();
       await followingDocument.save();
       res.send({ success: true });
-      const isUser = User.findOne({_id : toId}, '_id');
+      const isUser = User.findOne({_id : ObjectId(toId)}, '_id username');
       if (isUser){
         let title = 'Tamely'
         let body = `${user.username} just followed you!🥳`
         let channel = 'tamelyid';
-        let image = formatCloudinaryUrl(
-          post.image,
-          { height: 256, width: 512, x: '100%', y: '100%' },
-          true
-        );
-        const obj = {title, body, image}
-        notifyUser(obj,channel,user._id);
+        // let image = formatCloudinaryUrl(
+        //   post.image,
+        //   { height: 256, width: 512, x: '100%', y: '100%' },
+        //   true
+        // );
+        const obj = {title, body}
+        notifyUser(obj,channel,user._id);  
         }
         else{
+          const animalDoc = await Animal.findOne({id : ObjectId(toId)}, '_id username')
           let obj = {
             title : 'Tamely',
             body : `${user.username} just followed ${animalDoc.username}!🥳`,
-            image : formatCloudinaryUrl(
-              post.image,
-              { height: 256, width: 512, x: '100%', y: '100%' },
-              true
-            ),
+            // image : formatCloudinaryUrl(
+            //   post.image,
+            //   { height: 256, width: 512, x: '100%', y: '100%' },
+            //   true
+            // ),
           }
           notifyAnimal(obj,'tamelyid',user._id);   
         }
