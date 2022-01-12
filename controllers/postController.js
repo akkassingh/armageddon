@@ -520,29 +520,6 @@ module.exports.postComment = async (req, res, next) => {
     });
     await postComment.save();
     res.send({ success: true });
-    const post = await Post.findOne({_id : ObjectId(postId)}, 'authorType Animalauthor Userauthor');
-    if (post.authorType == "User"){
-        let body = `${user.username} commented on your post recently.`
-        let channel = 'tamelyid';
-        let image = formatCloudinaryUrl(
-          post.image,
-          { height: 256, width: 512, x: '100%', y: '100%' },
-          true
-        );
-        const n_obj = {body, image}
-        notifyUser(n_obj,channel,post.Userauthor);
-    }
-    else{
-      let n_obj = {
-        body : `${user.username} commented on ${animalDoc.username}'s post recently.`,
-        image : formatCloudinaryUrl(
-          post.image,
-          { height: 256, width: 512, x: '100%', y: '100%' },
-          true
-        ),
-      }
-      notifyAnimal(n_obj,'tamelyid',post.Animalauthor);
-    }
   } catch (err) {
     next(err);
   }
@@ -1856,7 +1833,31 @@ module.exports.follow = async (req, res, next) => {
       });
       await followerDocument.save();
       await followingDocument.save();
-      return res.send({ success: true });
+      res.send({ success: true });
+      if (isUser){
+        let title = 'Tamely'
+        let body = `${user.username} just followed you!🥳`
+        let channel = 'tamelyid';
+        let image = formatCloudinaryUrl(
+          post.image,
+          { height: 256, width: 512, x: '100%', y: '100%' },
+          true
+        );
+        const obj = {title, body, image}
+        notifyUser(obj,channel,user._id);
+        }
+        else{
+          let obj = {
+            title : 'Tamely',
+            body : `${user.username} just followed ${animalDoc.username}!🥳`,
+            image : formatCloudinaryUrl(
+              post.image,
+              { height: 256, width: 512, x: '100%', y: '100%' },
+              true
+            ),
+          }
+          notifyAnimal(obj,'tamelyid',user._id);   
+        }
     }
   } catch (err) {
     next(err);
