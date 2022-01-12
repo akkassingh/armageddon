@@ -10,12 +10,36 @@ const jwt = require("jwt-simple");
 const fs = require("fs");
 const cloudinary = require("cloudinary").v2;
 const dogNames = require('dog-names');
+
 cloudinary.config({
   cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
   api_key: process.env.CLOUDINARY_API_KEY,
   api_secret: process.env.CLOUDINARY_API_SECRET,
 });
 
+
+
+// QB.createSession(params, function(error, result) {
+//   if (error) {
+//     console.log('Something went wrong: ' + JSON.stringify(error));
+// } else {
+//     console.log('Session created with id ' + result);
+// }});
+
+
+// var params = {
+//   login: "user1",
+//   password: "someSecret"
+// };
+
+// QB.users.create(params, function(error, result) {
+//   if (error) {
+//     console.log("Create user error: " + JSON.stringify(error));
+//   } else {
+//     console.log("Result " + JSON.stringify(result));
+
+//   }
+// });
 module.exports.registerPet = async (req, res, next) => {
   const user = res.locals.user;
   const {
