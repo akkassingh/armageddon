@@ -575,6 +575,7 @@ searchAnimal = async(username,counter,type) => {
   ]);
   users.forEach(function (element) {
     element.type = "Animal";
+    element.token = jwt.encode({id : element._id}, process.env.JWT_SECRET);
   });
   return users;
 };
