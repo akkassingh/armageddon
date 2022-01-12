@@ -1834,31 +1834,23 @@ module.exports.follow = async (req, res, next) => {
       await followerDocument.save();
       await followingDocument.save();
       res.send({ success: true });
-      const isUser = User.findOne({_id : ObjectId(toId)}, '_id username');
+      const isUser = await User.findOne({_id : ObjectId(toId)}, '_id username');
       if (isUser){
         let title = 'Tamely'
         let body = `${user.username} just followed you!🥳`
         let channel = 'tamelyid';
-        // let image = formatCloudinaryUrl(
-        //   post.image,
-        //   { height: 256, width: 512, x: '100%', y: '100%' },
-        //   true
-        // );
-        const obj = {title, body}
-        notifyUser(obj,channel,user._id);  
+        let image = 'https://res.cloudinary.com/tamely-app/image/upload/v1640976197/wwikfqeapmqxu4xnlffe.jpg';
+        const obj = {title, body, image}
+        notifyUser(obj,channel,toId);  
         }
         else{
           const animalDoc = await Animal.findOne({id : ObjectId(toId)}, '_id username')
           let obj = {
             title : 'Tamely',
             body : `${user.username} just followed ${animalDoc.username}!🥳`,
-            // image : formatCloudinaryUrl(
-            //   post.image,
-            //   { height: 256, width: 512, x: '100%', y: '100%' },
-            //   true
-            // ),
+            image : 'https://res.cloudinary.com/tamely-app/image/upload/v1640976197/wwikfqeapmqxu4xnlffe.jpg'
           }
-          notifyAnimal(obj,'tamelyid',user._id);   
+          notifyAnimal(obj,'tamelyid',toId);   
         }
     }
   } catch (err) {
