@@ -23,6 +23,9 @@ const CommentSchema = new Schema({
     ref: "Post",
     index : true,
   },
+},
+{
+  timestamps: true
 });
 
 CommentSchema.pre("deleteOne", async function (next) {

@@ -28,7 +28,8 @@ const {
   getReport,
   changeRunstatus,
   getServiceProviderProfile,
-  postPayment
+  postPayment,
+  getQuickbloxDetails
 } = require("../controllers/serviceController");
 
 const { requireAuth } = require("../controllers/authController");
@@ -70,4 +71,5 @@ serviceRouter.post("/changeRunstatus", requireAuth, changeRunstatus);
 serviceRouter.post("/getServiceProviderProfile", requireAuth, getServiceProviderProfile);
 serviceRouter.patch("/postPayment", requireAuth, postPayment);
 
+serviceRouter.post("/getQuickbloxDetails", requireAuth, getQuickbloxDetails);
 module.exports = serviceRouter;

@@ -13,8 +13,22 @@ const ObjectId = require("mongoose").Types.ObjectId;
 const logger = require("../logger/logger");
 const fs = require("fs");
 const Animal = require("../models/Animal");
+const Quickblox = require("../models/Quickblox");
 const ServiceProvider=require("../models/ServiceProvider")
 const cloudinary = require("cloudinary").v2;
+var generator = require('generate-password');
+var QB = require('quickblox');
+// var QB = new QuickBlox();
+var CREDENTIALS = {
+  appId: 95010,
+  authKey: 'tgz8MQ-QkPWnyZS',
+  authSecret: 'SgK6cfKa7Q4Yy4T',
+  accountKey: 'ea8RxFFV8cCxaYYfZ_vC'
+};
+var CONFIG = { debug: true };
+
+QB.init(CREDENTIALS.appId, CREDENTIALS.authKey, CREDENTIALS.authSecret, CREDENTIALS.accountKey);
+
 cloudinary.config({
   cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
   api_key: process.env.CLOUDINARY_API_KEY,
@@ -159,7 +173,6 @@ module.exports.isSentforApproval = async (req, res, next) => {
       {isSentforApproval:true})
     if(!resp)
     return res.status(404).send('NO background check found!');
-
     return res.status(200).send({success:true});
   } catch (err) {
     console.log(err);
@@ -398,12 +411,63 @@ module.exports.changeAppointmentstatus = async (req, res, next) => {
         image : 'https://res.cloudinary.com/tamely-app/image/upload/v1640976197/wwikfqeapmqxu4xnlffe.jpg',
       }
       await ServiceAppointment.deleteMany({ _id: { $nin: [ObjectId(req.body.appointmentId)] }, bookingDetails:serviceList.bookingDetails})
+      let booking =await bookingDetails.findByIdAndUpdate({_id:serviceList.bookingDetails},{status:1})
+      res.status(200).send({success:true});
+      let userId;
+
+        var params = { login: "103641649381386550513_12855", password: "Tamely123" };
+        QB.createSession(params,async function(err, result) {
+          var pwd = generator.generate({
+            length: 10,
+            numbers: true
+          });
+           params = {
+            login: req.body.appointmentId.toString(),
+            password: pwd
+          };
+          
+          QB.users.create(params,async function(error, result) {
+            if (error) {
+              console.log("Create user error: " + JSON.stringify(error));
+            } else {
+              console.log("Result " + JSON.stringify(result));
+              userId=await Quickblox.findOneAndUpdate({userLogin:booking._id.toString()},{partnerLogin:req.body.appointmentId.toString(),partnerPassword:pwd,partnerChatID:result.id})
+
+          const chatConnectParams = {
+            userId: userId.userChatID,
+            password: userId.userPassword
+          };
+          QB.chat.connect(chatConnectParams, function(error, contactList) {
+            if(error){
+              console.log('error:'+JSON.stringify(error))
+            }
+            else{
+              console.log('contactList:'+ JSON.stringify(contactList))
+              var params = {
+                type: 3,
+                occupants_ids: [result.id]
+              };
+                console.log(params)
+              QB.chat.dialog.create(params,async function(error, dialog) {
+                if(error){
+                  console.log('error:'+JSON.stringify(error))
+                }
+                else{
+                  console.log('dialog:'+JSON.stringify(dialog))
+                  userId=await Quickblox.findOneAndUpdate({userLogin:booking._id.toString()},{dialogID:dialog._id})
+
+                }
+              });
+            }
+          });
+            }
+          });   
+        });
       await bookingDetails.findByIdAndUpdate({_id:serviceList.bookingDetails},{status:1})
       notifyUser(obj, 'tamelyid',serviceList.User)
     }
     //TODO : What if booking status = 2 or 3?
     //if booking status =3 =>servicestatus=2
-    return res.status(200).send({success:true});
   } catch (err) {
     console.log(err);
     next(err);
@@ -609,6 +673,16 @@ module.exports.getReport = async (req, res, next) => {
      }
      formatDate(new Date(parseInt(req.body.date)))
     return res.status(200).send(resp);
+  } catch (err) {
+    console.log(err);
+    next(err);
+  }
+};
+
+module.exports.getQuickbloxDetails = async (req, res, next) => {
+  try {
+    let resp=await Quickblox.findOne({partnerLogin:req.body.partnerLogin})
+    return res.status(200).send({resp});
   } catch (err) {
     console.log(err);
     next(err);

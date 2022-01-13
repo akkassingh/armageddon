@@ -20,6 +20,9 @@ const PostVoteSchema = new Schema({
     },
     voterType:String,
   },
+},
+{
+  timestamps: true
 });
 
 const postVoteModel = mongoose.model("PostVote", PostVoteSchema);

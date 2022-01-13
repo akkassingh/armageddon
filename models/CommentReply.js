@@ -20,6 +20,9 @@ const CommentReplySchema = new Schema({
     ref: "User",
   },
   authorType:String,
+},
+{
+  timestamps: true
 });
 
 CommentReplySchema.pre("deleteMany", async function (next) {

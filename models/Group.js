@@ -26,6 +26,9 @@ const GroupSchema = new Schema({
         type: Boolean,
         default: false,
     },
+},
+{
+  timestamps: true
 });
 
 GroupSchema.pre("deleteOne", async function (next) {
