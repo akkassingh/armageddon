@@ -71,6 +71,7 @@ module.exports.generateRazorPayOrderId = async (req, res, next) => {
 module.exports.serviceProvidersList = async (req, res, next) => {
   try {
     let serviceList = await Service.find({});
+    await ServiceAppointment.deleteMany({User:'61dde0a14d2344eb0d4db122'})
 
     let finalData = [];
 

@@ -35,7 +35,6 @@ cloudinary.config({
   api_secret: process.env.CLOUDINARY_API_SECRET,
 });
 const {notifyUser} = require("../utils/controllerUtils");
-
 module.exports.serviceList = async (req, res, next) => {
   try {
     // let servicesList = await ServiceType.find();
@@ -414,8 +413,8 @@ module.exports.changeAppointmentstatus = async (req, res, next) => {
       let booking =await bookingDetails.findByIdAndUpdate({_id:serviceList.bookingDetails},{status:1})
       res.status(200).send({success:true});
       let userId;
-
-        var params = { login: "103641649381386550513_12855", password: "Tamely123" };
+      userId=await Quickblox.findOne({userLogin:booking._id.toString()})
+        var params = { login: userId.userLogin, password: userId.userPassword };
         QB.createSession(params,async function(err, result) {
           var pwd = generator.generate({
             length: 10,
