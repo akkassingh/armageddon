@@ -1534,7 +1534,7 @@ module.exports.sendNotification = async (req, res, next) => {
       title : 'Tamely',
       body : 'Welcome to Tamely! This will be a long body to check if it is working fine or not...Is it?',
       image : formatCloudinaryUrl(
-        'https://res.cloudinary.com/tamely-app/image/upload/v1642076108/hpbt4zzefllry95oytoo.jpg',
+        process.env.TAMELY_LOGO_LINK,
         { height: 720, width: 1440, x: '100%', y: '100%', notify : true  },
         true
       ),
