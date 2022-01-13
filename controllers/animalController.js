@@ -11,11 +11,15 @@ const fs = require("fs");
 const cloudinary = require("cloudinary").v2;
 const dogNames = require('dog-names');
 <<<<<<< HEAD
+<<<<<<< HEAD
 
 const {notifyUser, notifyAnimal} = require("../utils/controllerUtils");
 =======
 const {notifyUser, notifyAnimal, formatCloudinaryUrl} = require("../utils/controllerUtils");
 >>>>>>> d2cc6efc16c2ccb31f520422b5fe9a68e7b61ec4
+=======
+const {notifyUser, notifyAnimal, formatCloudinaryUrl} = require("../utils/controllerUtils");
+>>>>>>> 6eaaa850890d78b0b55b64e8c7e579475c95d1f4
 cloudinary.config({
   cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
   api_key: process.env.CLOUDINARY_API_KEY,
