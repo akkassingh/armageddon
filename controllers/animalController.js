@@ -10,7 +10,7 @@ const jwt = require("jwt-simple");
 const fs = require("fs");
 const cloudinary = require("cloudinary").v2;
 const dogNames = require('dog-names');
-const {notifyUser, notifyAnimal} = require("../utils/controllerUtils");
+const {notifyUser, notifyAnimal, formatCloudinaryUrl} = require("../utils/controllerUtils");
 cloudinary.config({
   cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
   api_key: process.env.CLOUDINARY_API_KEY,
@@ -302,7 +302,7 @@ module.exports.addGuardian = async (req, res, next) => {
       body : `${animal.username} has requested you to become the Guardian!`,
       image : formatCloudinaryUrl(
         animal.avatar,
-        { height: 256, width: 512, x: '100%', y: '100%' },
+        { height: 720, width: 1440, x: '100%', y: '100%', notify: true },
         true
       ),
     }
@@ -369,7 +369,7 @@ module.exports.addRelatedAnimals = async (req, res, next) => {
       body : `${animal.username} requested to be ${relatedAnimal.username}'s ${oppRelation}!`,
       image : formatCloudinaryUrl(
         animal.avatar,
-        { height: 256, width: 512, x: '100%', y: '100%' },
+        { height: 720, width: 1440, x: '100%', y: '100%', notify : true },
         true
       ),
     }
@@ -439,7 +439,7 @@ module.exports.confirmRelation = async (req, res, next) => {
       body : `${animal.username} accepted ${relatedAnimal.username}'s relation request!`,
       image : formatCloudinaryUrl(
         animal.avatar,
-        { height: 256, width: 512, x: '100%', y: '100%' },
+        { height: 720, width: 1440, x: '100%', y: '100%', notify : true },
         true
       ),
     };
@@ -725,7 +725,7 @@ module.exports.confirmGuardian = async (req, res, next) => {
       body : `${user.username} accepted the request to be ${animal.username}'s guardian!`,
       image : formatCloudinaryUrl(
         user.avatar,
-        { height: 256, width: 512, x: '100%', y: '100%' },
+        { height: 720, width: 1440, x: '100%', y: '100%', notify : true },
         true
       ),
     }
