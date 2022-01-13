@@ -96,6 +96,9 @@ const ServiceProviderSchema = new Schema({
     type: Boolean,
     default: false,
   },
+},
+{
+  timestamps: true
 });
 
 ServiceProviderSchema.pre("save", async function (next) {

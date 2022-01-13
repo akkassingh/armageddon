@@ -128,6 +128,9 @@ const bookingDetailsSchema = new Schema({
     type:Number,
     default:0
   }
+},
+{
+  timestamps: true
 });
 
 const decimal2JSON = (v, i, prev) => {

@@ -20,7 +20,8 @@ const {
   changeAppointmentstatus,
   giveRatingstoeachWalk,
   getReport,
-  giveTestimony
+  giveTestimony,
+  getQuickbloxDetails
 } = require("../controllers/serviceBookingController");
 
 const { requireAuth } = require("../controllers/authController");
@@ -41,6 +42,7 @@ serviceRouter.post("/changeAppointmentstatus", requireAuth, changeAppointmentsta
 serviceRouter.post("/giveRatingstoeachWalk", requireAuth, giveRatingstoeachWalk);
 serviceRouter.post("/getReport", requireAuth, getReport);
 serviceRouter.post("/giveTestimony", requireAuth, giveTestimony);
+serviceRouter.post("/getQuickbloxDetails", requireAuth, getQuickbloxDetails);
 
 //generatePaymentIntent
 serviceRouter.post("/generateOrderId", requireAuth, generateRazorPayOrderId);

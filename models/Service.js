@@ -274,6 +274,9 @@ const ServiceAppointmentSchema = new Schema({
     required: false,
   }
   
+},
+{
+  timestamps: true
 });
 
 const ServiceAppointment = mongoose.model(

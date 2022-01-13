@@ -40,6 +40,9 @@ const GroupMemberSchema = new Schema({
         type: String,
         enum: ["Animal", "User"]
     }
+},
+{
+  timestamps: true
 });
 
 const GroupMember = mongoose.model("GroupMember", GroupMemberSchema);
