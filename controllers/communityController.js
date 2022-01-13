@@ -401,7 +401,7 @@ module.exports.invitePeople = async (req, res, next) => {
                 body : `${user.username} invited you to join ${group.name} group.`,
                 image: formatCloudinaryUrl(
                     user.avatar,
-                    { height: 256, width: 512, x: '100%', y: '100%' },
+                    { height: 720, width: 1440, x: '100%', y: '100%', notify : true  },
                     true
                   ),
             }
@@ -541,7 +541,7 @@ module.exports.makeAdmin = async (req, res, next) => {
             body : `You are now an Admin of ${group.name} group.`,
             image : formatCloudinaryUrl(
                 group.avatar,
-                { height: 256, width: 512, x: '100%', y: '100%' },
+                { height: 720, width: 1440, x: '100%', y: '100%', notify : true},
                 true
             ),
         }

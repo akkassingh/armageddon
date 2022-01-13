@@ -19,7 +19,7 @@ const {
   sendOTPEmail,
   hashPassword,
   notify,
-  notifyUser, notifyAnimal
+  notifyUser, notifyAnimal, formatCloudinaryUrl
 } = require("../utils/controllerUtils");
 const { validateEmail, validatePassword } = require("../utils/validation");
 
@@ -1532,8 +1532,12 @@ module.exports.sendNotification = async (req, res, next) => {
   try{
     const n_obj = {
       title : 'Tamely',
-      body : 'Welcome to Tamely!',
-      image : 'https://res.cloudinary.com/tamely-app/image/upload/v1640976197/wwikfqeapmqxu4xnlffe.jpg'
+      body : 'Welcome to Tamely! This will be a long body to check if it is working fine or not...Is it?',
+      image : formatCloudinaryUrl(
+        process.env.TAMELY_LOGO_LINK,
+        { height: 720, width: 1440, x: '100%', y: '100%', notify : true  },
+        true
+      ),
     }
     notifyUser(n_obj, 'tamelyid',id);
     notifyAnimal(n_obj,'tamelyid',id);
@@ -1541,6 +1545,6 @@ module.exports.sendNotification = async (req, res, next) => {
   }
   catch(err){
     console.log(err)
-    next(err);
+    next(err)
   }
 }

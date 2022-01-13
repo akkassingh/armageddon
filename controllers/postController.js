@@ -435,7 +435,7 @@ module.exports.votePost = async (req, res, next) => {
             let channel = 'tamelyid';
             let image = formatCloudinaryUrl(
               post.image,
-              { height: 256, width: 512, x: '100%', y: '100%' },
+              { height: 720, width: 1440, x: '100%', y: '100%', notify : true  },
               true
             );
             const n_obj = {body, image}
@@ -447,7 +447,7 @@ module.exports.votePost = async (req, res, next) => {
             body : `${user.username} liked ${animalDoc.username}'s post recently.`,
             image : formatCloudinaryUrl(
               post.image,
-              { height: 256, width: 512, x: '100%', y: '100%' },
+              { height: 720, width: 1440, x: '100%', y: '100%', notify : true  },
               true
             ),
           }
@@ -1839,7 +1839,11 @@ module.exports.follow = async (req, res, next) => {
         let title = 'Tamely'
         let body = `${user.username} just followed you!🥳`
         let channel = 'tamelyid';
-        let image = 'https://res.cloudinary.com/tamely-app/image/upload/v1640976197/wwikfqeapmqxu4xnlffe.jpg';
+        let image = formatCloudinaryUrl(
+          user.avatar,
+          { height: 720, width: 1440, x: '100%', y: '100%', notify : true  },
+          true
+        );
         const obj = {title, body, image}
         notifyUser(obj,channel,toId);  
         }
@@ -1848,7 +1852,11 @@ module.exports.follow = async (req, res, next) => {
           let obj = {
             title : 'Tamely',
             body : `${user.username} just followed ${animalDoc.username}!🥳`,
-            image : 'https://res.cloudinary.com/tamely-app/image/upload/v1640976197/wwikfqeapmqxu4xnlffe.jpg'
+            image : formatCloudinaryUrl(
+              user.avatar,
+              { height: 720, width: 1440, x: '100%', y: '100%', notify : true  },
+              true
+            ),
           }
           notifyAnimal(obj,'tamelyid',toId);   
         }

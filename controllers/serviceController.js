@@ -34,7 +34,8 @@ cloudinary.config({
   api_key: process.env.CLOUDINARY_API_KEY,
   api_secret: process.env.CLOUDINARY_API_SECRET,
 });
-const {notifyUser} = require("../utils/controllerUtils");
+const {notifyUser, formatCloudinaryUrl} = require("../utils/controllerUtils");
+
 module.exports.serviceList = async (req, res, next) => {
   try {
     // let servicesList = await ServiceType.find();
@@ -407,7 +408,11 @@ module.exports.changeAppointmentstatus = async (req, res, next) => {
       // booking is getting accepted
       const obj = {
         body : `Your appointment has been confirmed by our service provider!`,
-        image : 'https://res.cloudinary.com/tamely-app/image/upload/v1640976197/wwikfqeapmqxu4xnlffe.jpg',
+        image : formatCloudinaryUrl(
+          process.env.TAMELY_LOGO_LINK,
+          { height: 720, width: 1440, x: '100%', y: '100%', notify : true  },
+          true
+        ),
       }
       await ServiceAppointment.deleteMany({ _id: { $nin: [ObjectId(req.body.appointmentId)] }, bookingDetails:serviceList.bookingDetails})
       let booking =await bookingDetails.findByIdAndUpdate({_id:serviceList.bookingDetails},{status:1})
