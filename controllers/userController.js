@@ -342,7 +342,7 @@ module.exports.followUser = async (req, res, next) => {
         let channel = 'tamelyid';
         let image = formatCloudinaryUrl(
           post.image,
-          { height: 256, width: 512, x: '100%', y: '100%' },
+          { height: 720, width: 1440, x: '100%', y: '100%', notify : true  },
           true
         );
         const obj = {title, body, image}
@@ -355,7 +355,7 @@ module.exports.followUser = async (req, res, next) => {
         body : `${user.username} just followed ${animalDoc.username}!🥳`,
         image : formatCloudinaryUrl(
           post.image,
-          { height: 256, width: 512, x: '100%', y: '100%' },
+          { height: 720, width: 1440, x: '100%', y: '100%', notify : true  },
           true
         ),
       }

@@ -68,7 +68,7 @@ module.exports.createComment = async (req, res, next) => {
       let channel = 'tamelyid';
       let image = formatCloudinaryUrl(
         post.image,
-        { height: 256, width: 512, x: '100%', y: '100%' },
+        { height: 720, width: 1440, x: '100%', y: '100%', notify : true  },
         true
       );
       const n_obj = {body, image}
@@ -80,7 +80,7 @@ module.exports.createComment = async (req, res, next) => {
         body : `${user.username} commented on ${animalDoc.username}'s post recently.`,
         image : formatCloudinaryUrl(
           post.image,
-          { height: 256, width: 512, x: '100%', y: '100%' },
+          { height: 720, width: 1440, x: '100%', y: '100%', notify : true  },
           true
         ),
       }

@@ -414,14 +414,25 @@ module.exports.sendPasswordResetOTP = async (
  * Formats a cloudinary thumbnail url with a specified size
  * @function formatCloudinaryUrl
  * @param {string} url The url to format
- * @param {size} number Desired size of the image
+ * @param {size} number Desired size of the image ; pass notify : true incase of notifications
  * @return {string} Formatted url
  */
 module.exports.formatCloudinaryUrl = (url, size, thumb) => {
   const splitUrl = url.split("upload/");
-  splitUrl[0] += `upload/${
-    size.y && size.z ? `x_${size.x},y_${size.y},` : ""
-  }w_${size.width},h_${size.height}${thumb && ",c_thumb"}/`;
+  if (size.notify){
+    splitUrl[0] += 'upload/'
+    splitUrl[0] += 'r_max';
+    var n = splitUrl[1].length;
+    if (splitUrl[1].substring(n-3,n) != "png"){
+      splitUrl[1] = splitUrl[1].substring(0,n-3) + "png"
+    } 
+  }
+  else{
+    splitUrl[0] += `upload/${
+      size.y && size.z ? `x_${size.x},y_${size.y},` : ""
+    }w_${size.width},h_${size.height}${thumb && ",c_thumb"}`;
+  }
+  splitUrl[0] += '/'
   const formattedUrl = splitUrl[0] + splitUrl[1];
   return formattedUrl;
 };
