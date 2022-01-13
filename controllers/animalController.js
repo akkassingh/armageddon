@@ -19,6 +19,7 @@ cloudinary.config({
 
 
 
+
 // QB.createSession(params, function(error, result) {
 //   if (error) {
 //     console.log('Something went wrong: ' + JSON.stringify(error));
