@@ -474,6 +474,44 @@ module.exports.giveTestimony = async (req, res, next) => {
 module.exports.getQuickbloxDetails = async (req, res, next) => {
   try {
     let resp=await Quickblox.findOne({userLogin:req.body.userLogin})
+    var params = { login: resp.userLogin, password: resp.userPassword };
+    QB.createSession(params,async function(err, result) {
+      const chatConnectParams = {
+        userId: resp.userChatID,
+        password: resp.userPassword
+      };
+      QB.chat.connect(chatConnectParams, async function(error, contactList) {
+        if(error){
+          console.log('error:'+JSON.stringify(error))
+        }
+        else{
+
+            // var message = {
+            //   type: "chat",
+            //   body: "How are you today Ishaan?",
+            //   extension: {
+            //     save_to_history: 1,
+            //     dialog_id: resp.dialogID
+            //   },
+            //   markable: 1
+            // };
+
+            // var opponentId = resp.partnerChatID;
+            // //resp.partnerChatID;
+            // try {
+            //   message.id = QB.chat.send(opponentId, message);
+            // } catch (e) {
+            //   if (e.name === 'ChatNotConnectedError') {
+            //     // not connected to chat
+            //     console.log('errorname:'+JSON.stringify(e))
+            //   }
+            //   console.log('IShaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaannnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnn')
+            //   console.log('error:'+JSON.stringify(e))
+            // }
+            QB.chat.onMessageListener =  onMessage; 
+          }
+        });
+      });
     return res.status(200).send({resp});
   } catch (err) {
     console.log(err);
@@ -527,3 +565,32 @@ QB.createSession(params,function(err, result) {
 });
 }
 
+function onMessage(userId, message) {
+  console.log('message:'+JSON.stringify(message))
+  console.log('userId:'+JSON.stringify(userId))
+
+//   var message = {
+//     type: "chat",
+//     body: "How are you today Ishaan?",
+//     extension: {
+//       save_to_history: 1,
+//       dialog_id: resp.dialogID
+//     },
+//     markable: 1
+//   };
+
+// var opponentId = userId
+// //resp.partnerChatID;
+// try {
+//   message.id = QB.chat.send(opponentId, message);
+// } catch (e) {
+//   if (e.name === 'ChatNotConnectedError') {
+//     // not connected to chat
+//     console.log('errorname:'+JSON.stringify(e))
+//   }
+//   console.log('IShaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaannnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnn')
+//   console.log('error:'+JSON.stringify(e))
+// }
+
+
+} 

@@ -686,12 +686,83 @@ module.exports.getReport = async (req, res, next) => {
 module.exports.getQuickbloxDetails = async (req, res, next) => {
   try {
     let resp=await Quickblox.findOne({partnerLogin:req.body.partnerLogin})
-    return res.status(200).send({resp});
-  } catch (err) {
+     res.status(200).send({resp});
+        var params = { login: resp.partnerLogin, password: resp.partnerPassword };
+        QB.createSession(params,async function(err, result) {
+          if(err){
+            console.log('LOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOO')
+            console.log('error:'+JSON.stringify(err))
+          }
+          const chatConnectParams = {
+            userId: resp.partnerChatID,
+            password: resp.partnerPassword
+          };
+          QB.chat.connect(chatConnectParams,async function(error, contactList) {
+            if(error){
+              console.log('IShaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaannnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnn')
+              console.log('error:'+JSON.stringify(error))
+            }
+            else{
+              // console.log('contactList:'+JSON.stringify(contactList))
+              var message = {
+                type: "chat",
+                body: "How are you today?",
+                extension: {
+                  save_to_history: 1,
+                  dialog_id: resp.dialogID
+                },
+                markable: 1
+              };
+            
+            var opponentId = resp.userChatID;
+            try {
+              message.id = QB.chat.send(opponentId, message);
+
+            } catch (e) {
+              if (e.name === 'ChatNotConnectedError') {
+                // not connected to chat
+            
+              }
+              console.log('error:'+JSON.stringify(e))
+            }
+                QB.chat.onMessageListener =  onMessage;
+                console.log(resp)
+
+              }
+            });
+          });
+      } catch (err) {
     console.log(err);
     next(err);
   }
 };
+
+function onMessage(userId, message) {
+  console.log('message:'+JSON.stringify(message))
+  console.log('userId:'+JSON.stringify(userId))
+//   var message = {
+//     type: "chat",
+//     body: "How are you today?",
+//     extension: {
+//       save_to_history: 1,
+//       dialog_id: resp.dialogID
+//     },
+//     markable: 1
+//   };
+
+// var opponentId = userId
+// //resp.userChatID;
+// try {
+//   message.id = QB.chat.send(opponentId, message);
+// } catch (e) {
+//   if (e.name === 'ChatNotConnectedError') {
+//     // not connected to chat
+
+//   }
+//   console.log('error:'+JSON.stringify(e))
+// }
+
+    }
 
 function formatDate(date) {
   var d = new Date(date),
