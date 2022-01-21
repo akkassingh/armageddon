@@ -417,7 +417,7 @@ module.exports.changeAppointmentstatus = async (req, res, next) => {
       await ServiceAppointment.deleteMany({ _id: { $nin: [ObjectId(req.body.appointmentId)] }, bookingDetails:serviceList.bookingDetails})
       let booking =await bookingDetails.findByIdAndUpdate({_id:serviceList.bookingDetails},{status:1})
       res.status(200).send({success:true});
-      let userId;
+      let userId, dialogueID;
       userId=await Quickblox.findOne({userLogin:booking._id.toString()})
         var params = { login: userId.userLogin, password: userId.userPassword };
         QB.createSession(params,async function(err, result) {
@@ -436,7 +436,10 @@ module.exports.changeAppointmentstatus = async (req, res, next) => {
             } else {
               console.log("Result " + JSON.stringify(result));
               userId=await Quickblox.findOneAndUpdate({userLogin:booking._id.toString()},{partnerLogin:req.body.appointmentId.toString(),partnerPassword:pwd,partnerChatID:result.id})
-
+              dialogueID=result.id
+            }
+          });
+          
           const chatConnectParams = {
             userId: userId.userChatID,
             password: userId.userPassword
@@ -449,7 +452,7 @@ module.exports.changeAppointmentstatus = async (req, res, next) => {
               console.log('contactList:'+ JSON.stringify(contactList))
               var params = {
                 type: 3,
-                occupants_ids: [result.id]
+                occupants_ids: [dialogueID]
               };
                 console.log(params)
               QB.chat.dialog.create(params,async function(error, dialog) {
@@ -459,11 +462,10 @@ module.exports.changeAppointmentstatus = async (req, res, next) => {
                 else{
                   console.log('dialog:'+JSON.stringify(dialog))
                   userId=await Quickblox.findOneAndUpdate({userLogin:booking._id.toString()},{dialogID:dialog._id})
+                  QB.chat.onMessageListener =  onMessage;
 
                 }
               });
-            }
-          });
             }
           });   
         });
@@ -687,50 +689,50 @@ module.exports.getQuickbloxDetails = async (req, res, next) => {
   try {
     let resp=await Quickblox.findOne({partnerLogin:req.body.partnerLogin})
      res.status(200).send({resp});
-        var params = { login: resp.partnerLogin, password: resp.partnerPassword };
-        QB.createSession(params,async function(err, result) {
-          if(err){
-            console.log('LOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOO')
-            console.log('error:'+JSON.stringify(err))
-          }
-          const chatConnectParams = {
-            userId: resp.partnerChatID,
-            password: resp.partnerPassword
-          };
-          QB.chat.connect(chatConnectParams,async function(error, contactList) {
-            if(error){
-              console.log('IShaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaannnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnn')
-              console.log('error:'+JSON.stringify(error))
-            }
-            else{
-              // console.log('contactList:'+JSON.stringify(contactList))
-              var message = {
-                type: "chat",
-                body: "How are you today?",
-                extension: {
-                  save_to_history: 1,
-                  dialog_id: resp.dialogID
-                },
-                markable: 1
-              };
+        // var params = { login: resp.partnerLogin, password: resp.partnerPassword };
+        // QB.createSession(params,async function(err, result) {
+        //   if(err){
+        //     console.log('LOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOO')
+        //     console.log('error:'+JSON.stringify(err))
+        //   }
+        //   const chatConnectParams = {
+        //     userId: resp.partnerChatID,
+        //     password: resp.partnerPassword
+        //   };
+        //   QB.chat.connect(chatConnectParams,async function(error, contactList) {
+        //     if(error){
+        //       console.log('IShaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaannnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnn')
+        //       console.log('error:'+JSON.stringify(error))
+        //     }
+        //     else{
+        //       // console.log('contactList:'+JSON.stringify(contactList))
+        //     //   var message = {
+        //     //     type: "chat",
+        //     //     body: "How are you today?",
+        //     //     extension: {
+        //     //       save_to_history: 1,
+        //     //       dialog_id: resp.dialogID
+        //     //     },
+        //     //     markable: 1
+        //     //   };
             
-            var opponentId = resp.userChatID;
-            try {
-              message.id = QB.chat.send(opponentId, message);
+        //     // var opponentId = resp.userChatID;
+        //     // try {
+        //     //   message.id = QB.chat.send(opponentId, message);
 
-            } catch (e) {
-              if (e.name === 'ChatNotConnectedError') {
-                // not connected to chat
+        //     // } catch (e) {
+        //     //   if (e.name === 'ChatNotConnectedError') {
+        //     //     // not connected to chat
             
-              }
-              console.log('error:'+JSON.stringify(e))
-            }
-                QB.chat.onMessageListener =  onMessage;
-                console.log(resp)
+        //     //   }
+        //     //   console.log('error:'+JSON.stringify(e))
+        //     // }
+        //         QB.chat.onMessageListener =  onMessage;
+        //         console.log(resp)
 
-              }
-            });
-          });
+        //       }
+        //     });
+        //   });
       } catch (err) {
     console.log(err);
     next(err);
