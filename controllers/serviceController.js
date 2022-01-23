@@ -715,7 +715,7 @@ module.exports.postPayment = async (req, res, next) => {
   }
   const obj = {
     body : 'Your booking has been successfully booked!🥳',
-    image : 'https://res.cloudinary.com/tamely-app/image/upload/v1640976197/wwikfqeapmqxu4xnlffe.jpg'
+    image : process.env.TAMELY_LOGO_LINK
   }
   notifyUser(obj,'tamelyid',user._id);
   try{
