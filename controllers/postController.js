@@ -79,9 +79,6 @@ module.exports.createPost = async (req, res, next) => {
    user = res.locals.user
   else
    user = res.locals.animal
-<<<<<<< HEAD
-  const { caption, filter: filterName, Animalauthor, Userauthor, authorType } = req.body;
-=======
   const { caption, filter: filterName, Animalauthor, Userauthor, authorType, group, image, thumbnail, isGroupPost } = req.body;
   if (authorType == "Animal" && !Animalauthor){
     res.status(400).send("Invalid Request");
@@ -89,7 +86,6 @@ module.exports.createPost = async (req, res, next) => {
   if (authorType == "User" && !Userauthor){
     res.status(400).send("invalid Request!")
   }
->>>>>>> Ishaan
   let post = undefined;
   const filterObject = filters.find((filter) => filter.name === filterName);
   const hashtags = [];
@@ -129,30 +125,6 @@ module.exports.createPost = async (req, res, next) => {
     //   });
     // }
 
-<<<<<<< HEAD
-    const thumbnailUrl = formatCloudinaryUrl(
-      response.secure_url,
-      {
-        width: 400,
-        height: 400,
-      },
-      true
-    );
-    fs.unlinkSync(req.file.path);
-    post = new Post({
-      image: response.secure_url,
-      thumbnail: thumbnailUrl,
-      filter: filterObject ? filterObject.filter : "",
-      caption,
-      hashtags,
-      Animalauthor:Animalauthor,
-      Userauthor:Userauthor,
-      authorType:authorType
-    });
-    const postVote = new PostVote({
-      post: post._id,
-    });
-=======
     // const thumbnailUrl = formatCloudinaryUrl(
     //   response.secure_url,
     //   {
@@ -225,7 +197,6 @@ module.exports.createPost = async (req, res, next) => {
     // const postVote = new PostVote({
     //   post: post._id,
     // });
->>>>>>> Ishaan
     await post.save();
     // await postVote.save();
     res.status(201).json({
@@ -238,31 +209,6 @@ module.exports.createPost = async (req, res, next) => {
     next(err);
   }
 
-<<<<<<< HEAD
-  try {
-    // Updating followers feed with post
-    const followersDocument = await Followers.find({ 'user.id': user._id });
-    const followers = followersDocument[0].followers;
-    const postObject = {
-      ...post.toObject(),
-      author: { username: user.username, avatar: user.avatar },
-      commentData: { commentCount: 0, comments: [] },
-      postVotes: [],
-    };
-
-    // socketHandler.sendPost(req, postObject, user._id);
-    followers.forEach((follower) => {
-      socketHandler.sendPost(
-        req,
-        // Since the post is new there is no need to look up any fields
-        postObject,
-        follower.user
-      );
-    });
-  } catch (err) {
-    console.log(err);
-  }
-=======
   // try {
   //   // Updating followers feed with post
   //   const followersDocument = await Followers.find({ 'user.id': user._id });
@@ -286,7 +232,6 @@ module.exports.createPost = async (req, res, next) => {
   // } catch (err) {
   //   console.log(err);
   // }
->>>>>>> Ishaan
 };
 
 // module.exports.deletePost = async (req, res, next) => {
@@ -485,10 +430,6 @@ module.exports.votePost = async (req, res, next) => {
           post.filter,
           post._id
         );
-<<<<<<< HEAD
-          console.log('loooooo')
-    
-=======
         if (post.authorType == "User"){
             let body = `${user.username} liked your post recently.`
             let channel = 'tamelyid';
@@ -512,7 +453,6 @@ module.exports.votePost = async (req, res, next) => {
           }
           notifyAnimal(n_obj,'tamelyid',post.Animalauthor);
         }
->>>>>>> Ishaan
         // Find the username of the post author
         // const postDocument = await Post.findById(post._id).populate('author');
         // image = formatCloudinaryUrl(
@@ -967,49 +907,6 @@ following.push(user._id)
 following.push(ObjectId('6197b8b854bb630004ed1387'))
     // Fields to not include on the user object
     // console.log(following)
-<<<<<<< HEAD
-    const unwantedUserFields = [
-      "Userauthor.password",
-      "Userauthor.private",
-      "Userauthor.confirmed",
-      "Userauthor.bookmarks",
-      "Userauthor.email",
-      "Userauthor.website",
-      "Userauthor.bio",
-      "Userauthor.githubId",
-      "Userauthor.pets",
-      "Userauthor.googleUserId"
-    ];
-    const unwantedAnimalFields = [
-      "Animalauthor.mating",
-      "Animalauthor.adoption",
-      "Animalauthor.playBuddies",
-      "Animalauthor.username",
-      "Animalauthor.category",
-      "Animalauthor.animal_type",
-      "Animalauthor.location",
-      "Animalauthor.guardians",
-      "Animalauthor.pets",
-      "Animalauthor.bio",
-      "Animalauthor.animalType",
-      "Animalauthor.gender",
-      "Animalauthor.breed",
-      "Animalauthor.age",
-      "Animalauthor.playFrom",
-      "Animalauthor.playTo",
-      "Animalauthor.servicePet",
-      "Animalauthor.spayed",
-      "Animalauthor.friendlinessWithHumans",
-      "Animalauthor.friendlinessWithAnimals",
-      "Animalauthor.favouriteThings",
-      "Animalauthor.thingsDislikes",
-      "Animalauthor.uniqueHabits",
-      "Animalauthor.eatingHabits",
-      "Animalauthor.relatedAnimals",
-      "Animalauthor.registeredWithKennelClub"
-    ];
-=======
->>>>>>> Ishaan
     const posts = await Post.aggregate([
       {
         $match: {
@@ -1985,27 +1882,6 @@ module.exports.retrievePostlikes = async (req, res, next) => {
   } catch (err) {
     next(err);
   }
-<<<<<<< HEAD
-}
-
-module.exports.retrievePostlikes = async (req, res, next) => {
-  const { postId } = req.body;
-  const user = res.locals.user;
-
-  try {
-    const postlikes = await PostVote.find({ post: postId}).populate('voterDetails.Uservoter','_id name username avatar').populate('voterDetails.Animalvoter','_id name username avatar');
-    if (!postlikes) {
-      return res.status(404).send({
-        error: "Could not find likes with that postid",
-      });
-    }
-  console.log(postId)
-    return res.send({postlikes});
-  } catch (err) {
-    next(err);
-  }
-};
-=======
 };
 
 module.exports.deleteNullPostVotes = async (req, res, next) => {
@@ -2170,4 +2046,3 @@ module.exports.deletePost = async (req, res, next) => {
     next(err)
   }
 }
->>>>>>> Ishaan
