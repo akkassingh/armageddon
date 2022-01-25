@@ -44,9 +44,9 @@ cloudinary.config({
   api_key: process.env.CLOUDINARY_API_KEY,
   api_secret: process.env.CLOUDINARY_API_SECRET,
 });
-
 module.exports.generateRazorPayOrderId = async (req, res, next) => {
   try {
+
     var options = {
       amount: Number(req.body.amount) * 100, // amount in the smallest currency unit
       currency: "INR",
@@ -55,7 +55,7 @@ module.exports.generateRazorPayOrderId = async (req, res, next) => {
     async function orderCreation() {
       return new Promise((resolve, reject) => {
         razorPayInstance.orders.create(options, function (err, order) {
-          console.log(order);
+          // console.log(order);
           resolve(order);
         });
       });
