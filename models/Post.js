@@ -16,23 +16,35 @@ const PostSchema = new Schema({
     type: Date,
     default: Date.now,
   },
-  author: String,
-  postOwnerDetails: {
-    postOwnerType: {
-      type: String,
-      enum: ["Animal", "User"],
-    },
-    postOwnerId: {
-      type: Schema.ObjectId,
-      refPath: "postOwnerDetails.postOwnerType"
-    }
+  Animalauthor:  {
+    type: Schema.ObjectId,
+    ref: "Animal",
   },
+  Userauthor:  {
+    type: Schema.ObjectId,
+    ref: "User",
+  },
+  authorType:String,
+  group : {
+    type : Schema.ObjectId,
+    ref : "Group",
+  }
+  // postOwnerDetails: {
+  //   postOwnerId: String,
+  //   postOwnerType: {
+  //     type: String,
+  //     enum: ["Animal", "Human"],
+  //   },
+  // },
+},
+{
+  timestamps: true
 });
 
 PostSchema.pre("deleteOne", async function (next) {
   const postId = this.getQuery()["_id"];
   try {
-    await mongoose.model("PostVote").deleteOne({ post: postId });
+    await mongoose.model("PostVote").deleteMany({ post: postId });
     await mongoose.model("Comment").deleteMany({ post: postId });
     next();
   } catch (err) {

@@ -23,6 +23,9 @@ const FollowRequestSchema = new Schema({
     }
   },
   confirmed: { type: Boolean, default: false },
+},
+{
+  timestamps: true
 });
 
 const followRequestModel = mongoose.model("FollowRequest", FollowRequestSchema);

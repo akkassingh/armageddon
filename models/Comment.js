@@ -7,20 +7,25 @@ const CommentSchema = new Schema({
     default: Date.now,
   },
   message: String,
-  authorDetails: {
-    authorType: {
-      type: String,
-      enum: ["Animal", "User"],
-    },
-    authorId: {
-      type: Schema.ObjectId,
-      refPath : "authorDetails.authorType"
-    }
+  Animalauthor:  {
+    type: Schema.ObjectId,
+    index : true,
+    ref: "Animal",
   },
+  Userauthor:  {
+    type: Schema.ObjectId,
+    ref: "User",
+    index : true,
+  },
+  authorType:String,
   post: {
     type: Schema.ObjectId,
     ref: "Post",
+    index : true,
   },
+},
+{
+  timestamps: true
 });
 
 CommentSchema.pre("deleteOne", async function (next) {

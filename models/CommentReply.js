@@ -11,16 +11,18 @@ const CommentReplySchema = new Schema({
     default: Date.now,
   },
   message: String,
-  authorDetails: {
-    authorType: {
-      type: String,
-      enum: ["Animal", "User"],
-    },
-    authorId: {
-      type: Schema.ObjectId,
-      refPath: "authorDetails.authorType"
-    }
+  Animalauthor:  {
+    type: Schema.ObjectId,
+    ref: "Animal",
   },
+  Userauthor:  {
+    type: Schema.ObjectId,
+    ref: "User",
+  },
+  authorType:String,
+},
+{
+  timestamps: true
 });
 
 CommentReplySchema.pre("deleteMany", async function (next) {

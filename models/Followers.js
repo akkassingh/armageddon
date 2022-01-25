@@ -19,6 +19,9 @@ const FollowersSchema = new Schema({
       refPath: 'followerDetails.followerType'
     }
   },
+},
+{
+  timestamps: true
 });
 
 const followersModel = mongoose.model("Followers", FollowersSchema);

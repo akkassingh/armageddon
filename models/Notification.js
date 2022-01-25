@@ -6,9 +6,13 @@ const NotificationSchema = new Schema({
     type: Schema.ObjectId,
     ref: 'User',
   },
-  receiver: {
+  Userreceiver: {
     type: Schema.ObjectId,
     ref: 'User',
+  },
+  Animalreceiver: {
+    type: Schema.ObjectId,
+    ref: 'Animal',
   },
   notificationType: {
     type: String,
@@ -20,6 +24,9 @@ const NotificationSchema = new Schema({
     type: Boolean,
     default: false,
   },
+},
+{
+  timestamps: true
 });
 
 const notificationModel = mongoose.model('notification', NotificationSchema);

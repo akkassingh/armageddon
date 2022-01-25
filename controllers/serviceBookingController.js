@@ -1,5 +1,6 @@
 const ServiceType = require("../models/ServiceType");
 const User = require("../models/User");
+const Quickblox = require("../models/Quickblox");
 const Animal = require("../models/Animal");
 const { petDetails, bookingDetails } = require("../models/ServiceBooking");
 const {
@@ -17,8 +18,21 @@ const ObjectId = require("mongoose").Types.ObjectId;
 const logger = require("../logger/logger");
 const cloudinary = require("cloudinary").v2;
 const fs = require("fs");
+var generator = require('generate-password');
 
+const {notifyUser, formatCloudinaryUrl} = require("../utils/controllerUtils");
 const Razorpay = require("razorpay");
+var QB = require('quickblox');
+// var QB = new QuickBlox();
+var CREDENTIALS = {
+  appId: 95010,
+  authKey: 'tgz8MQ-QkPWnyZS',
+  authSecret: 'SgK6cfKa7Q4Yy4T',
+  accountKey: 'ea8RxFFV8cCxaYYfZ_vC'
+};
+var CONFIG = { debug: true };
+
+QB.init(CREDENTIALS.appId, CREDENTIALS.authKey, CREDENTIALS.authSecret, CREDENTIALS.accountKey);
 
 const razorPayInstance = new Razorpay({
   key_id: process.env.RAZORPAY_KEY_ID,
@@ -30,9 +44,9 @@ cloudinary.config({
   api_key: process.env.CLOUDINARY_API_KEY,
   api_secret: process.env.CLOUDINARY_API_SECRET,
 });
-
 module.exports.generateRazorPayOrderId = async (req, res, next) => {
   try {
+
     var options = {
       amount: Number(req.body.amount) * 100, // amount in the smallest currency unit
       currency: "INR",
@@ -41,7 +55,7 @@ module.exports.generateRazorPayOrderId = async (req, res, next) => {
     async function orderCreation() {
       return new Promise((resolve, reject) => {
         razorPayInstance.orders.create(options, function (err, order) {
-          console.log(order);
+          // console.log(order);
           resolve(order);
         });
       });
@@ -57,6 +71,7 @@ module.exports.generateRazorPayOrderId = async (req, res, next) => {
 module.exports.serviceProvidersList = async (req, res, next) => {
   try {
     let serviceList = await Service.find({});
+    await ServiceAppointment.deleteMany({User:'61dde0a14d2344eb0d4db122'})
 
     let finalData = [];
 
@@ -83,7 +98,7 @@ module.exports.serviceProvidersList = async (req, res, next) => {
 
 module.exports.bookService = async (req, res, next) => {
   try {
-    console.log(req.body.runDetails[0].runTime)
+    // console.log(req.body.runDetails[0].runTime)
     let arr=[],dayoff=[]
     let j=0;
     let start=req.body.startDate;
@@ -137,6 +152,7 @@ module.exports.bookService = async (req, res, next) => {
       startDate:formatDate(new Date(parseInt(req.body.startDate))),
       start:new Date(parseInt(req.body.startDate)),
       dayOff: dayoff,
+      // User:'61dc497c4f60822f13e5c4fb',
       User: res.locals.user._id
       //(new Date(req.body.dayOff).toDateString()).split(' ')[0],
     };
@@ -163,6 +179,7 @@ module.exports.bookService = async (req, res, next) => {
     for (let sp1 of getServiceProviders) {
       let ServiceAppointmentSave = new ServiceAppointment({
         ServiceProvider: sp1.serviceProvider,
+        // User:'61dc497c4f60822f13e5c4fb',
         User: res.locals.user._id,
         bookingDetails: ServiceBookingModel._id,
         petDetails: petArr1,
@@ -174,8 +191,9 @@ module.exports.bookService = async (req, res, next) => {
       //console.log(st)
     }
 
-    return res.status(200).send({bookingId:ServiceBookingModel._id});
-  } catch (err) {
+     res.status(200).send({bookingId:ServiceBookingModel._id});
+    let result= await quickbloxRegistration(ServiceBookingModel._id)
+    } catch (err) {
     console.log(err);
     next(err);
   }
@@ -362,6 +380,7 @@ module.exports.getscrollAppointmentstatus = async (req, res, next) => {
         }
       }
     return res.status(200).send({resp:resp});
+    // return res.status(200).send({resp: 1});
   } catch (err) {
     console.log(err);
     next(err);
@@ -452,6 +471,54 @@ module.exports.giveTestimony = async (req, res, next) => {
 };
 
 
+module.exports.getQuickbloxDetails = async (req, res, next) => {
+  try {
+    let resp=await Quickblox.findOne({userLogin:req.body.userLogin})
+    // var params = { login: resp.userLogin, password: resp.userPassword };
+    // QB.createSession(params,async function(err, result) {
+    //   const chatConnectParams = {
+    //     userId: resp.userChatID,
+    //     password: resp.userPassword
+    //   };
+    //   QB.chat.connect(chatConnectParams, async function(error, contactList) {
+    //     if(error){
+    //       console.log('error:'+JSON.stringify(error))
+    //     }
+    //     else{
+
+    //         // var message = {
+    //         //   type: "chat",
+    //         //   body: "How are you today Ishaan?",
+    //         //   extension: {
+    //         //     save_to_history: 1,
+    //         //     dialog_id: resp.dialogID
+    //         //   },
+    //         //   markable: 1
+    //         // };
+
+    //         // var opponentId = resp.partnerChatID;
+    //         // //resp.partnerChatID;
+    //         // try {
+    //         //   message.id = QB.chat.send(opponentId, message);
+    //         // } catch (e) {
+    //         //   if (e.name === 'ChatNotConnectedError') {
+    //         //     // not connected to chat
+    //         //     console.log('errorname:'+JSON.stringify(e))
+    //         //   }
+    //         //   console.log('IShaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaannnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnn')
+    //         //   console.log('error:'+JSON.stringify(e))
+    //         // }
+    //         QB.chat.onMessageListener =  onMessage; 
+    //       }
+    //     });
+    //   });
+    return res.status(200).send({resp});
+  } catch (err) {
+    console.log(err);
+    next(err);
+  }
+};
+
 function formatDate(date) {
   var d = new Date(date),
       month = '' + (d.getMonth() + 1),
@@ -465,3 +532,65 @@ function formatDate(date) {
 
   return [year, month, day].join('-');
 }
+
+async function quickbloxRegistration(UserId) {
+  var pwd = generator.generate({
+    length: 10,
+    numbers: true
+  });
+  
+ var params = { login: "103641649381386550513_12855", password: "Tamely123" };
+QB.createSession(params,function(err, result) {
+  // let pwd= await genpwd();
+   params = {
+    login: UserId.toString(),
+    password: pwd
+  };
+  
+  QB.users.create(params,async function(error, result) {
+    if (error) {
+      console.log("Create user error: " + JSON.stringify(error));
+    } else {
+      console.log("Result " + JSON.stringify(result));
+      payload={
+        userLogin:UserId.toString(),
+        userPassword:pwd,
+        userChatID:result.id 
+      }
+      let QuickbloxSchema = new Quickblox(payload);
+      let resp = await QuickbloxSchema.save();
+      return result;
+    }
+  });          
+});
+}
+
+function onMessage(userId, message) {
+  console.log('message:'+JSON.stringify(message))
+  console.log('userId:'+JSON.stringify(userId))
+
+//   var message = {
+//     type: "chat",
+//     body: "How are you today Ishaan?",
+//     extension: {
+//       save_to_history: 1,
+//       dialog_id: resp.dialogID
+//     },
+//     markable: 1
+//   };
+
+// var opponentId = userId
+// //resp.partnerChatID;
+// try {
+//   message.id = QB.chat.send(opponentId, message);
+// } catch (e) {
+//   if (e.name === 'ChatNotConnectedError') {
+//     // not connected to chat
+//     console.log('errorname:'+JSON.stringify(e))
+//   }
+//   console.log('IShaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaannnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnn')
+//   console.log('error:'+JSON.stringify(e))
+// }
+
+
+} 

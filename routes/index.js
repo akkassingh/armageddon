@@ -8,6 +8,7 @@ const notificationRouter = require("./notification");
 const serviceRouter = require("./service");
 const serviceBookingRouter = require("./serviceBooking");
 const hamburgerRouter = require("./hamburger");
+const communityRouter = require("./community")
 const apiRouter = express.Router();
 
 apiRouter.use("/auth", authRouter);
@@ -19,6 +20,7 @@ apiRouter.use("/animal", animalRouter);
 apiRouter.use("/service", serviceRouter);
 apiRouter.use("/serviceBooking", serviceBookingRouter);
 apiRouter.use("/hamburger",hamburgerRouter);
+apiRouter.use("/community",communityRouter);
 module.exports = apiRouter;
 
 //-------code to add initial services types-----------------------------

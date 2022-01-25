@@ -17,6 +17,9 @@ const Notification = require("../models/Notification");
 const socketHandler = require("../handlers/socketHandler");
 const fs = require("fs");
 const ObjectId = require("mongoose").Types.ObjectId;
+const jwt = require("jwt-simple");
+const {notify, notifyUser, notifyAnimal} = require('../utils/controllerUtils');
+const FcmToken = require("../models/FcmToken");
 
 const {
   retrieveComments,
@@ -25,6 +28,49 @@ const {
   sendPostVotenotification
 } = require("../utils/controllerUtils");
 const filters = require("../utils/filters");
+const unwantedUserFields = [
+  "Userauthor.password",
+  "Userauthor.private",
+  "Userauthor.confirmed",
+  "Userauthor.bookmarks",
+  "Userauthor.email",
+  "Userauthor.website",
+  "Userauthor.bio",
+  "Userauthor.githubId",
+  "Userauthor.pets",
+  "Userauthor.googleUserId",
+  "Userauthor.__v"
+];
+const unwantedAnimalFields = [
+  "Animalauthor.mating",
+  "Animalauthor.adoption",
+  "Animalauthor.playBuddies",
+  // "Animalauthor.username",
+  "Animalauthor.category",
+  "Animalauthor.animal_type",
+  "Animalauthor.location",
+  "Animalauthor.guardians",
+  "Animalauthor.pets",
+  "Animalauthor.bio",
+  "Animalauthor.animalType",
+  "Animalauthor.gender",
+  "Animalauthor.breed",
+  "Animalauthor.age",
+  "Animalauthor.playFrom",
+  "Animalauthor.playTo",
+  "Animalauthor.servicePet",
+  "Animalauthor.spayed",
+  "Animalauthor.friendlinessWithHumans",
+  "Animalauthor.friendlinessWithAnimals",
+  "Animalauthor.favouriteThings",
+  "Animalauthor.thingsDislikes",
+  "Animalauthor.uniqueHabits",
+  "Animalauthor.eatingHabits",
+  "Animalauthor.relatedAnimals",
+  "Animalauthor.registeredWithKennelClub",
+  "Animalauthor.bookmarks",
+  "Animalauthor.__v"
+];
 
 module.exports.createPost = async (req, res, next) => {
   let user=undefined;
@@ -33,7 +79,17 @@ module.exports.createPost = async (req, res, next) => {
    user = res.locals.user
   else
    user = res.locals.animal
+<<<<<<< HEAD
   const { caption, filter: filterName, Animalauthor, Userauthor, authorType } = req.body;
+=======
+  const { caption, filter: filterName, Animalauthor, Userauthor, authorType, group, image, thumbnail, isGroupPost } = req.body;
+  if (authorType == "Animal" && !Animalauthor){
+    res.status(400).send("Invalid Request");
+  }
+  if (authorType == "User" && !Userauthor){
+    res.status(400).send("invalid Request!")
+  }
+>>>>>>> Ishaan
   let post = undefined;
   const filterObject = filters.find((filter) => filter.name === filterName);
   const hashtags = [];
@@ -43,36 +99,37 @@ module.exports.createPost = async (req, res, next) => {
     }
   });
 
-  if (!req.file) {
-    return res
-      .status(400)
-      .send({ error: "Please provide the image to upload." });
-  }
+  // if (!req.file) {
+  //   return res
+  //     .status(400)
+  //     .send({ error: "Please provide the image to upload." });
+  // }
 
-  cloudinary.config({
-    cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
-    api_key: process.env.CLOUDINARY_API_KEY,
-    api_secret: process.env.CLOUDINARY_API_SECRET,
-  });
+  // cloudinary.config({
+  //   cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
+  //   api_key: process.env.CLOUDINARY_API_KEY,
+  //   api_secret: process.env.CLOUDINARY_API_SECRET,
+  // });
 
   try {
-    const response = await cloudinary.uploader.upload(req.file.path);
-    const moderationResponse = await axios.get(
-      `https://api.moderatecontent.com/moderate/?key=${process.env.MODERATECONTENT_API_KEY}&url=${response.secure_url}`
-    );
+    // const response = await cloudinary.uploader.upload(req.file.path);
+    // const moderationResponse = await axios.get(
+    //   `https://api.moderatecontent.com/moderate/?key=${process.env.MODERATECONTENT_API_KEY}&url=${response.secure_url}`
+    // );
 
-    if (moderationResponse.data.error) {
-      return res
-        .status(500)
-        .send({ error: "Error moderating image, please try again later." });
-    }
+    // if (moderationResponse.data.error) {
+    //   return res
+    //     .status(500)
+    //     .send({ error: "Error moderating image, please try again later." });
+    // }
 
-    if (moderationResponse.data.rating_index > 2) {
-      return res.status(403).send({
-        error: "The content was deemed too explicit to upload.",
-      });
-    }
+    // if (moderationResponse.data.rating_index > 2) {
+    //   return res.status(403).send({
+    //     error: "The content was deemed too explicit to upload.",
+    //   });
+    // }
 
+<<<<<<< HEAD
     const thumbnailUrl = formatCloudinaryUrl(
       response.secure_url,
       {
@@ -95,8 +152,82 @@ module.exports.createPost = async (req, res, next) => {
     const postVote = new PostVote({
       post: post._id,
     });
+=======
+    // const thumbnailUrl = formatCloudinaryUrl(
+    //   response.secure_url,
+    //   {
+    //     width: 400,
+    //     height: 400,
+    //   },
+    //   true
+    // );
+    // fs.unlinkSync(req.file.path);
+    if (req.headers.type=="User"){
+      if (group){
+        console.log("VALUE OF GRP ID IS", group);
+        post = new Post({
+          // image: response.secure_url,
+          image,
+          // thumbnail: thumbnailUrl,
+          thumbnail,
+          filter: filterObject ? filterObject.filter : "",
+          caption,
+          hashtags,
+          Userauthor,
+          authorType,
+          group
+        });
+      }
+      else{
+        post = new Post({
+          // image: response.secure_url,
+          image,
+          // thumbnail: thumbnailUrl,
+          thumbnail,
+          filter: filterObject ? filterObject.filter : "",
+          caption,
+          hashtags,
+          Userauthor,
+          authorType,
+        });
+      }
+    }
+    if (req.headers.type=="Animal"){
+      if (group){
+        post = new Post({
+          // image: response.secure_url,
+          // thumbnail: thumbnailUrl,
+          image,
+          thumbnail,
+          filter: filterObject ? filterObject.filter : "",
+          caption,
+          hashtags,
+          Animalauthor,
+          authorType,
+          group
+        });
+      }
+      else{
+        post = new Post({
+          // image: response.secure_url,
+          // thumbnail: thumbnailUrl,
+          image,
+          thumbnail,
+          filter: filterObject ? filterObject.filter : "",
+          caption,
+          hashtags,
+          Animalauthor,
+          authorType,
+        });
+      }
+      
+    }
+    // const postVote = new PostVote({
+    //   post: post._id,
+    // });
+>>>>>>> Ishaan
     await post.save();
-    await postVote.save();
+    // await postVote.save();
     res.status(201).json({
       post,
       postVotes: [],
@@ -107,6 +238,7 @@ module.exports.createPost = async (req, res, next) => {
     next(err);
   }
 
+<<<<<<< HEAD
   try {
     // Updating followers feed with post
     const followersDocument = await Followers.find({ 'user.id': user._id });
@@ -130,31 +262,56 @@ module.exports.createPost = async (req, res, next) => {
   } catch (err) {
     console.log(err);
   }
+=======
+  // try {
+  //   // Updating followers feed with post
+  //   const followersDocument = await Followers.find({ 'user.id': user._id });
+  //   const followers = followersDocument[0].followers;
+  //   const postObject = {
+  //     ...post.toObject(),
+  //     author: { username: user.username, avatar: user.avatar },
+  //     commentData: { commentCount: 0, comments: [] },
+  //     postVotes: [],
+  //   };
+
+  //   // socketHandler.sendPost(req, postObject, user._id);
+  //   followers.forEach((follower) => {
+  //     socketHandler.sendPost(
+  //       req,
+  //       // Since the post is new there is no need to look up any fields
+  //       postObject,
+  //       follower.user
+  //     );
+  //   });
+  // } catch (err) {
+  //   console.log(err);
+  // }
+>>>>>>> Ishaan
 };
 
-module.exports.deletePost = async (req, res, next) => {
-  const { postId } = req.body;
-  const user = res.locals.user;
+// module.exports.deletePost = async (req, res, next) => {
+//   const { postId } = req.body;
+//   const user = res.locals.user;
 
-  try {
-    const post = await Post.findOne({ _id: postId, author: user._id });
-    if (!post) {
-      return res.status(404).send({
-        error: "Could not find a post with that id associated with the user.",
-      });
-    }
-    // This uses pre hooks to delete everything associated with this post i.e comments
-    const postDelete = await Post.deleteOne({
-      _id: postId,
-    });
-    if (!postDelete.deletedCount) {
-      return res.status(500).send({ error: "Could not delete the post." });
-    }
-    res.status(204).send();
-  } catch (err) {
-    next(err);
-  }
-};
+//   try {
+//     const post = await Post.findOne({ _id: postId, author: user._id });
+//     if (!post) {
+//       return res.status(404).send({
+//         error: "Could not find a post with that id associated with the user.",
+//       });
+//     }
+//     // This uses pre hooks to delete everything associated with this post i.e comments
+//     const postDelete = await Post.deleteOne({
+//       _id: postId,
+//     });
+//     if (!postDelete.deletedCount) {
+//       return res.status(500).send({ error: "Could not delete the post." });
+//     }
+//     res.status(204).send();
+//   } catch (err) {
+//     next(err);
+//   }
+// };
 
 module.exports.retrievePost = async (req, res, next) => {
   const { postId } = req.params;
@@ -173,22 +330,35 @@ module.exports.retrievePost = async (req, res, next) => {
       {
         $lookup: {
           from: "users",
-          localField: "author",
+          localField: "Userauthor",
           foreignField: "_id",
-          as: "author",
+          as: "Userauthor",
         },
       },
-      { $unwind: "$author" },
-      { $unwind: "$postVotes" },
       {
-        $unset: [
-          "author.password",
-          "author.email",
-          "author.private",
-          "author.bio",
-          "author.githubId",
-        ],
+        $unset: unwantedUserFields,
+      },     
+      {
+        $lookup: {
+          from: "animals",
+          localField: "Animalauthor",
+          foreignField: "_id",
+          as: "Animalauthor",
+        },
       },
+      {
+        $unset: unwantedAnimalFields,
+      },
+      { $unwind: "$postVotes" },
+      // {
+      //   $unset: [
+      //     "author.password",
+      //     "author.email",
+      //     "author.private",
+      //     "author.bio",
+      //     "author.githubId",
+      //   ],
+      // },
       {
         $addFields: { postVotes: "$postVotes.votes" },
       },
@@ -315,8 +485,34 @@ module.exports.votePost = async (req, res, next) => {
           post.filter,
           post._id
         );
+<<<<<<< HEAD
           console.log('loooooo')
     
+=======
+        if (post.authorType == "User"){
+            let body = `${user.username} liked your post recently.`
+            let channel = 'tamelyid';
+            let image = formatCloudinaryUrl(
+              post.image,
+              { height: 720, width: 1440, x: '100%', y: '100%', notify : true  },
+              true
+            );
+            const n_obj = {body, image}
+            notifyUser(n_obj,channel,post.Userauthor);
+          
+        }
+        else{
+          let n_obj = {
+            body : `${user.username} liked ${animalDoc.username}'s post recently.`,
+            image : formatCloudinaryUrl(
+              post.image,
+              { height: 720, width: 1440, x: '100%', y: '100%', notify : true  },
+              true
+            ),
+          }
+          notifyAnimal(n_obj,'tamelyid',post.Animalauthor);
+        }
+>>>>>>> Ishaan
         // Find the username of the post author
         // const postDocument = await Post.findById(post._id).populate('author');
         // image = formatCloudinaryUrl(
@@ -383,7 +579,7 @@ module.exports.postComment = async (req, res, next) => {
       },
     });
     await postComment.save();
-    return res.send({ success: true });
+    res.send({ success: true });
   } catch (err) {
     next(err);
   }
@@ -767,8 +963,11 @@ for(let i=0;i<followingDocument.length;i++){
 }
 // following =[]
 //  following.push(ObjectId('618a0d66e443a1dcaf4e4d8c'))
+following.push(user._id)
+following.push(ObjectId('6197b8b854bb630004ed1387'))
     // Fields to not include on the user object
     // console.log(following)
+<<<<<<< HEAD
     const unwantedUserFields = [
       "Userauthor.password",
       "Userauthor.private",
@@ -809,6 +1008,8 @@ for(let i=0;i<followingDocument.length;i++){
       "Animalauthor.relatedAnimals",
       "Animalauthor.registeredWithKennelClub"
     ];
+=======
+>>>>>>> Ishaan
     const posts = await Post.aggregate([
       {
         $match: {
@@ -1024,6 +1225,49 @@ for(let i=0;i<followingDocument.length;i++){
         $unset: [...unwantedUserFields, "comments", "commentCount"],
       },
     ]);
+    for (var i=0;i<posts.length;i++){
+      if (posts[i].authorType == "Animal"){
+        const animal_token = jwt.encode({ id: posts[i].Animalauthor[0]._id}, process.env.JWT_SECRET);
+        posts[i]['Animalauthor'][0]['category'] = animal_token;
+      }
+    }
+    if (req.headers.type=="User"){
+      for (var i=0;i<posts.length;i++){
+        const like = await PostVote.findOne({
+            'post' : ObjectId(posts[i]._id.toString()),
+            'voterDetails.Uservoter' : ObjectId(user._id.toString())
+        })
+        if (like){
+          posts[i].isLiked = true;
+        }
+        else{
+          posts[i].isLiked = false;
+        }
+        const isBookmark = user.bookmarks.some((e) => {
+          return e.post == posts[i]._id.toString()
+        })
+        posts[i].isBookmarked = isBookmark
+      }
+    }
+    if (req.headers.type=="Animal"){
+      for (var i=0;i<posts.length;i++){
+        const like = await PostVote.findOne({
+            'post' : ObjectId(posts[i]._id.toString()),
+            'voterDetails.Animalvoter' : ObjectId(user._id.toString())
+        })
+        if (like){
+          posts[i].isLiked = true;
+        }
+        else{
+          posts[i].isLiked = false;
+        }
+        const isBookmark = user.bookmarks.some((e) => {
+          return e.post == posts[i]._id.toString()
+        })
+        posts[i].isBookmarked = isBookmark
+      }
+    }
+    console.log(user.bookmarks)
     return res.send({posts:posts});
   } catch (err) {
     next(err);
@@ -1057,12 +1301,26 @@ module.exports.retrieveSuggestedPosts = async (req, res, next) => {
 
 module.exports.retrievMyPosts = async (req, res, next) => {
   const { counter = 0 } = req.body;
-
+  let obj = {}
+  let user=undefined
+  if(req.headers.type=="User"){
+    user = res.locals.user
+    obj = {'Userauthor' : user._id}
+  }
+  else
+  {
+    user = res.locals.animal
+    obj = {'Animalauthor' : user._id}
+  }
   try {
-    // const authorId = ObjectId(res.locals.user._id);
-    const authorId = res.locals.user._id;
+    const authorId = user._id;
     const posts = await Post.aggregate([
-      { $match: { author: authorId } },
+      // { $match: obj},
+      {
+        $match: {
+          $or: [{ Userauthor: ObjectId(user._id)}, { Animalauthor:  ObjectId(user._id)}],
+        },
+      },
       {
         $sort: { date: -1 },
       },
@@ -1072,8 +1330,160 @@ module.exports.retrievMyPosts = async (req, res, next) => {
       {
         $limit: 20,
       },
+      {
+        $lookup: {
+          from: "users",
+          localField: "Userauthor",
+          foreignField: "_id",
+          as: "Userauthor",
+        },
+      },
+      {
+        $unset: unwantedUserFields,
+      },     
+      {
+        $lookup: {
+          from: "animals",
+          localField: "Animalauthor",
+          foreignField: "_id",
+          as: "Animalauthor",
+        },
+      },
+      {
+        $unset: unwantedAnimalFields,
+      },
+      {
+        $lookup: {
+          from: "postvotes",
+          let: { post: "$_id" },
+          pipeline: [
+            {
+              $match: {
+                $expr: {
+                  $eq: ["$post", "$$post"],
+                },
+              },
+            },
+            {
+              $group: { _id: null, count: { $sum: 1 } },
+            },
+            {
+              $project: {
+                _id: false,
+              },
+            },
+          ],
+          as: "votesCount",
+        },
+      },
+      {
+        $lookup: {
+          from: "comments",
+          let: { postId: "$_id" },
+          pipeline: [
+            {
+              // Finding comments related to the postId
+              $match: {
+                $expr: {
+                  $eq: ["$post", "$$postId"],
+                },
+              },
+            },
+            { $sort: { date: -1 } },
+            { $limit: 3 },
+            // Populating the author field
+            {
+              $lookup: {
+                from: "users",
+                localField: "Userauthor",
+                foreignField: "_id",
+                as: "Userauthor",
+              },
+            },
+            {
+              $lookup: {
+                from: "animals",
+                localField: "Animalauthor",
+                foreignField: "_id",
+                as: "Animalauthor",
+              },
+            },
+            {
+              $unset: unwantedAnimalFields,
+            },
+            {
+              $lookup: {
+                from: "commentvotes",
+                localField: "_id",
+                foreignField: "comment",
+                as: "commentVotes",
+              },
+            },
+            // {
+            //   $unwind: "$author",
+            // },
+            {
+              $unwind: {
+                path: "$commentVotes",
+                preserveNullAndEmptyArrays: true,
+              },
+            },
+            {
+              $unset: unwantedUserFields,
+            },
+            {
+              $addFields: {
+                commentVotes: "$commentVotes.votes",
+              },
+            },
+          ],
+          as: "comments",
+        },
+      },
+      {
+        $lookup: {
+          from: "comments",
+          let: { postId: "$_id" },
+          pipeline: [
+            {
+              $match: {
+                $expr: {
+                  $eq: ["$post", "$$postId"],
+                },
+              },
+            },
+            {
+              $group: { _id: null, count: { $sum: 1 } },
+            },
+            {
+              $project: {
+                _id: false,
+              },
+            },
+          ],
+          as: "commentCount",
+        },
+      },
+      {
+        $unwind: {
+          path: "$commentCount",
+          preserveNullAndEmptyArrays: true,
+        },
+      },
+      {
+        $addFields: {
+          // postVotes: "$postVotes.votes",
+          commentData: {
+            comments: "$comments",
+            commentCount: "$commentCount.count",
+          },
+        },
+      },
+      {
+        $unset: [...unwantedUserFields, "comments", "commentCount"],
+      },
     ]);
-
+    console.log(posts)
     for (let p1 of posts) {
       let getPostVoteresp = await PostVote.aggregate([
         {
@@ -1115,6 +1525,39 @@ module.exports.retrievMyPosts = async (req, res, next) => {
     //   },
     //   ...populatePostsPipeline,
     // ]);
+    if (req.headers.type=="User"){
+      for (var i=0;i<posts.length;i++){
+        const like = await PostVote.findOne({
+            'post' : ObjectId(posts[i]._id.toString()),
+            'voterDetails.Uservoter' : ObjectId(user._id.toString())
+        })
+        if (like){
+          posts[i].isLiked = true;
+        }
+        else{
+          posts[i].isLiked = false;
+        }
+        const isBookmark = user.bookmarks.includes(posts[i]._id.toString())
+        posts[i].isBookmarked = isBookmark
+      }
+    }
+    if (req.headers.type=="Animal"){
+      for (var i=0;i<posts.length;i++){
+        const like = await PostVote.findOne({
+            'post' : ObjectId(posts[i]._id.toString()),
+            'voterDetails.Animalvoter' : ObjectId(user._id.toString())
+        })
+        if (like){
+          posts[i].isLiked = true;
+        }
+        else{
+          posts[i].isLiked = false;
+        }
+        const isBookmark = user.bookmarks.includes(posts[i]._id.toString())
+        posts[i].isBookmarked = isBookmark
+      }
+    }
+    
     return res.send({"posts" : posts});
   } catch (err) {
     console.log(err);
@@ -1179,47 +1622,6 @@ module.exports.foryoufeed = async (req, res, next) => {
   const { counter } = req.body;
 
   try {
-
-    const unwantedUserFields = [
-      "author.password",
-      "author.private",
-      "author.confirmed",
-      "author.bookmarks",
-      "author.email",
-      "author.website",
-      "author.bio",
-      "author.githubId",
-      "author.pets",
-      "author.googleUserId"
-    ];
-    const unwantedAnimalFields = [
-      "Animalauthor.mating",
-      "Animalauthor.adoption",
-      "Animalauthor.playBuddies",
-      "Animalauthor.username",
-      "Animalauthor.category",
-      "Animalauthor.animal_type",
-      "Animalauthor.location",
-      "Animalauthor.guardians",
-      "Animalauthor.pets",
-      "Animalauthor.bio",
-      "Animalauthor.animalType",
-      "Animalauthor.gender",
-      "Animalauthor.breed",
-      "Animalauthor.age",
-      "Animalauthor.playFrom",
-      "Animalauthor.playTo",
-      "Animalauthor.servicePet",
-      "Animalauthor.spayed",
-      "Animalauthor.friendlinessWithHumans",
-      "Animalauthor.friendlinessWithAnimals",
-      "Animalauthor.favouriteThings",
-      "Animalauthor.thingsDislikes",
-      "Animalauthor.uniqueHabits",
-      "Animalauthor.eatingHabits",
-      "Animalauthor.relatedAnimals",
-      "Animalauthor.registeredWithKennelClub"
-    ];
     const posts = await Post.aggregate([
       // {
       //   $match: {
@@ -1227,7 +1629,7 @@ module.exports.foryoufeed = async (req, res, next) => {
       //   },
       // },
       { $sort: { date: -1 } },
-      { $skip: Number(counter)*5 },
+      { $skip: Number(counter)*20 },
       { $limit: 20 },
       {
         $lookup: {
@@ -1435,6 +1837,46 @@ module.exports.foryoufeed = async (req, res, next) => {
         $unset: [...unwantedUserFields, "comments", "commentCount"],
       },
     ]);
+    for (var i=0;i<posts.length;i++){
+      if (posts[i].authorType == "Animal"){
+        // console.log(posts[i])
+        const animal_token = jwt.encode({ id: posts[i].Animalauthor[0]._id}, process.env.JWT_SECRET);
+        posts[i]['Animalauthor'][0]['category'] = animal_token;
+      }
+    }
+    if (req.headers.type=="User"){
+      for (var i=0;i<posts.length;i++){
+        const like = await PostVote.findOne({
+            'post' : ObjectId(posts[i]._id.toString()),
+            'voterDetails.Uservoter' : ObjectId(user._id.toString())
+        })
+        // console.log(like)
+        if (like){
+          posts[i].isLiked = true;
+        }
+        else{
+          posts[i].isLiked = false;
+        }
+        const isBookmark = user.bookmarks.includes(posts[i]._id.toString())
+        posts[i].isBookmarked = isBookmark
+      }
+    }
+    if (req.headers.type=="Animal"){
+      for (var i=0;i<posts.length;i++){
+        const like = await PostVote.findOne({
+            'post' : ObjectId(posts[i]._id.toString()),
+            'voterDetails.Animalvoter' : ObjectId(user._id.toString())
+        })
+        if (like){
+          posts[i].isLiked = true;
+        }
+        else{
+          posts[i].isLiked = false;
+        }
+        const isBookmark = user.bookmarks.includes(posts[i]._id.toString())
+        posts[i].isBookmarked = isBookmark
+      }
+    }
     return res.send({posts:posts});
   } catch (err) {
     next(err);
@@ -1494,7 +1936,33 @@ module.exports.follow = async (req, res, next) => {
       });
       await followerDocument.save();
       await followingDocument.save();
-      return res.send({ success: true });
+      res.send({ success: true });
+      const isUser = await User.findOne({_id : ObjectId(toId)}, '_id username');
+      if (isUser){
+        let title = 'Tamely'
+        let body = `${user.username} just followed you!🥳`
+        let channel = 'tamelyid';
+        let image = formatCloudinaryUrl(
+          user.avatar,
+          { height: 720, width: 1440, x: '100%', y: '100%', notify : true  },
+          true
+        );
+        const obj = {title, body, image}
+        notifyUser(obj,channel,toId);  
+        }
+        else{
+          const animalDoc = await Animal.findOne({id : ObjectId(toId)}, '_id username')
+          let obj = {
+            title : 'Tamely',
+            body : `${user.username} just followed ${animalDoc.username}!🥳`,
+            image : formatCloudinaryUrl(
+              user.avatar,
+              { height: 720, width: 1440, x: '100%', y: '100%', notify : true  },
+              true
+            ),
+          }
+          notifyAnimal(obj,'tamelyid',toId);   
+        }
     }
   } catch (err) {
     next(err);
@@ -1517,4 +1985,189 @@ module.exports.retrievePostlikes = async (req, res, next) => {
   } catch (err) {
     next(err);
   }
+<<<<<<< HEAD
+}
+
+module.exports.retrievePostlikes = async (req, res, next) => {
+  const { postId } = req.body;
+  const user = res.locals.user;
+
+  try {
+    const postlikes = await PostVote.find({ post: postId}).populate('voterDetails.Uservoter','_id name username avatar').populate('voterDetails.Animalvoter','_id name username avatar');
+    if (!postlikes) {
+      return res.status(404).send({
+        error: "Could not find likes with that postid",
+      });
+    }
+  console.log(postId)
+    return res.send({postlikes});
+  } catch (err) {
+    next(err);
+  }
 };
+=======
+};
+
+module.exports.deleteNullPostVotes = async (req, res, next) => {
+  try{
+    const result = await PostVote.deleteMany({"voterDetails" : null});
+    return res.status(200).send({ success: true });
+  }
+  catch(err){
+    console.log(err);
+    next(err)
+  }
+}
+
+module.exports.getPostsById = async (req, res, next) => {
+    const {id,type, counter = 0} = req.body;
+    let user = null;
+    if (type == "User"){
+      user = await User.findById(id, '_id bookmarks')
+    }
+    else{
+      user = await Animal.findById(id, '_id bookmarks')
+    }
+    const posts = await Post.aggregate([
+      {
+        $match: {
+          $or: [{ Userauthor: ObjectId(user._id)}, { Animalauthor:  ObjectId(user._id)}],
+        },
+      },
+      {
+        $sort: { date: -1 },
+      },
+      {
+        $skip: Number(counter*20),
+      },
+      {
+        $limit: 20,
+      },
+      {
+        $lookup: {
+          from: "users",
+          localField: "Userauthor",
+          foreignField: "_id",
+          as: "Userauthor",
+        },
+      },
+      {
+        $unset: unwantedUserFields,
+      },     
+      {
+        $lookup: {
+          from: "animals",
+          localField: "Animalauthor",
+          foreignField: "_id",
+          as: "Animalauthor",
+        },
+      },
+      {
+        $unset: unwantedAnimalFields,
+      },
+    ]);
+    for (let p1 of posts) {
+      let getPostVoteresp = await PostVote.aggregate([
+        {
+          $match: { post: p1._id },
+        },
+        {
+          $count: "totalVotes",
+        },
+      ]);
+      let getTotalCommentsResp = await Comment.aggregate([
+        {
+          $match: { post: p1._id },
+        },
+        {
+          $count: "totalComments",
+        },
+      ]);
+      p1.totalVotes =
+        getPostVoteresp.length == 0 ? 0 : getPostVoteresp[0].totalVotes;
+      p1.totalComments =
+        getTotalCommentsResp.length == 0
+          ? 0
+          : getTotalCommentsResp[0].totalComments;
+    }
+    if (req.headers.type=="User"){
+      for (var i=0;i<posts.length;i++){
+        const like = await PostVote.findOne({
+            'post' : ObjectId(posts[i]._id.toString()),
+            'voterDetails.Uservoter' : ObjectId(user._id.toString())
+        })
+        if (like){
+          posts[i].isLiked = true;
+        }
+        else{
+          posts[i].isLiked = false;
+        }
+        const isBookmark = user.bookmarks.includes(posts[i]._id.toString())
+        posts[i].isBookmarked = isBookmark
+      }
+    }
+    if (req.headers.type=="Animal"){
+      for (var i=0;i<posts.length;i++){
+        const like = await PostVote.findOne({
+            'post' : ObjectId(posts[i]._id.toString()),
+            'voterDetails.Animalvoter' : ObjectId(user._id.toString())
+        })
+        if (like){
+          posts[i].isLiked = true;
+        }
+        else{
+          posts[i].isLiked = false;
+        }
+        const isBookmark = user.bookmarks.includes(posts[i]._id.toString())
+        posts[i].isBookmarked = isBookmark
+      }
+    }
+    
+    return res.send({"posts" : posts});
+}
+
+module.exports.deletePost = async (req, res, next) => {
+  const {postId} = req.body;
+  let user = null;
+  try{
+    if (req.headers.type=="User")
+      user = res.locals.user;
+    else
+      user = res.locals.animal
+    const post = await Post.findById(postId, 'authorType Animalauthor Userauthor');
+    console.log(post)
+    if (!post){
+      return res.status(404).send({"message" : "No such post found!" , "success" : false});
+    }
+    if (post.authorType != req.headers.type){
+      return res.status(403).send({"message" : "You dont have required permissions", "success" : false});
+    }
+    if (req.headers.type==post.authorType){
+      console.log(user._id)
+      if (post.authorType == "User"){
+        if (user._id.toString() == post.Userauthor.toString()){
+          await Post.deleteOne({"_id" : ObjectId(postId)});
+          return res.status(200).send({"message" : "Post was deleted successfully!", "success" : true})
+        }
+        else{
+          return res.status(403).send({"message" : "You dont have required permissions", "success" : false});
+        }
+      }
+      if (post.authorType == "Animal"){
+        if (user._id.toString() == post.Animalauthor.toString()){
+          await Post.deleteOne({"_id" : ObjectId(postId)});
+          return res.status(200).send({"message" : "Post was deleted successfully!", "success" : true})
+        }
+        else{
+          return res.status(403).send({"message" : "You dont have required permissions", "success" : false});
+        }
+      }
+    }
+    return res.status(400).send({"message" : "Something went wrong!", "success" : false});
+  }
+  catch (err){
+    console.log(err)
+    next(err)
+  }
+}
+>>>>>>> Ishaan

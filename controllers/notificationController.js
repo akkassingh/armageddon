@@ -2,14 +2,24 @@ const Notification = require('../models/Notification');
 const ObjectId = require('mongoose').Types.ObjectId;
 
 module.exports.retrieveNotifications = async (req, res, next) => {
-  const user = res.locals.user;
-  const notification = await Notification.find({receiver:user._id})
+  let user=undefined;
+  if(req.headers.type=="User")
+   user = res.locals.user
+  else
+   user = res.locals.animal
+   const notification = await Notification.find({receiver:user._id})
   console.log(notification)
 
   try {
     const notifications = await Notification.aggregate([
+      // {
+      //   $match: { receiver: user._id },
+      // },
       {
-        $match: { receiver: user._id },
+        $match: {
+          $or: [{ Userreceiver: user._id  }, { Animalreceiver: user._id }],
+          $and: [{ read: false  }],
+        },
       },
       {
         $sort: { date: -1 },
@@ -19,23 +29,42 @@ module.exports.retrieveNotifications = async (req, res, next) => {
           from: 'users',
           localField: 'sender',
           foreignField: '_id',
-          as: 'sender',
+          as: 'senderUser',
+        },
+      },
+      {
+        $lookup: {
+          from: 'animals',
+          localField: 'sender',
+          foreignField: '_id',
+          as: 'senderAnimal',
         },
       },
       {
         $lookup: {
           from: 'users',
-          localField: 'receiver',
+          localField: 'Userreceiver',
           foreignField: '_id',
-          as: 'receiver',
+          as: 'Userreceiver',
         },
       },
       {
-        $unwind: '$sender',
+        $lookup: {
+          from: 'animals',
+          localField: 'Animalauthor',
+          foreignField: '_id',
+          as: 'Animalreciever',
+        },
       },
-      {
-        $unwind: '$receiver',
-      },
+      // {
+      //   $unwind: '$senderUser',
+      // },
+      // {
+      //   $unwind: '$senderAnimal',
+      // },
+      // {
+      //   $unwind: '$receiver',
+      // },
       // Look for the sender's followers
       // {
       //   $lookup: {
@@ -63,26 +92,37 @@ module.exports.retrieveNotifications = async (req, res, next) => {
           isFollowing: true,
           date: true,
           notificationData: true,
-          'sender.username': true,
-          'sender.avatar': true,
-          'sender._id': true,
-          'receiver._id': true,
+          'senderUser.username': true,
+          'senderUser.avatar': true,
+          'senderUser._id': true,
+          'senderAnimal.username': true,
+          'senderAnimal.avatar': true,
+          'senderAnimal._id': true,
+          'Userreceiver._id': true,
+          'Animalreciever._id': true,
         },
       },
     ]);
     console.log(notifications)
-    return res.send(notifications);
+    return res.send({notifications:notifications});
   } catch (err) {
     next(err);
   }
 };
 
 module.exports.readNotifications = async (req, res, next) => {
-  const user = res.locals.user;
+  let user=undefined;
 
   try {
-    await Notification.updateMany({ receiver: user._id }, { read: true });
-    return res.send();
+    if(req.headers.type=="User"){
+    user = res.locals.user
+    await Notification.updateMany({ Userreceiver: user._id }, { read: true });
+  }
+   else{
+    user = res.locals.animal
+    await Notification.updateMany({ Animalreceiver: user._id }, { read: true });
+  }
+    return res.send({"success" : true});
   } catch (err) {
     next(err);
   }

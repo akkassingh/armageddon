@@ -22,11 +22,12 @@ const {
   updateBioAndAvatar,
   showPeopleToFollow,
   getPendingGuardianRequests,
-  getUserDetailsById
+  getUserDetailsById,
+  getAvatarLink
 } = require("../controllers/userController");
 const { requireAuth, optionalAuth } = require("../controllers/authController");
 
-userRouter.get("/getPendingGuardianRequests",requireAuth,getPendingGuardianRequests)
+userRouter.post("/getPendingGuardianRequests",requireAuth,getPendingGuardianRequests)
 userRouter.get("/userDetails", requireAuth, getUserDetails);
 userRouter.post("/getUserDetailsById", getUserDetailsById);
 userRouter.post('/showPeopleToFollow',requireAuth, showPeopleToFollow);
@@ -35,7 +36,7 @@ userRouter.get("/:username", optionalAuth, retrieveUser);
 userRouter.post("/:username/posts", retrievePosts);
 userRouter.post("/following", requireAuth, retrieveFollowing);
 userRouter.post("/followers", requireAuth, retrieveFollowers);
-userRouter.post("/search", searchUsers);
+userRouter.post("/search",requireAuth, searchUsers);
 
 userRouter.put("/confirm", requireAuth, confirmUser);
 userRouter.put(
@@ -61,5 +62,7 @@ userRouter.get(
 );
 userRouter.post("/addPet", requireAuth, becomeGuardian);
 userRouter.patch("/petanduserdetails", requireAuth, petanduserdetails);
-
+userRouter.post("/getAvatarLink",multer({
+  dest: "temp/",
+}).single("image"), requireAuth, getAvatarLink);
 module.exports = userRouter;

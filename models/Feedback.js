@@ -11,6 +11,9 @@ const FeedbackSchema = new Schema({
         type: Schema.ObjectId,
         ref: 'User'
     }
+},
+{
+  timestamps: true
 });
 
 const Feedback = mongoose.model("Feedback", FeedbackSchema);

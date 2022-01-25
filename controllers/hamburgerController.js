@@ -9,6 +9,47 @@ const Feedback = require('../models/Feedback');
 const {bookingDetails} = require("../models/ServiceBooking");
 const {ServiceAppointment}=require("../models/Service");
 const Help = require('../models/Help');
+const ObjectId = require("mongoose").Types.ObjectId;
+const unwantedUserFields = [
+  "Userauthor.password",
+  "Userauthor.private",
+  "Userauthor.confirmed",
+  "Userauthor.bookmarks",
+  "Userauthor.email",
+  "Userauthor.website",
+  "Userauthor.bio",
+  "Userauthor.githubId",
+  "Userauthor.pets",
+  "Userauthor.googleUserId"
+];
+const unwantedAnimalFields = [
+  "Animalauthor.mating",
+  "Animalauthor.adoption",
+  "Animalauthor.playBuddies",
+  // "Animalauthor.username",
+  "Animalauthor.category",
+  "Animalauthor.animal_type",
+  "Animalauthor.location",
+  "Animalauthor.guardians",
+  "Animalauthor.pets",
+  "Animalauthor.bio",
+  "Animalauthor.animalType",
+  "Animalauthor.gender",
+  "Animalauthor.breed",
+  "Animalauthor.age",
+  "Animalauthor.playFrom",
+  "Animalauthor.playTo",
+  "Animalauthor.servicePet",
+  "Animalauthor.spayed",
+  "Animalauthor.friendlinessWithHumans",
+  "Animalauthor.friendlinessWithAnimals",
+  "Animalauthor.favouriteThings",
+  "Animalauthor.thingsDislikes",
+  "Animalauthor.uniqueHabits",
+  "Animalauthor.eatingHabits",
+  "Animalauthor.relatedAnimals",
+  "Animalauthor.registeredWithKennelClub"
+];
 
 module.exports.getBookmarks = async (req, res, next) => {
     const { counter = 0 } = req.body;
@@ -30,11 +71,164 @@ module.exports.getBookmarks = async (req, res, next) => {
       {
         $limit: 20,
       },
+      {
+        $lookup: {
+          from: "users",
+          localField: "Userauthor",
+          foreignField: "_id",
+          as: "Userauthor",
+        },
+      },
+      {
+        $unset: unwantedUserFields,
+      },     
+      {
+        $lookup: {
+          from: "animals",
+          localField: "Animalauthor",
+          foreignField: "_id",
+          as: "Animalauthor",
+        },
+      },
+      {
+        $unset: unwantedAnimalFields,
+      },
+      {
+        $lookup: {
+          from: "postvotes",
+          let: { post: "$_id" },
+          pipeline: [
+            {
+              $match: {
+                $expr: {
+                  $eq: ["$post", "$$post"],
+                },
+              },
+            },
+            {
+              $group: { _id: null, count: { $sum: 1 } },
+            },
+            {
+              $project: {
+                _id: false,
+              },
+            },
+          ],
+          as: "votesCount",
+        },
+      },
+      {
+        $lookup: {
+          from: "comments",
+          let: { postId: "$_id" },
+          pipeline: [
+            {
+              // Finding comments related to the postId
+              $match: {
+                $expr: {
+                  $eq: ["$post", "$$postId"],
+                },
+              },
+            },
+            { $sort: { date: -1 } },
+            { $limit: 3 },
+            // Populating the author field
+            {
+              $lookup: {
+                from: "users",
+                localField: "Userauthor",
+                foreignField: "_id",
+                as: "Userauthor",
+              },
+            },
+            {
+              $lookup: {
+                from: "animals",
+                localField: "Animalauthor",
+                foreignField: "_id",
+                as: "Animalauthor",
+              },
+            },
+            {
+              $unset: unwantedAnimalFields,
+            },
+            {
+              $lookup: {
+                from: "commentvotes",
+                localField: "_id",
+                foreignField: "comment",
+                as: "commentVotes",
+              },
+            },
+            // {
+            //   $unwind: "$author",
+            // },
+            {
+              $unwind: {
+                path: "$commentVotes",
+                preserveNullAndEmptyArrays: true,
+              },
+            },
+            {
+              $unset: unwantedUserFields,
+            },
+            {
+              $addFields: {
+                commentVotes: "$commentVotes.votes",
+              },
+            },
+          ],
+          as: "comments",
+        },
+      },
+      {
+        $lookup: {
+          from: "comments",
+          let: { postId: "$_id" },
+          pipeline: [
+            {
+              $match: {
+                $expr: {
+                  $eq: ["$post", "$$postId"],
+                },
+              },
+            },
+            {
+              $group: { _id: null, count: { $sum: 1 } },
+            },
+            {
+              $project: {
+                _id: false,
+              },
+            },
+          ],
+          as: "commentCount",
+        },
+      },
+      {
+        $unwind: {
+          path: "$commentCount",
+          preserveNullAndEmptyArrays: true,
+        },
+      },
+      {
+        $addFields: {
+          // postVotes: "$postVotes.votes",
+          commentData: {
+            comments: "$comments",
+            commentCount: "$commentCount.count",
+          },
+        },
+      },
+      {
+        $unset: [...unwantedUserFields, "comments", "commentCount"],
+      },
     ]);
+    console.log(bookmarks)
     for (let b of bookmarks) {
       let getPostVoteresp = await PostVote.aggregate([
         {
-          $match: { post: b.post },
+          $match: { post: b._id },
         },
         {
           $count: "totalVotes",
@@ -42,7 +236,7 @@ module.exports.getBookmarks = async (req, res, next) => {
       ]);
       let getTotalCommentsResp = await Comment.aggregate([
         {
-          $match: { post: b.post },
+          $match: { post: b._id },
         },
         {
           $count: "totalComments",
@@ -54,6 +248,38 @@ module.exports.getBookmarks = async (req, res, next) => {
         getTotalCommentsResp.length == 0
           ? 0
           : getTotalCommentsResp[0].totalComments;
+    }
+    if (req.headers.type=="User"){
+      for (var i=0;i<bookmarks.length;i++){
+        const like = await PostVote.findOne({
+            'post' : ObjectId(bookmarks[i]._id.toString()),
+            'voterDetails.Uservoter' : ObjectId(user._id.toString())
+        })
+        if (like){
+          bookmarks[i].isLiked = true;
+        }
+        else{
+          bookmarks[i].isLiked = false;
+        }
+        const isBookmark = true
+        bookmarks[i].isBookmarked = isBookmark
+      }
+    }
+    if (req.headers.type=="Animal"){
+      for (var i=0;i<bookmarks.length;i++){
+        const like = await PostVote.findOne({
+            'post' : ObjectId(bookmakrs[i]._id.toString()),
+            'voterDetails.Animalvoter' : ObjectId(user._id.toString())
+        })
+        if (like){
+          bookmarks[i].isLiked = true;
+        }
+        else{
+          bookmarks[i].isLiked = false;
+        }
+        const isBookmark = true
+        bookmarks[i].isBookmarked = isBookmark
+      }
     }
     return res.send({"bookmarks": bookmarks});
   } catch (err) {

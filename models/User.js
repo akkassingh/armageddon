@@ -8,8 +8,8 @@ const RequestError = require("../errorTypes/RequestError");
 const UserSchema = new Schema({
   email: {
     type: String,
-    required: true,
     unique: true,
+    sparse: true,
     lowercase: true,
     validate: (value) => {
       if (!validator.isEmail(value)) {
@@ -75,6 +75,14 @@ const UserSchema = new Schema({
       },
     },
   ],
+  phoneNumber: {
+    type: String,
+    required: false,
+    unique: [true, "A user with this phone number already exists"],
+  }
+},
+{
+  timestamps: true
 });
 
 // UserSchema.pre('save', function (next) {
@@ -100,7 +108,8 @@ UserSchema.pre("save", async function (next) {
   if (this.isNew) {
     try {
       const document = await User.findOne({
-        $or: [{ email: this.email }, { username: this.username }],
+        $or: [{ username: this.username }],
+        // $or: [{ email: this.email }, { username: this.username }],
       });
       if (document)
         return next(

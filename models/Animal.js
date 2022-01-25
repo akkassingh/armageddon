@@ -15,6 +15,14 @@ const AnimalSchema = new Schema({
     lowercase: true,
     minlength: 3,
   },
+  bookmarks: [
+    {
+      post: {
+        type: Schema.ObjectId,
+        ref: "Post",
+      },
+    },
+  ],
   avatar: String,
   guardians: [
     {
@@ -40,6 +48,7 @@ const AnimalSchema = new Schema({
         ref: "Animal",
       },
       status: Number //  0 , 1 , -1 
+      // 0 means outgoing, 1 means incoming and -1 means relation has been accepted
     },
   ],
   //TODO: make a different schema of category
@@ -92,9 +101,21 @@ const AnimalSchema = new Schema({
     type: String,
     maxlength: 130,
   },
-  location: String,
-  registeredWithKennelClub:Boolean
+  location: {
+    type : {type : String},
+    coordinates : [],
+  },
+  registeredWithKennelClub:Boolean,
+  isBrandAmbassador : {
+    type : Boolean,
+    default : false,
+  }
+},
+{
+  timestamps: true
 });
+
+AnimalSchema.index({ location: "2dsphere" });
 
 AnimalSchema.pre("save", async function (next) {
   if (this.isNew) {

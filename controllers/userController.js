@@ -1,6 +1,8 @@
 const User = require("../models/User");
 const Animal = require("../models/Animal");
+const Group = require("../models/Group");
 const Post = require("../models/Post");
+const GroupMember = require("../models/GroupMember");
 const ServiceProvider = require("../models/ServiceProvider");
 const PostVote = require("../models/PostVote");
 const Followers = require("../models/Followers");
@@ -14,6 +16,9 @@ const fs = require("fs");
 const crypto = require("crypto");
 const logger = require("../logger/logger");
 const bcrypt = require("bcrypt");
+const jwt = require("jwt-simple");
+const FcmToken = require("../models/FcmToken");
+const {notify, notifyUser,notifyAnimal} = require("../utils/controllerUtils");
 
 const {
   validateEmail,
@@ -22,7 +27,7 @@ const {
   validateBio,
   validateWebsite,
 } = require("../utils/validation");
-const { sendConfirmationEmail } = require("../utils/controllerUtils");
+const { sendConfirmationEmail, formatCloudinaryUrl } = require("../utils/controllerUtils");
 
 module.exports.retrieveUser = async (req, res, next) => {
   const { username } = req.params;
@@ -190,8 +195,12 @@ module.exports.retrievePosts = async (req, res, next) => {
 
 module.exports.bookmarkPost = async (req, res, next) => {
   const { postId } = req.params;
-  const user = res.locals.user;
-
+  let user=undefined;
+  let userRemoveBookmarkUpdate;
+  if(req.headers.type=="User")
+   user = res.locals.user
+  else
+   user = res.locals.animal
   try {
     const post = await Post.findById(postId);
     if (!post) {
@@ -199,24 +208,42 @@ module.exports.bookmarkPost = async (req, res, next) => {
         .status(404)
         .send({ error: "Could not find a post with that id." });
     }
-
-    const userBookmarkUpdate = await User.updateOne(
-      {
-        _id: user._id,
-        "bookmarks.post": { $ne: postId },
-      },
-      { $push: { bookmarks: { post: postId } } }
-    );
+    if(req.headers.type=="User"){
+       userBookmarkUpdate = await User.updateOne(
+        {
+          _id: user._id,
+          "bookmarks.post": { $ne: postId },
+        },
+        { $push: { bookmarks: { post: postId } } }
+      );
+    }
+    else{
+       userBookmarkUpdate = await Animal.updateOne(
+        {
+          _id: user._id,
+          "bookmarks.post": { $ne: postId },
+        },
+        { $push: { bookmarks: { post: postId } } }
+      );
+    }
     if (!userBookmarkUpdate.nModified) {
       if (!userBookmarkUpdate.ok) {
         return res.status(500).send({ error: "Could not bookmark the post." });
       }
       // The above query did not modify anything meaning that the user has already bookmarked the post
       // Remove the bookmark instead
-      const userRemoveBookmarkUpdate = await User.updateOne(
-        { _id: user._id },
-        { $pull: { bookmarks: { post: postId } } }
-      );
+      if(req.headers.type=="User"){
+         userRemoveBookmarkUpdate = await User.updateOne(
+          { _id: user._id },
+          { $pull: { bookmarks: { post: postId } } }
+        );
+      }
+      else{
+         userRemoveBookmarkUpdate = await Animal.updateOne(
+          { _id: user._id },
+          { $pull: { bookmarks: { post: postId } } }
+        );
+      }
       if (!userRemoveBookmarkUpdate.nModified) {
         return res.status(500).send({ error: "Could not bookmark the post." });
       }
@@ -230,7 +257,11 @@ module.exports.bookmarkPost = async (req, res, next) => {
 
 module.exports.followUser = async (req, res, next) => {
   const { userId } = req.params;
-  const user = res.locals.user;
+  let user = null;
+  if (req.headers.type=="User")
+    user = res.locals.user
+  else 
+    user = res.locals.animal
 
   try {
     const userToFollow = await User.findById(userId);
@@ -304,6 +335,32 @@ module.exports.followUser = async (req, res, next) => {
     });
 
     res.send({ success: true, operation: "follow" });
+    const isUser = await User.findOne({id : ObjectId(userId)}, '_id username');
+    if (isUser){
+        let title = 'Tamely'
+        let body = `${user.username} just followed you!🥳`
+        let channel = 'tamelyid';
+        let image = formatCloudinaryUrl(
+          post.image,
+          { height: 720, width: 1440, x: '100%', y: '100%', notify : true  },
+          true
+        );
+        const obj = {title, body, image}
+        notifyUser(obj,channel,userId);
+      
+    }
+    else{
+      let obj = {
+        title : 'Tamely',
+        body : `${user.username} just followed ${animalDoc.username}!🥳`,
+        image : formatCloudinaryUrl(
+          post.image,
+          { height: 720, width: 1440, x: '100%', y: '100%', notify : true  },
+          true
+        ),
+      }
+      notifyAnimal(obj,'tamelyid',userId);   
+    }
   } catch (err) {
     next(err);
   }
@@ -414,11 +471,27 @@ module.exports.retrieveFollowers = async (req, res, next) => {
   const user = res.locals.user;
   try {
     // const users = await retrieveRelatedUsers(user, userId, counter*10, true);
+    const following = await Following.find({"user.id": userId},{'followingDetails.followingId': 1, '_id': 0}).lean();
+    const followingIds = [];
+    for (var i=0; i< following.length; i++){
+      followingIds[i] = following[i].followingDetails.followingId.toString();
+    }
+    console.log(followingIds)
     const users = await Followers.find({
       "user.id" : ObjectId(userId)
-    },'followerDetails').populate('followerDetails.followerId', 'username avatar _id fullName').skip(20*counter).limit(20);
+    },'followerDetails').populate('followerDetails.followerId', 'username avatar _id fullName').skip(20*counter).limit(20).lean();
+    
+    for (var i=0;i<users.length;i++){
+      if (followingIds.indexOf(users[i].followerDetails.followerId._id.toString())>-1){
+        users[i]['isFollowing'] = 1;
+      }
+      else {
+        users[i]['isFollowing'] = 0;
+      }
+    }
     return res.send({"followers" : users});
-  } catch (err) {
+  } 
+  catch (err) {
     next(err);
   }
 };
@@ -496,19 +569,56 @@ searchAnimal = async(username,counter,type) => {
         username: true,
         avatar: true,
         fullName: true,
+        name : true,
       },
     },
   ]);
   users.forEach(function (element) {
     element.type = "Animal";
+    element.token = jwt.encode({id : element._id}, process.env.JWT_SECRET);
   });
   return users;
 };
 
+searchGroup = async(username,counter) => {
+  let lim = 10;
+  const users = await Group.aggregate([
+    {
+      $match: {
+        name: { $regex: new RegExp(username,"i")}
+      },
+    },
+    {
+      $sort: { members: -1 },
+    },
+    {
+      $skip: Number(counter*10),
+    },
+    {
+      $limit: lim,
+    },
+    {
+      $project: {
+        _id: true,
+        name: true,
+        avatar: true,
+        coverPhoto: true,
+        members : true,
+        description : true,
+      },
+    },
+  ]);
+  return users;
+};
 
 
 module.exports.searchUsers = async (req, res, next) => {
   const {username, counter = 0, type} = req.body;
+  let user = null;
+  if (req.headers.type=="User")
+    user = res.locals.user
+  else
+    user = res.locals.animal
   //type will be of 3 types
   // "Both" will mean both User and Animal
   // "Animal" will mean only Animal
@@ -537,6 +647,30 @@ module.exports.searchUsers = async (req, res, next) => {
       }
       return res.status(200).send({"profiles" : users});
 
+    }
+    else if (type == "Group"){
+      const users = await searchGroup(username,counter)
+      if (users.length === 0) {
+        return res
+          .status(404)
+          .send({ error: "Could not find any users matching the criteria." });
+      }
+      for (var i=0;i<users.length;i++){
+        const isMember = await GroupMember.findOne({
+          user : user._id,
+          group : ObjectId(users[i]._id),
+          confirmed : true,
+        }, 'isAdmin confirmed');
+        if (isMember){
+          users[i]['isMember'] = true;
+          users[i]['isAdmin'] = isMember.isAdmin;
+        }
+        else{
+          users[i]['isMember'] = false;
+          users[i]['isAdmin'] = false;
+        }
+      }
+      return res.status(200).send({"profiles" : users});
     }
     else if (type=== "Both"){
       const humans = await searchHuman(username,counter,type);
@@ -612,6 +746,41 @@ module.exports.confirmUser = async (req, res, next) => {
     next(err);
   }
 };
+
+module.exports.getAvatarLink = async (req, res, next) => {
+  const user = res.locals.user;
+  if (!req.file) {
+    return res
+      .status(400)
+      .send({ error: "Please provide the image to upload." });
+  }
+
+  cloudinary.config({
+    cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
+    api_key: process.env.CLOUDINARY_API_KEY,
+    api_secret: process.env.CLOUDINARY_API_SECRET,
+  });
+
+  try {
+    const response = await cloudinary.uploader.upload(req.file.path);
+    const thumbnailUrl = formatCloudinaryUrl(
+      response.secure_url,
+      {
+        width: 400,
+        height: 400,
+      },
+      true
+    );
+    fs.unlinkSync(req.file.path);
+    const image = response.secure_url;
+    const thumbnail = thumbnailUrl
+    return res.status(201).send({"avatarLink" : {image, thumbnail}});
+  }
+  catch (err) {
+    console.log(err);
+    next(err);
+  }
+}
 
 module.exports.changeAvatar = async (req, res, next) => {
   const user = res.locals.user;
@@ -1009,13 +1178,23 @@ module.exports.becomeGuardian = async (req, res, next) => {
 
 module.exports.getUserDetails = async (req, res, next) => {
   const user = res.locals.user;
-  const { idPet } = req.body;
+  const getPosts = await Post.find({"Userauthor" : ObjectId(user._id)}, '_id');
+  // const { idPet } = req.body;
   try {
-    const user_details = await User.findById(user._id).populate("pets.pet", '_id name avatar');
+    let user_details = await User.findById(user._id).populate("pets.pet", '_id name avatar category');
     if (!user_details)
       return res.status(404).send({ error: "No such user exists!" });
+      // console.log(user_details)
+if(user_details.pets)
+    for(let i=0;i<user_details.pets.length;i++){
+      if(user_details.pets[i].pet){
+        let animal_token= jwt.encode({ id: user_details.pets[i].pet._id }, process.env.JWT_SECRET)
+        user_details.pets[i].pet.category=animal_token;
+      }
 
-    const animal_details = await Animal.find({ "guardians.user": user._id }, 'username name avatar');
+    }
+
+    // const animal_details = await Animal.find({ "guardians.user": user._id }, 'username name avatar');
     // let newAnimalArr = [];
     // if (animal_details.length > 0) {
     //   for (let a1 of animal_details) {
@@ -1079,19 +1258,18 @@ module.exports.getUserDetails = async (req, res, next) => {
 
     const followersCount = await Followers.aggregate([
       {
-        $match: { "user.id": user._id },
+        $match: { "user.id": ObjectId(user._id) },
       },
       {
         $count: "totalFollowers",
       },
     ]);
-
     let totalFollowers =
       followersCount.length == 0 ? 0 : followersCount[0].totalFollowers;
 
     const followingCount = await Following.aggregate([
       {
-        $match: { "user.id": user._id },
+        $match: { "user.id": ObjectId(user._id) },
       },
       {
         $count: "totalFollowing",
@@ -1101,9 +1279,6 @@ module.exports.getUserDetails = async (req, res, next) => {
     let totalFollowings =
       followingCount.length == 0 ? 0 : followingCount[0].totalFollowing;
 
-    const getPosts = await Post.find({
-      "postOwnerDetails.postOwnerId": user._id.toString(),
-    });
 
     let totalLikes = 0;
     let totalPosts = 0;
@@ -1132,6 +1307,7 @@ module.exports.getUserDetails = async (req, res, next) => {
     });
   } catch (err) {
     logger.info(err);
+    console.log('loooooooooppppppp')
     res.status(400).send({ error: err });
   }
 };
@@ -1206,21 +1382,24 @@ module.exports.getPendingGuardianRequests = async (req, res, next) => {
 module.exports.getUserDetailsById = async (req, res, next) => {
   const { id, type } = req.body;
   let user = {};
+  let getPosts = null;
   try {
     if (type == "User"){
       user = await User.findById(id).populate("pets.pet", '_id name avatar');
       if (!user)
         return res.status(404).send({ error: "No such user exists!" });
+      getPosts = await Post.find({"Userauthor": ObjectId(id)}, '_id');
     }
     else {
       user = await Animal.findById(id , 'username name avatar');
       if (!user)
         return res.status(404).send({ error: "No such user exists!" });
+      getPosts = await Post.find({"Animalauthor": ObjectId(id)}, '_id');
     }
     
     const followersCount = await Followers.aggregate([
       {
-        $match: { "user.id": id },
+        $match: { "user.id": ObjectId(id) },
       },
       {
         $count: "totalFollowers",
@@ -1232,7 +1411,7 @@ module.exports.getUserDetailsById = async (req, res, next) => {
 
     const followingCount = await Following.aggregate([
       {
-        $match: { "user.id": id },
+        $match: { "user.id": ObjectId(id) },
       },
       {
         $count: "totalFollowing",
@@ -1242,9 +1421,7 @@ module.exports.getUserDetailsById = async (req, res, next) => {
     let totalFollowings =
       followingCount.length == 0 ? 0 : followingCount[0].totalFollowing;
 
-    const getPosts = await Post.find({
-      "postOwnerDetails.postOwnerId": id,
-    });
+    
 
     let totalLikes = 0;
     let totalPosts = 0;

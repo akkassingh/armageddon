@@ -7,6 +7,9 @@ const ConfirmationToken = require("../models/ConfirmationToken");
 const bcrypt = require("bcrypt");
 const axios = require("axios");
 const logger = require("../logger/logger");
+const dogNames = require('dog-names');
+const FcmToken = require('../models/FcmToken');
+const admin = require("../admin");
 
 const {
   sendConfirmationEmail,
@@ -15,6 +18,8 @@ const {
   sendPasswordResetOTP,
   sendOTPEmail,
   hashPassword,
+  notify,
+  notifyUser, notifyAnimal, formatCloudinaryUrl
 } = require("../utils/controllerUtils");
 const { validateEmail, validatePassword } = require("../utils/validation");
 
@@ -55,7 +60,7 @@ module.exports.verifyJwtAnimal = (token) => {
       const id = jwt.decode(token, process.env.JWT_SECRET).id;
       const animal = await Animal.findOne(
         { _id: id },
-        "name username avatar guardians relatedAnimals"
+        "name username avatar guardians relatedAnimals bookmarks"
       );
       if (animal) {
         return resolve(animal);
@@ -69,22 +74,39 @@ module.exports.verifyJwtAnimal = (token) => {
 };
 
 module.exports.requireAuth = async (req, res, next) => {
-  const { authorization } = req.headers;
-  const type  = req.body.type ? req.body.type : req.query.type;
-  if (!authorization) return res.status(401).send({ error: "Not authorized" });
-  try {
-    let user;
-    if (type && type === "sp") {
-      user = await this.verifyJwt(authorization, type);
-    } else {
-      user = await this.verifyJwt(authorization);
+	const { authorization } = req.headers;
+  const {type} = req.headers;
+  if (!type) {
+    return res.status(400).send({error: "Invalid Request Type!"})
+  }
+  // const type  = req.body.type ? req.body.type : req.query.type;
+  if (!authorization) return res.status(401).send({ error: "Not authorized." });
+  if (type === "Animal"){
+    try {
+      let animal;
+      animal = await this.verifyJwtAnimal(authorization);
+      res.locals.animal = animal;
+      return next();
     }
-
-    // Allow other middlewares to access the authenticated user details.
-    res.locals.user = user;
-    return next();
-  } catch (err) {
-    return res.status(401).send({ error: err });
+    catch (err) {
+      return res.status(401).send({ error: err });
+    }
+  }
+  
+  else {
+    try {
+      let user;
+      if (type && type === "sp") {
+        user = await this.verifyJwt(authorization, type);
+      } else {
+        user = await this.verifyJwt(authorization);
+      }
+      // Allow other middlewares to access the authenticated user details.
+      res.locals.user = user;
+      return next();
+    } catch (err) {
+      return res.status(401).send({ error: err });
+    }
   }
 };
 
@@ -124,7 +146,7 @@ module.exports.loginAuthentication = async (req, res, next) => {
       try {
         const user = await this.verifyJwt(authorization, type);
         let isNewUser = true;
-        if (user.avatar) {
+        if (user.fullName) {
           isNewUser = false;
         }
         if (!user.confirmed) {
@@ -198,7 +220,7 @@ module.exports.loginAuthentication = async (req, res, next) => {
         });
       }
       let isNewUser = true;
-      if (user.avatar) {
+      if (user.fullName) {
         isNewUser = false;
       }
       if (!user.confirmed) {
@@ -242,7 +264,7 @@ module.exports.loginAuthentication = async (req, res, next) => {
       try {
         const user = await this.verifyJwt(authorization);
         let isNewUser = true;
-        if (user.avatar) {
+        if (user.fullName) {
           isNewUser = false;
         }
         if (!user.confirmed) {
@@ -318,7 +340,7 @@ module.exports.loginAuthentication = async (req, res, next) => {
         });
       }
       let isNewUser = true;
-      if (user.avatar) {
+      if (user.fullName) {
         isNewUser = false;
       }
       if (!user.confirmed) {
@@ -365,6 +387,10 @@ module.exports.register = async (req, res, next) => {
   logger.info("*** Register method called *** ");
   const { email, password, type } = req.body;
   if (type && type === "sp") {
+    const alreadyMember = await ServiceProvider.find({email}, '_id');
+    if (alreadyMember){
+      return res.status(400).send({"message" : "This email already has an account on Tamely! PLease try login instead of signup!", "success" : false});
+    }
     let user = null;
     let confirmationToken = null;
 
@@ -420,7 +446,10 @@ module.exports.register = async (req, res, next) => {
   } else {
     let user = null;
     let confirmationToken = null;
-
+    const alreadyMember = await User.find({email}, '_id');
+    if (alreadyMember){
+      return res.status(400).send({"message" : "This email already has an account on Tamely! PLease try logging in instead of signing up!", "success" : false});
+    }
     const emailError = validateEmail(email);
     if (emailError) return res.status(400).send({ error: emailError });
 
@@ -600,6 +629,7 @@ module.exports.facebookLoginAuthentication = async (req, res, next) => {
             email: userDocument.email,
             username: userDocument.username,
             avatar: userDocument.avatar,
+            confirmed: true,
           },
           isNewUser,
           token: jwt.encode({ id: userDocument._id }, process.env.JWT_SECRET),
@@ -620,6 +650,7 @@ module.exports.facebookLoginAuthentication = async (req, res, next) => {
           id : user._id,
           email: user.email,
           username: user.username,
+          confirmed: true,
         },
         isNewUser: true,
         token: jwt.encode({ id: user._id }, process.env.JWT_SECRET),
@@ -654,12 +685,15 @@ module.exports.facebookLoginAuthentication = async (req, res, next) => {
       console.log(fbUser.data);
       const primaryEmail = fbUser.data.email;
       const facebookId = fbUser.data.id;
-      const userDocument = await User.findOne({$or: [{ faceBookUserId: facebookId }, {email: primaryEmail}]}, '_id email username avatar googleUserId facebookUserId');
+      const userDocument = await User.findOne({$or: [{ faceBookUserId: facebookId }, {email: primaryEmail}]}, '_id email username avatar googleUserId faceBookUserId');
       console.log(userDocument, "userDoc")
       let isNewUser = true;
       if (userDocument) {
         if (userDocument.avatar || userDocument.googleUserId || userDocument.faceBookUserId){
           isNewUser = false;
+        }
+        if (!userDocument.confirmed){
+          await User.findOneAndUpdate({ _id: userDocument._id}, { confirmed: true });
         }
         return res.status(200).send({
           user: {
@@ -667,6 +701,7 @@ module.exports.facebookLoginAuthentication = async (req, res, next) => {
             email: userDocument.email,
             username: userDocument.username,
             avatar: userDocument.avatar,
+            confirmed: true,
           },
           isNewUser,
           token: jwt.encode({ id: userDocument._id }, process.env.JWT_SECRET),
@@ -1308,5 +1343,208 @@ module.exports.resendOTP = async (req, res, next) => {
   }
 };
 
+module.exports.sendOTPtoPhoneNumber = async (req, res, next) => {
+  // let {phoneNumber, countryCode} = req.body
+  let {phoneNumber} = req.body
+  if (phoneNumber.length != 10){
+    return res.status(400).send({"message" : 'Please give your 10 digit mobile number', "success" : false})
+  }
+  // if (countryCode[0] == '+'){
+  //   countryCode = countryCode.substring(1)
+  // }
+  let mobileNumber = "91" + phoneNumber
+  try{
+    const response = await axios.get(
+      `https://api.msg91.com/api/v5/otp?template_id=${process.env.MSG91_TEMPLATE_ID}&mobile=${mobileNumber}&authkey=${process.env.MSG91_API_KEY}&otp_length=6&otp_expiry=10`,
+      {
+        headers: { "Content-Type" : "application/json"},
+      }
+    );
+    if (response.data.type == 'success'){
+      return res.status(201).send({"message" : "OTP sent!", "success" : true})
+    }
+    else{
+      return res.status(500).send({"message" : response.data.message, "success" : false})
+    }
+    
+  }
+  catch (err){
+    console.log(err)
+    next(err)
+  }
+}
 
+module.exports.verifyMobileOTP = async (req, res, next) => {
+  // let {phoneNumber, countryCode, otp} = req.body
+  let {phoneNumber, otp, type} = req.body
+  if (phoneNumber.length != 10){
+    return res.status(400).send({"message" : 'Please give your 10 digit mobile number'})
+  }
+  // if (countryCode[0] == '+'){
+  //   countryCode = countryCode.substring(1)
+  // }
+  // let mobileNumber = countryCode + phoneNumber
+  let mobileNumber = "91" + phoneNumber
+  try {
+    const response = await axios.get
+    (
+      `https://api.msg91.com/api/v5/otp/verify?authkey=${process.env.MSG91_API_KEY}&mobile=${mobileNumber}&otp=${otp}&otp_expiry=10`,
+    )
+    if (response.data.type == 'success'){
+      if (type && type == "sp"){
+        const userDocument = await ServiceProvider.findOne({phoneNumber: mobileNumber}, '_id username');
+        if (userDocument){ // Old user
+          return res.status(200).send({
+            message : "OTP verified successfully!",
+            user : {
+              username : userDocument.username,
+              phoneNumber : mobileNumber,
+              confirmed : true,
+              avatar : userDocument.avatar,
+            },
+            isNewUser: false,
+            token: jwt.encode({ id: userDocument._id }, process.env.JWT_SECRET) 
+          });
+        }
+        else{ // New user
+          let uniqueUsername = undefined;
+          while (!uniqueUsername) {
+            const username = dogNames.allRandom() + Math.floor(Math.random(1000) * 9999 + 1);
+            const user_ = await ServiceProvider.findOne({username},'_id').lean();
+            if (!user_) {
+              uniqueUsername = username;
+            }
+          }
+          const user = new ServiceProvider({
+            phoneNumber : mobileNumber,
+            username : uniqueUsername,
+            confirmed : true,
+          })
+          const isNewUser = true;
+          await user.save();
+          return res.status(201).send({
+            user,
+            isNewUser,
+            token : jwt.encode({ id:user._id}, process.env.JWT_SECRET)
+          });
+        }
+      }
+      else{
+        const userDocument = await User.findOne({phoneNumber: mobileNumber}, '_id username');
+        if (userDocument){ // Old user
+          return res.status(200).send({
+            "message" : "OTP verified successfully!",
+            "user" : {
+              'username' : userDocument.username,
+              'phoneNumber' : mobileNumber,
+              'confirmed' : true,
+              'avatar' : userDocument.avatar,
+            },
+            "isNewUser": false,
+            "token": jwt.encode({ id: userDocument._id }, process.env.JWT_SECRET) 
+          })
+        }
+        else{ // New user
+          let uniqueUsername = undefined;
+          while (!uniqueUsername) {
+            const username = dogNames.allRandom() + Math.floor(Math.random(1000) * 9999 + 1);
+            const user_ = await User.findOne({username},'_id').lean();
+            if (!user_) {
+              uniqueUsername = username;
+            }
+          }
+          const user = new User({
+            phoneNumber : mobileNumber,
+            username : uniqueUsername,
+            confirmed : true,
+          })
+          const isNewUser = true;
+          await user.save();
+          return res.status(201).send({
+            user,
+            isNewUser,
+            token : jwt.encode({ id:user._id}, process.env.JWT_SECRET)
+          });
+        }
+      }
+    }
+    else{
+      return res.status(400).send({"message" : "Wrong OTP entered!", "success" : false})
+    }
+  }
+  catch (err){
+    console.log(err)
+    next(err)
+  }
+}
 
+module.exports.resendMobileOTP = async (req, res, next) => {
+  const {type, phoneNumber} = req.body;
+  let mobileNumber = "91" + phoneNumber
+  // type should be either Voice or text
+  try{
+    const response = await axios.get(
+      `https://api.msg91.com/api/v5/otp/retry?authkey=${process.env.MSG91_API_KEY}&retrytype=${type}&mobile=${mobileNumber}`
+    )
+    if (response.data.type == 'success'){
+      return res.status(201).send({"message" : 'OTP has been sent again!', "success" : true})
+    }
+    else{
+      console.log(response.data.message)
+      return res.status(500).send({"message" : "Something went wrong! Please try again later", "success" : false})
+    }
+  }
+  catch (err){
+    console.log(err)
+    next(err)
+  }
+}
+
+module.exports.registerFCMtoken = async (req, res, next) => {
+  let type = null;
+  if (req.headers.type=="User"){
+    type = "User"
+  }
+  else type = "ServiceProvider";
+  let user = res.locals.user
+  const {token} = req.body;
+  try {
+    if (!token){
+      return res.status(400).send({"message" : "Provide a valid FCM Token", "success" : false});
+    }
+    await FcmToken.updateOne({user: user._id }, {
+        userType : type,
+        token,
+    }, {upsert : true});
+    return res.status(200).send({"message" : "Token updated successfully!", "success" : true});
+  }
+  catch (err) {
+    console.log(err);
+    next(err);
+  }
+}
+const notification_options = {
+  priority: "high",
+  timeToLive: 60 * 60 * 24,
+};
+module.exports.sendNotification = async (req, res, next) => {
+  const {id} = req.body;
+  try{
+    const n_obj = {
+      title : 'Tamely',
+      body : 'Welcome to Tamely! This will be a long body to check if it is working fine or not...Is it?',
+      image : formatCloudinaryUrl(
+        process.env.TAMELY_LOGO_LINK,
+        { height: 720, width: 1440, x: '100%', y: '100%', notify : true  },
+        true
+      ),
+    }
+    notifyUser(n_obj, 'tamelyid',id);
+    notifyAnimal(n_obj,'tamelyid',id);
+    return res.status(200).send(true);
+  }
+  catch(err){
+    console.log(err)
+    next(err)
+  }
+}

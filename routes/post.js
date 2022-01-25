@@ -29,7 +29,10 @@ const {
   getFollowRequests,
   acceptFollowRequests,
   foryoufeed,
-  follow
+  follow,
+  retrievePostlikes,
+  deleteNullPostVotes,
+  getPostsById
 } = require("../controllers/postController");
 const filters = require("../utils/filters");
 
@@ -50,8 +53,9 @@ postRouter.get("/filters", (req, res) => {
 postRouter.get("/:postId", retrievePost);
 postRouter.post("/feed", requireAuth, retrievePostFeed);
 postRouter.post("/hashtag/:hashtag", requireAuth, retrieveHashtagPosts);
+postRouter.post("/getPostsById", requireAuth, getPostsById);
 
-postRouter.delete("/post", requireAuth, deletePost);
+postRouter.delete("/deletePost", requireAuth, deletePost);
 
 //------------COMMENTS-------------------------------------
 postRouter.post("/comment", requireAuth, postComment);
@@ -74,5 +78,10 @@ postRouter.post("/sendfollowrequest", requireAuth, sendFollowRequest);
 postRouter.post("/getfollowrequests", requireAuth, getFollowRequests);
 postRouter.post("/acceptfollowrequests", requireAuth, acceptFollowRequests);
 postRouter.post("/follow",requireAuth, follow);
+
+//------POST VOTES----------------------------------------------
+postRouter.post("/retrievePostlikes", requireAuth, retrievePostlikes);
+postRouter.post("/deletePostVote", deleteNullPostVotes);
+
 
 module.exports = postRouter;

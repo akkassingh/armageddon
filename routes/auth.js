@@ -14,7 +14,12 @@ const {
   googleRedirect,
   resetPasswordOTP,
   verifyResetPasswordOTP,
-  resendOTP
+  resendOTP,
+  sendOTPtoPhoneNumber,
+  verifyMobileOTP,
+  resendMobileOTP,
+  registerFCMtoken,
+  sendNotification
 } = require('../controllers/authController');
 const { sendPasswordResetLink } = require('../utils/controllerUtils');
 
@@ -32,5 +37,10 @@ authRouter.patch('/reset-password-mail', resetPasswordOTP);
 authRouter.put('/verify-reset-otp',requireAuth,verifyResetPasswordOTP)
 authRouter.patch('/update-password/', requireAuth, updatePassword);
 authRouter.post('/resendotp/:path', requireAuth, resendOTP)
+authRouter.post('/sendMobileOTP',sendOTPtoPhoneNumber);
+authRouter.post('/verifyMobileOTP', verifyMobileOTP);
+authRouter.post('/resendMobileOTP', resendMobileOTP);
+authRouter.post('/registerFCMtoken', requireAuth, registerFCMtoken);
+authRouter.post('/sendNotification',sendNotification);
 
 module.exports = authRouter;

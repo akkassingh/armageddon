@@ -5,17 +5,24 @@ const PostVoteSchema = new Schema({
   post: {
     type: Schema.ObjectId,
     ref: "Post",
+    index : true,
   },
   voterDetails: {
-    voterType: {
-      type: String,
-      enum: ["Animal", "User"],
-    },
-    voterId: {
+    Animalvoter:  {
       type: Schema.ObjectId,
-      refPath: "voterDetails.voterType"
-    }
+      ref: "Animal",
+      index: true,
+    },
+    Uservoter:  {
+      type: Schema.ObjectId,
+      ref: "User",
+      index: true,
+    },
+    voterType:String,
   },
+},
+{
+  timestamps: true
 });
 
 const postVoteModel = mongoose.model("PostVote", PostVoteSchema);

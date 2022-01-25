@@ -19,6 +19,9 @@ const FollowingSchema = new Schema({
       refPath: 'followingDetails.followingType'
     }
   },
+},
+{
+  timestamps: true
 });
 
 const followingModel = mongoose.model("Following", FollowingSchema);

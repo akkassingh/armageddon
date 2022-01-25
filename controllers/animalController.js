@@ -10,12 +10,37 @@ const jwt = require("jwt-simple");
 const fs = require("fs");
 const cloudinary = require("cloudinary").v2;
 const dogNames = require('dog-names');
+const {notifyUser, notifyAnimal, formatCloudinaryUrl} = require("../utils/controllerUtils");
 cloudinary.config({
   cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
   api_key: process.env.CLOUDINARY_API_KEY,
   api_secret: process.env.CLOUDINARY_API_SECRET,
 });
 
+
+
+
+// QB.createSession(params, function(error, result) {
+//   if (error) {
+//     console.log('Something went wrong: ' + JSON.stringify(error));
+// } else {
+//     console.log('Session created with id ' + result);
+// }});
+
+
+// var params = {
+//   login: "user1",
+//   password: "someSecret"
+// };
+
+// QB.users.create(params, function(error, result) {
+//   if (error) {
+//     console.log("Create user error: " + JSON.stringify(error));
+//   } else {
+//     console.log("Result " + JSON.stringify(result));
+
+//   }
+// });
 module.exports.registerPet = async (req, res, next) => {
   const user = res.locals.user;
   const {
@@ -106,11 +131,16 @@ module.exports.registerPet = async (req, res, next) => {
 };
 
 module.exports.editPet = async (req, res, next) => {
-  const user = res.locals.user;
+  let user = null;
+  if (req.headers.type=="User")
+    user = res.locals.user
+  else
+    user = res.locals.animal
   const {
     animalId,
     name,
     username,
+    avatar,
     category,
     bio,
     animalType,
@@ -124,55 +154,41 @@ module.exports.editPet = async (req, res, next) => {
     playTo,
     servicePet,
     spayed,
-    friendlinessWithHumans,
-    friendlinessWithAnimals,
-    favouriteThings,
-    thingsDislikes,
-    uniqueHabits,
-    eatingHabits,
     location,
     registeredWithKennelClub,
   } = req.body;
   try {
-    let fileArr = [];
-    for (let fl of req.files) {
-      const response = await cloudinary.uploader.upload(fl.path);
-      fileArr.push(response.secure_url);
-      fs.unlinkSync(fl.path);
-    }
-
-    let animalObj = {
-      name,
-      avatar: fileArr.length > 0 ? fileArr[0] : req.body.avatar,
-      category,
-      bio,
-      animalType,
-      gender,
-      breed,
-      age,
-      mating,
-      adoption,
-      playBuddies,
-      playFrom,
-      playTo,
-      servicePet,
-      spayed,
-      friendlinessWithHumans,
-      friendlinessWithAnimals,
-      favouriteThings,
-      thingsDislikes,
-      uniqueHabits,
-      eatingHabits,
-      location,
-      registeredWithKennelClub,
-      guardians: {
-        user: user._id,
-        confirmed: true,
-      },
-    };
-    const animal = await Animal.findByIdAndUpdate(
+    // let fileArr = [];
+    // for (let fl of req.files) {
+    //   const response = await cloudinary.uploader.upload(fl.path);
+    //   fileArr.push(response.secure_url);
+    //   fs.unlinkSync(fl.path);
+    // }
+    // avatar: fileArr.length > 0 ? fileArr[0] : req.body.avatar,
+    // const animal = await Animal.findById(animalId,'guardians')
+    // let animalObj = {
+    //   name,
+    //   username,      
+    //   avatar,
+    //   category,
+    //   bio,
+    //   animalType,
+    //   gender,
+    //   breed,
+    //   age,
+    //   mating,
+    //   adoption,
+    //   playBuddies,
+    //   playFrom,
+    //   playTo,
+    //   servicePet,
+    //   spayed,
+    //   location,
+    //   registeredWithKennelClub,
+    // };
+    await Animal.updateOne(
       { _id: ObjectId(animalId) },
-      animalObj
+      {...req.body}
     );
 
     return res.status(200).json({
@@ -306,6 +322,15 @@ module.exports.addGuardian = async (req, res, next) => {
       { _id: animal._id },
       { $push : {guardians: userObject} }
     );
+    const n_obj = {
+      body : `${animal.username} has requested you to become the Guardian!`,
+      image : formatCloudinaryUrl(
+        animal.avatar,
+        { height: 720, width: 1440, x: '100%', y: '100%', notify: true },
+        true
+      ),
+    }
+    notifyUser(n_obj,'tamelyid',idUser);
     return res.status(201).send({message: "Your request has been sent successfully!"});
   } catch (err) {
     logger.info(err);
@@ -323,7 +348,7 @@ module.exports.addRelatedAnimals = async (req, res, next) => {
     return res.status(400).send({error: "Please select a different animal!"});
   }
   try {
-    const animal = await Animal.findById(animalId, 'relatedAnimals');
+    const animal = await Animal.findById(animalId, 'relatedAnimals username avatar');
     const relatedAnimal = await Animal.findById(idRelatedAnimal);
     if (!relatedAnimal) {
       return res.status(404).send({ error: "Invalid animal!" });
@@ -364,6 +389,15 @@ module.exports.addRelatedAnimals = async (req, res, next) => {
       { _id: relatedAnimal._id },
       { $push: { relatedAnimals: objRelatedAnimal } }
     );
+    const n_obj = {
+      body : `${animal.username} requested to be ${relatedAnimal.username}'s ${oppRelation}!`,
+      image : formatCloudinaryUrl(
+        animal.avatar,
+        { height: 720, width: 1440, x: '100%', y: '100%', notify : true },
+        true
+      ),
+    }
+    notifyAnimal(n_obj,'tamelyid',idRelatedAnimal);
     return res
       .status(201)
       .json({ message: "Your request has been sent successfully!" });
@@ -377,9 +411,9 @@ module.exports.addRelatedAnimals = async (req, res, next) => {
 module.exports.confirmRelation = async (req, res, next) => {
   const { idRelatedAnimal, animalId } = req.body;
   try {
-    const animal = await Animal.findById(animalId, 'relatedAnimals');
+    const animal = await Animal.findById(animalId, 'relatedAnimals username avatar');
     console.log(animal);
-    const relatedAnimal = await Animal.findById(idRelatedAnimal, 'relatedAnimals');
+    const relatedAnimal = await Animal.findById(idRelatedAnimal, 'relatedAnimals username');
     console.log(relatedAnimal)
     if (!relatedAnimal || !animal)
       return res.status(404).send({ error: "Invalid animal!" });
@@ -425,6 +459,15 @@ module.exports.confirmRelation = async (req, res, next) => {
         },
       }
     );
+    const n_obj = {
+      body : `${animal.username} accepted ${relatedAnimal.username}'s relation request!`,
+      image : formatCloudinaryUrl(
+        animal.avatar,
+        { height: 720, width: 1440, x: '100%', y: '100%', notify : true },
+        true
+      ),
+    };
+    notifyAnima(n_obj,'tamelyid',idRelatedAnimal);
     return res.status(201).send({"message" : "Request Accepted Successfully!"});
   } catch (err) {
     logger.info(err);
@@ -448,7 +491,7 @@ module.exports.getPetDetails = async (req, res, next) => {
 
 module.exports.getGuardians = async (req, res, next) => {
   try {
-    const guardians = await Animal.findOne({_id: req.body.animalId}, {guardians: 1, _id: 0}).populate('guardians.user', 'username email avatar confirmed');
+    const guardians = await Animal.findOne({_id: req.body.animalId}, {guardians: 1, _id: 0}).populate('guardians.user', 'username email avatar');
     if (!guardians) return res.status(404).send({ error: "No such pet exists!" });
     return res.status(201).send(guardians);
   }
@@ -465,14 +508,15 @@ module.exports.getRelations = async (req, res, next) => {
     return res.status(400).send({"error": "Invalid Request!"})
   }
   try {
-    const animal = await Animal.findById(animalId, 'relatedAnimals');
+    const animal = await Animal.findById(animalId, 'relatedAnimals').populate('relatedAnimals.animal', 'username name avatar');
     if (!animal) {
-      return res.status(404).send({"error" : "Fuck off!"});
+      return res.status(404).send({"error" : "Invalid request!"});
     }
-    var relations = animal.relatedAnimals.filter(function(check)
-    {
-      return check.confirmed == true;
-    });
+    // var relations = animal.relatedAnimals.filter(function(check)
+    // {
+    //   return check.confirmed == true;
+    // });
+    var relations = animal.relatedAnimals;
     return res.status(200).send({"relatives":relations});
   }
   catch (err){
@@ -480,6 +524,118 @@ module.exports.getRelations = async (req, res, next) => {
     next(err);
   }
 };
+
+module.exports.rejectRelation = async (req, res, next) => {
+  const {animalId, id} = req.body;
+  let user = null;
+  user = await Animal.findById(id, '_id relatedAnimals');
+  const relation = user.relatedAnimals;
+  let idx = -1;
+  let confirmed = undefined;
+  // we are looking in user now
+  for (var i=0;i<relation.length;i++){
+    if (relation[i].animal.toString() == animalId.toString()){
+      idx = i;
+      confirmed = relation[i].confirmed;
+    }
+  }
+  if (idx == -1){
+    return res.status(404).send({"message" : "No relation found between the two animals", "success" : false});
+  }
+  if (confirmed){
+    return res.status(400).send({"message" : "Invalid Request!", "success" : false});
+  }
+  var newRelationSelf = relation.filter(function (ele){
+    return ele.animal.toString() != animalId.toString()
+  })
+  console.log('Self Related_Animals', newRelationSelf);
+  //we are looking in other animal now
+  let relationAnimal = await Animal.findById(animalId, 'relatedAnimals');
+  let animalRelations = relationAnimal.relatedAnimals;
+  idx = -1;
+  confirmed = undefined;
+  for (var i=0; i<animalRelations.length;i++){
+    if (animalRelations[i].animal.toString() == user._id.toString()){
+      idx = i;
+      confirmed = animalRelations[i].confirmed;
+    }
+  }
+  if (idx == -1){
+    return res.status(404).send({"message" : "No relation found between the two animals", "success" : false});
+  }
+  if (confirmed){
+    return res.status(400).send({"message" : "Invalid Request!", "success" : false});
+  }
+  var newRelationsAnimal = animalRelations.filter(function (ele){
+    return ele.animal.toString() != user._id.toString()
+  })
+  console.log('Opposite Related_Animals', newRelationsAnimal);
+
+  await Animal.updateOne({_id : user._id},{relatedAnimals : newRelationSelf});
+  await Animal.updateOne({_id : animalId}, {relatedAnimals : newRelationsAnimal});
+  return res.status(200).send({"message" : "Request Declined successfully!", "success" : true});
+
+}
+
+module.exports.rejectGuardian = async (req, res, next) => {
+  const {animalId} = req.body;
+  let user = null;
+  if (req.headers.type=="User"){
+    user = res.locals.user
+  }
+  if (!user){
+    return res.status(403).send({"message" : "Not authorized!", "success" : false})
+  }
+  try{
+    const animal = await Animal.findById(animalId, 'guardians');
+    if (!animal){
+      return res.status(400).send({"message" : "Invalid Request!"})
+    }
+    const guardians = animal.guardians;
+    let idx = -1;
+    let confirmed = null;
+    for (var i=0; i<guardians.length;i++){
+      if (guardians[i].user.toString() == user._id.toString()){
+        idx = i;
+        confirmed = guardians[i].confirmed;
+      }
+    }
+    if (idx == -1){
+      return res.status(404).send({"message" : "No pet found!", "success" : false});
+    }
+    if (confirmed){
+      return res.status(400).send({"message" : "Already a pet!", "success" : false});
+    }
+    idx = -1;
+    confirmed = null;
+    const pets = user.pets;
+    for (var i=0;i<pets.length;i++){
+      if (pets[i].pet.toString() == animalId){
+        idx = i;
+        confirmed = pets[i].confirmed;
+      }
+    }
+    if (idx == -1){
+      return res.status(404).send({"message" : "No pet found!", "success" : false});
+    }
+    if (confirmed){
+      return res.status(400).send({"message" : "Already a pet!", "success" : false});
+    }
+    const newPets = pets.filter(function (ele){
+      return ele.pet.toString() != animalId
+    })
+    const newGuardian = guardians.filter(function (ele){
+      return ele.user.toString() != user._id.toString()
+    })
+    await User.updateOne({id : user._id}, {pets : newPets});
+    await Animal.updateOne({id : animalId}, {guardians : newGuardian});
+    return res.status(201).send({"message" : "Request rejected successfully!", "success" : true});
+  }
+  catch (err){
+    console.log(err)
+    next(err)
+  }
+}
 
 module.exports.getRelationRequests = async (req, res, next) => {
   const {animalId, type} = req.body;
@@ -509,7 +665,7 @@ module.exports.getUniquePetName = async (req, res, next) => {
   try {
     while (!uniqueUsername) {
       const username = dogNames.allRandom() + Math.floor(Math.random(1000) * 9999 + 1);
-      const user = await Animal.findOne({username});
+      const user = await Animal.findOne({username},'_id');
       if (!user) {
         uniqueUsername = username;
       }
@@ -545,5 +701,73 @@ module.exports.editPetMainDetails = async (req, res, next) => {
   }
   catch (err) {
     console.log(err);
+  }
+}
+
+module.exports.confirmGuardian = async (req, res, next) => {
+  const {animalId} = req.body;
+  const user = res.locals.user;
+  if (!user)
+  {
+    return res.status(400).send({"message" : "Invalid user!", "success" : false});
+  }
+  try{
+    const animal = await Animal.findById(animalId, 'guardians username');
+    if (!animal){
+      return res.status(404).send({"message" : "Pet does not exist!", "success" : false});
+    }
+    const guardians = animal.guardians;
+    const pets = user.pets;
+    let found  = false; let found_g = false;
+    let confirmed = null; let confirmed_g = null;
+    let idx = -1; let idx_g = -1;
+    for (var i=0;i<guardians.length;i++){
+      if (guardians[i].user.toString() == user._id.toString()){
+        found_g = true;
+        confirmed_g = guardians[i].confirmed;
+        idx_g = i;
+      }
+    }
+    for (var i=0;i<pets.length;i++){
+      if (pets[i].pet.toString() == animalId){
+        found = true;
+        confirmed = pets[i].confirmed;
+        idx = i;
+      }
+    }
+    if (!found || !found_g){
+      return res.status(404).send({"message" : "No pet request exist!", "success" : false});
+    }
+    if (confirmed || confirmed_g){
+      return res.status(200).send({"message" : "You are already a guardian of your pet!", "success" : false});
+    }
+    pets[idx].confirmed = true;
+    guardians[idx_g].confirmed = true;
+    await User.updateOne({ _id: user._id}, {pets : pets});
+    await Animal.updateOne({_id : animalId},{guardians: guardians});
+    const n_obj = {
+      body : `${user.username} accepted the request to be ${animal.username}'s guardian!`,
+      image : formatCloudinaryUrl(
+        user.avatar,
+        { height: 720, width: 1440, x: '100%', y: '100%', notify : true },
+        true
+      ),
+    }
+    notifyAnimal(n_obj,'tamelyid',animalId);
+    return res.status(201).send({"message" : "Request Accepted!", "success" : true});
+  }
+  catch (err){
+    console.log(err);
+    next(err);
+  }
+}
+
+module.exports.setAmbassador = async (req, res, next) => {
+  try{
+    const token = jwt.encode({id : req.body.id},process.env.JWT_SECRET);
+    res.send(token);
+  }
+  catch (err){
+    console.log(err)
   }
 }

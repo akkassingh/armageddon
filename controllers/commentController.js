@@ -10,12 +10,25 @@ const {
   formatCloudinaryUrl,
   sendCommentNotification,
   sendMentionNotification,
+  notifyUser, notifyAnimal
 } = require('../utils/controllerUtils');
 
 module.exports.createComment = async (req, res, next) => {
   const { postId } = req.params;
   const { message } = req.body;
-  const user = res.locals.user;
+  let Userauthor,Animalauthor;
+  let user=undefined;
+  if(req.headers.type=="User"){
+   user = res.locals.user
+   Userauthor=user._id
+   authorType="User"
+  }
+  else{
+  user = res.locals.animal  
+  authorType="Animal"
+  Animalauthor=user._id
+  }
+
   let post = undefined;
 
   if (!message) {
@@ -37,13 +50,8 @@ module.exports.createComment = async (req, res, next) => {
         .send({ error: 'Could not find a post with that post id.' });
     }
     let authorDetails;
-    if(req.body.type=="User"){
-       authorDetails={
-        authorId: user._id,
-        authorType:"User"
-      }
-    }
-    const comment = new Comment({ message, authorDetails: authorDetails, post: postId });
+
+    const comment = new Comment({ message, Userauthor, Animalauthor, authorType, post: postId });
     await comment.save();
     res.status(201).send({
       ...comment.toObject(),
@@ -55,6 +63,29 @@ module.exports.createComment = async (req, res, next) => {
   }
 
   try {
+    if (post.authorType == "User"){
+      let body = `${user.username} commented on your post recently.`
+      let channel = 'tamelyid';
+      let image = formatCloudinaryUrl(
+        post.image,
+        { height: 720, width: 1440, x: '100%', y: '100%', notify : true  },
+        true
+      );
+      const n_obj = {body, image}
+      notifyUser(n_obj,channel,post.Userauthor);
+    
+    }
+    else{
+      let n_obj = {
+        body : `${user.username} commented on ${animalDoc.username}'s post recently.`,
+        image : formatCloudinaryUrl(
+          post.image,
+          { height: 720, width: 1440, x: '100%', y: '100%', notify : true  },
+          true
+        ),
+      }
+      notifyAnimal(n_obj,'tamelyid',post.Animalauthor);
+    }
     // Sending comment notification
     let image = formatCloudinaryUrl(
       post.image,
@@ -64,12 +95,14 @@ module.exports.createComment = async (req, res, next) => {
     sendCommentNotification(
       req,
       user,
-      post.author,
+      post.Userauthor,
+      post.Animalauthor,
       image,
       post.filter,
       message,
       post._id
     );
+
 
     // Find the username of the post author
     const postDocument = await Post.findById(post._id).populate('author');
@@ -88,12 +121,26 @@ module.exports.createComment = async (req, res, next) => {
 
 module.exports.deleteComment = async (req, res, next) => {
   const { commentId } = req.params;
-  const user = res.locals.user;
+  let user=undefined;
+  if(req.headers.type=="User")
+   user = res.locals.user
+  else
+   user = res.locals.animal
   try {
-    const comment = await Comment.findOne({
-      _id: commentId,
-      author: user._id,
-    });
+    let comment;
+    if(req.headers.type=="User"){
+        comment = await Comment.findOne({
+        _id: commentId,
+        Userauthor: user._id,
+      });
+    }
+    else{
+      comment = await Comment.findOne({
+        _id: commentId,
+        Animalauthor: user._id,
+      });
+
+    }    
     if (!comment) {
       return res.status(404).send({
         error:
@@ -153,8 +200,17 @@ module.exports.voteComment = async (req, res, next) => {
 module.exports.createCommentReply = async (req, res, next) => {
   const { parentCommentId } = req.params;
   const { message } = req.body;
-  const user = res.locals.user;
-
+  let user=undefined,Userauthor=undefined, Animalauthor=undefined, authorType=undefined;
+  if(req.headers.type=="User"){
+   user = res.locals.user
+   Userauthor=user._id
+   authorType="User"
+  }
+  else{
+  user = res.locals.animal  
+  authorType="Animal"
+  Animalauthor=user._id
+  }
   if (!message) {
     return res
       .status(400)
@@ -173,18 +229,21 @@ module.exports.createCommentReply = async (req, res, next) => {
         .status(404)
         .send({ error: 'Could not find a parent comment with that id.' });
     }
-    const commentReply = await new CommentReply({
+    const commentReply =  new CommentReply({
       parentComment: parentCommentId,
       message,
-      author: user._id,
-    });
+      Userauthor,
+      Animalauthor,
+      authorType
+     });
 
     await commentReply.save();
-    res.status(201).send({
-      ...commentReply.toObject(),
-      author: { username: user.username, avatar: user.avatar },
-      commentReplyVotes: [],
-    });
+      res.status(201).send({success:true  });
+    // res.status(201).send({
+    //   ...commentReply.toObject(),
+    //   author: { username: Userauthor.username, avatar: Userauthor.avatar },
+    //   commentReplyVotes: [],
+    // });
   } catch (err) {
     next(err);
   }
@@ -194,7 +253,7 @@ module.exports.createCommentReply = async (req, res, next) => {
     const parentCommentDocument = await Comment.findById(parentCommentId);
     const postDocument = await Post.findById(
       parentCommentDocument.post
-    ).populate('author');
+    ).populate({path:'author', model:'User'});
     const image = formatCloudinaryUrl(
       postDocument.image,
       {
@@ -215,7 +274,16 @@ module.exports.createCommentReply = async (req, res, next) => {
       message,
       postDocument._id
     );
-
+    sendCommentNotification(
+      req,
+      user,
+      post.Userauthor,
+      post.Animalauthor,
+      image,
+      post.filter,
+      message,
+      post._id
+    );
     sendMentionNotification(req, message, image, postDocument, user);
   } catch (err) {
     console.log(err);
@@ -289,7 +357,7 @@ module.exports.voteCommentReply = async (req, res, next) => {
 
 module.exports.retrieveCommentReplies = async (req, res, next) => {
   const { parentCommentId } = req.params;
-  const {counter = 0} = req.body;
+  const {counter = 0} = req.params;
   try {
     const comment = await Comment.findById(parentCommentId);
     if (!comment) {
@@ -353,6 +421,7 @@ module.exports.retrieveComments = async (req, res, next) => {
   const { postId, exclude } = req.params;
   const {counter = 0} = req.body;
   try {
+  // console.log(postId+"loooo", exclude)
     const comments = await retrieveComments(postId, counter*10, exclude);
     return res.send(comments);
   } catch (err) {

@@ -13,13 +13,28 @@ const ObjectId = require("mongoose").Types.ObjectId;
 const logger = require("../logger/logger");
 const fs = require("fs");
 const Animal = require("../models/Animal");
+const Quickblox = require("../models/Quickblox");
 const ServiceProvider=require("../models/ServiceProvider")
 const cloudinary = require("cloudinary").v2;
+var generator = require('generate-password');
+var QB = require('quickblox');
+// var QB = new QuickBlox();
+var CREDENTIALS = {
+  appId: 95010,
+  authKey: 'tgz8MQ-QkPWnyZS',
+  authSecret: 'SgK6cfKa7Q4Yy4T',
+  accountKey: 'ea8RxFFV8cCxaYYfZ_vC'
+};
+var CONFIG = { debug: true };
+
+QB.init(CREDENTIALS.appId, CREDENTIALS.authKey, CREDENTIALS.authSecret, CREDENTIALS.accountKey);
+
 cloudinary.config({
   cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
   api_key: process.env.CLOUDINARY_API_KEY,
   api_secret: process.env.CLOUDINARY_API_SECRET,
 });
+const {notifyUser, formatCloudinaryUrl} = require("../utils/controllerUtils");
 
 module.exports.serviceList = async (req, res, next) => {
   try {
@@ -27,7 +42,7 @@ module.exports.serviceList = async (req, res, next) => {
     let serviceList = await Service.find({
       serviceProvider: res.locals.user._id,
     });
-    let count=await ServiceAppointment.find({ServiceProvider: res.locals.user._id})
+    let count=await ServiceAppointment.find({ServiceProvider: res.locals.user._id,bookingStatus:1})
 
     return res.status(201).json({ services: serviceList[0].serviceType, serviceStatus: serviceList[0].isVerified, appointments:count.length });
   } catch (err) {
@@ -84,13 +99,13 @@ module.exports.addBackgroundCheckToService = async (req, res, next) => {
     );
     let fileArr = [];
     for (let fl of req.files) {
-      //   const response = await cloudinary.uploader.upload(fl.path, {
-      //     width: 200,
-      //     height: 200,
-      //     gravity: "face",
-      //     crop: "thumb",
-      //   });
-      const response = await cloudinary.uploader.upload(fl.path, {quality : 100});
+        // const response = await cloudinary.uploader.upload(fl.path, {
+        //   width: 200,
+        //   height: 200,
+        //   gravity: "face",
+        //   crop: "thumb",
+        // });
+      const response = await cloudinary.uploader.upload(fl.path);
 
       fileArr.push({
         fieldname: fl.fieldname,
@@ -158,7 +173,6 @@ module.exports.isSentforApproval = async (req, res, next) => {
       {isSentforApproval:true})
     if(!resp)
     return res.status(404).send('NO background check found!');
-
     return res.status(200).send({success:true});
   } catch (err) {
     console.log(err);
@@ -318,10 +332,10 @@ module.exports.getmyactiveAppointments = async (req, res, next) => {
       ServiceProvider: res.locals.user._id,
       bookingStatus:{ $lte:1}
     }).populate('bookingDetails','package run1 run2 startDate dayOff paymentDetails numberOfPets').populate('petDetails', 'name username').populate('User','fullName username avatar');
-    console.log(serviceList)
     serviceList = serviceList.filter(function (ele) {
       return ele.bookingDetails.paymentDetails.status == 1;
     });   
+    console.log(serviceList)
     for(let i=0;i<serviceList.length;i++){
       if(serviceList[i].petDetails==null || serviceList[i].petDetails.length==0){
         let pet={
@@ -342,6 +356,7 @@ module.exports.getmyactiveAppointments = async (req, res, next) => {
         serviceList[i].petDetails.push(pet)
       }
     }
+
     return res.status(200).json({serviceList:serviceList});
   } catch (err) {
     console.log(err);
@@ -390,11 +405,75 @@ module.exports.changeAppointmentstatus = async (req, res, next) => {
       { bookingStatus: req.body.bookingStatus},
       { new: true });
     if(req.body.bookingStatus==1){
-      await ServiceAppointment.deleteMany({ _id: { $nin: [ObjectId(req.body.appointmentId)] } })
+      // booking is getting accepted
+      const obj = {
+        body : `Your appointment has been confirmed by our service provider!`,
+        image : formatCloudinaryUrl(
+          process.env.TAMELY_LOGO_LINK,
+          { height: 720, width: 1440, x: '100%', y: '100%', notify : true  },
+          true
+        ),
+      }
+      await ServiceAppointment.deleteMany({ _id: { $nin: [ObjectId(req.body.appointmentId)] }, bookingDetails:serviceList.bookingDetails})
+      let booking =await bookingDetails.findByIdAndUpdate({_id:serviceList.bookingDetails},{status:1})
+      res.status(200).send({success:true});
+      let userId, dialogueID;
+      userId=await Quickblox.findOne({userLogin:booking._id.toString()})
+        var params = { login: userId.userLogin, password: userId.userPassword };
+        QB.createSession(params,async function(err, result) {
+          var pwd = generator.generate({
+            length: 10,
+            numbers: true
+          });
+           params = {
+            login: req.body.appointmentId.toString(),
+            password: pwd
+          };
+          
+          QB.users.create(params,async function(error, result) {
+            if (error) {
+              console.log("Create user error: " + JSON.stringify(error));
+            } else {
+              console.log("Result " + JSON.stringify(result));
+              userId=await Quickblox.findOneAndUpdate({userLogin:booking._id.toString()},{partnerLogin:req.body.appointmentId.toString(),partnerPassword:pwd,partnerChatID:result.id})
+              dialogueID=result.id
+            }
+          });
+          
+          const chatConnectParams = {
+            userId: userId.userChatID,
+            password: userId.userPassword
+          };
+          QB.chat.connect(chatConnectParams, function(error, contactList) {
+            if(error){
+              console.log('error:'+JSON.stringify(error))
+            }
+            else{
+              console.log('contactList:'+ JSON.stringify(contactList))
+              var params = {
+                type: 3,
+                occupants_ids: [dialogueID]
+              };
+                console.log(params)
+              QB.chat.dialog.create(params,async function(error, dialog) {
+                if(error){
+                  console.log('error:'+JSON.stringify(error))
+                }
+                else{
+                  console.log('dialog:'+JSON.stringify(dialog))
+                  userId=await Quickblox.findOneAndUpdate({userLogin:booking._id.toString()},{dialogID:dialog._id})
+                  QB.chat.onMessageListener =  onMessage;
+
+                }
+              });
+            }
+          });   
+        });
       await bookingDetails.findByIdAndUpdate({_id:serviceList.bookingDetails},{status:1})
+      notifyUser(obj, 'tamelyid',serviceList.User)
     }
+    //TODO : What if booking status = 2 or 3?
     //if booking status =3 =>servicestatus=2
-    return res.status(200).send({success:true});
   } catch (err) {
     console.log(err);
     next(err);
@@ -419,6 +498,7 @@ module.exports.getscrollAppointmentstatus = async (req, res, next) => {
         }
       }
     return res.status(200).send({resp:resp});
+    // return res.status(200).send({resp: 1});
   } catch (err) {
     console.log(err);
     next(err);
@@ -605,6 +685,87 @@ module.exports.getReport = async (req, res, next) => {
   }
 };
 
+module.exports.getQuickbloxDetails = async (req, res, next) => {
+  try {
+    let resp=await Quickblox.findOne({partnerLogin:req.body.partnerLogin})
+     res.status(200).send({resp});
+        // var params = { login: resp.partnerLogin, password: resp.partnerPassword };
+        // QB.createSession(params,async function(err, result) {
+        //   if(err){
+        //     console.log('LOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOO')
+        //     console.log('error:'+JSON.stringify(err))
+        //   }
+        //   const chatConnectParams = {
+        //     userId: resp.partnerChatID,
+        //     password: resp.partnerPassword
+        //   };
+        //   QB.chat.connect(chatConnectParams,async function(error, contactList) {
+        //     if(error){
+        //       console.log('IShaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaannnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnn')
+        //       console.log('error:'+JSON.stringify(error))
+        //     }
+        //     else{
+        //       // console.log('contactList:'+JSON.stringify(contactList))
+        //     //   var message = {
+        //     //     type: "chat",
+        //     //     body: "How are you today?",
+        //     //     extension: {
+        //     //       save_to_history: 1,
+        //     //       dialog_id: resp.dialogID
+        //     //     },
+        //     //     markable: 1
+        //     //   };
+            
+        //     // var opponentId = resp.userChatID;
+        //     // try {
+        //     //   message.id = QB.chat.send(opponentId, message);
+
+        //     // } catch (e) {
+        //     //   if (e.name === 'ChatNotConnectedError') {
+        //     //     // not connected to chat
+            
+        //     //   }
+        //     //   console.log('error:'+JSON.stringify(e))
+        //     // }
+        //         QB.chat.onMessageListener =  onMessage;
+        //         console.log(resp)
+
+        //       }
+        //     });
+        //   });
+      } catch (err) {
+    console.log(err);
+    next(err);
+  }
+};
+
+function onMessage(userId, message) {
+  console.log('message:'+JSON.stringify(message))
+  console.log('userId:'+JSON.stringify(userId))
+//   var message = {
+//     type: "chat",
+//     body: "How are you today?",
+//     extension: {
+//       save_to_history: 1,
+//       dialog_id: resp.dialogID
+//     },
+//     markable: 1
+//   };
+
+// var opponentId = userId
+// //resp.userChatID;
+// try {
+//   message.id = QB.chat.send(opponentId, message);
+// } catch (e) {
+//   if (e.name === 'ChatNotConnectedError') {
+//     // not connected to chat
+
+//   }
+//   console.log('error:'+JSON.stringify(e))
+// }
+
+    }
+
 function formatDate(date) {
   var d = new Date(date),
       month = '' + (d.getMonth() + 1),
@@ -625,6 +786,11 @@ module.exports.postPayment = async (req, res, next) => {
   if (!bookingId) {
     return res.status(400).send({"error": "Invalid Request!"})
   }
+  const obj = {
+    body : 'Your booking has been successfully booked!🥳',
+    image : 'https://res.cloudinary.com/tamely-app/image/upload/v1640976197/wwikfqeapmqxu4xnlffe.jpg'
+  }
+  notifyUser(obj,'tamelyid',user._id);
   try{
     const bookingStatus = await bookingDetails.findById(bookingId, 'paymentDetails');
     if (!bookingStatus){
