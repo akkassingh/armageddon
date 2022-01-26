@@ -23,7 +23,9 @@ const {
   showPeopleToFollow,
   getPendingGuardianRequests,
   getUserDetailsById,
-  getAvatarLink
+  getAvatarLink,
+  isFreeWalkAvailable,
+  updateFreeWalkStatus
 } = require("../controllers/userController");
 const { requireAuth, optionalAuth } = require("../controllers/authController");
 
@@ -65,4 +67,6 @@ userRouter.patch("/petanduserdetails", requireAuth, petanduserdetails);
 userRouter.post("/getAvatarLink",multer({
   dest: "temp/",
 }).single("image"), requireAuth, getAvatarLink);
+userRouter.post("/isFreeWalkAvailable", requireAuth, isFreeWalkAvailable);
+userRouter.post("/updateFreeWalkStatus", requireAuth, updateFreeWalkStatus);
 module.exports = userRouter;
