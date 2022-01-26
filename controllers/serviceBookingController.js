@@ -99,19 +99,24 @@ module.exports.serviceProvidersList = async (req, res, next) => {
 module.exports.bookService = async (req, res, next) => {
   try {
     // console.log(req.body.runDetails[0].runTime)
-    let arr=[],dayoff=[]
+    let arr=[]
+    //dayoff=[]
     let j=0;
     let start=req.body.startDate;
-    let off=req.body.dayOff;
+    // let off=req.body.dayOff;
+    var days = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
+    // let off=req.body.dayOff;
     for(let i=0;i<req.body.package.frequency;i++){
-      if(i>0 && i%7==0)
-        j++;
+      // if(i>0 && i%7==0)
+      //   j++;
         const runningDate=86400000*i+start;
-        const checkDate=604800000*j+off
+        // const checkDate=604800000*j+off
         const event = formatDate(new Date(parseInt(runningDate)));
-        const eventcheck = formatDate(new Date(parseInt(checkDate)));
+        const eventcheck = new Date(parseInt(runningDate)) 
+        let day=days[eventcheck.getDay()]
+        // console.log(event,day)
         // console.log(eventcheck)
-        if(event!=eventcheck){
+        if(day!='Sunday'){
           let ob;
           if(req.body.package.dayfrequency==2){
              ob={
@@ -128,10 +133,10 @@ module.exports.bookService = async (req, res, next) => {
           }
           arr.push(ob)
         }
-        else{
-            dayoff.push({"off":event})
+        // else{
+        //     dayoff.push({"off":event})
 
-        }
+        // }
     }
     let payload = {
       type: "sp",
@@ -151,7 +156,7 @@ module.exports.bookService = async (req, res, next) => {
       runDetails:arr,
       startDate:formatDate(new Date(parseInt(req.body.startDate))),
       start:new Date(parseInt(req.body.startDate)),
-      dayOff: dayoff,
+      // dayOff: dayoff,
       // User:'61dc497c4f60822f13e5c4fb',
       User: res.locals.user._id
       //(new Date(req.body.dayOff).toDateString()).split(' ')[0],
