@@ -99,8 +99,7 @@ module.exports.serviceProvidersList = async (req, res, next) => {
 module.exports.bookService = async (req, res, next) => {
   try {
     // console.log(req.body.runDetails[0].runTime)
-    let arr=[]
-    //dayoff=[]
+    let arr=[],dayoff=[]
     let j=0;
     let start=req.body.startDate;
     // let off=req.body.dayOff;
@@ -133,10 +132,10 @@ module.exports.bookService = async (req, res, next) => {
           }
           arr.push(ob)
         }
-        // else{
-        //     dayoff.push({"off":event})
+        else{
+            dayoff.push({"off":event})
 
-        // }
+        }
     }
     let payload = {
       type: "sp",
@@ -156,7 +155,7 @@ module.exports.bookService = async (req, res, next) => {
       runDetails:arr,
       startDate:formatDate(new Date(parseInt(req.body.startDate))),
       start:new Date(parseInt(req.body.startDate)),
-      // dayOff: dayoff,
+      dayOff: dayoff,
       // User:'61dc497c4f60822f13e5c4fb',
       User: res.locals.user._id
       //(new Date(req.body.dayOff).toDateString()).split(' ')[0],
