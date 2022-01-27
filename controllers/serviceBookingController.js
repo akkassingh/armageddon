@@ -145,7 +145,7 @@ module.exports.bookService = async (req, res, next) => {
       specialInstructions: req.body.specialInstructions,
       petBehaviour: req.body.petBehaviour,
       petRunningLocation: req.body.petRunningLocation,
-      // location: { type: 'Point', coordinates:[req.body.longitude, req.body.latitude] },
+      location: { type: 'Point', coordinates:[req.body.longitude, req.body.latitude] },
       phone: req.body.phone,
       alternateName: req.body.alternateName,
       alternatePhone: req.body.alternatePhone,
@@ -207,25 +207,27 @@ module.exports.bookService = async (req, res, next) => {
 module.exports.reorder = async (req, res, next) => {
   const {bookingId} = req.body;
   const user = res.locals.user;
+  var days = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
   try{
     const booking = await bookingDetails.findById(bookingId);
     let arr=[],dayoff=[]
     let j=0;
     let newStartDate = new Date(booking.startDate);
     newStartDate.setDate(newStartDate.getDate() + 31)
-    let newOffDate = new Date(booking.dayOff[booking.dayOff.length -1].off);
-    newOffDate.setDate(newOffDate.getDate() + 7);
+    // let newOffDate = new Date(booking.dayOff[booking.dayOff.length -1].off);
+    // newOffDate.setDate(newOffDate.getDate() + 7);
     let start= newStartDate.getTime();
-    let off=newOffDate.getTime();
+    // let off=newOffDate.getTime();
     for(let i=0;i<booking.package.frequency;i++){
-      if(i>0 && i%7==0)
-        j++;
+      // if(i>0 && i%7==0)
+      //   j++;
         const runningDate=86400000*i+start;
-        const checkDate=604800000*j+off
+        // const checkDate=604800000*j+off
         const event = formatDate(new Date(parseInt(runningDate)));
-        const eventcheck = formatDate(new Date(parseInt(checkDate)));
+        const eventcheck = new Date(parseInt(runningDate));
+        let day=days[eventcheck.getDay()]
         // console.log(eventcheck)
-        if(event!=eventcheck){
+        if(day!='Sunday'){
           let ob;
           if(booking.package.dayfrequency==2){
              ob={
@@ -242,10 +244,10 @@ module.exports.reorder = async (req, res, next) => {
           }
           arr.push(ob)
         }
-        else{
-            dayoff.push({"off":event})
+        // else{
+        //     dayoff.push({"off":event})
 
-        }
+        // }
     }
     let payload = {
       type: "sp",
@@ -254,7 +256,7 @@ module.exports.reorder = async (req, res, next) => {
       specialInstructions: booking.specialInstructions,
       petBehaviour: booking.petBehaviour,
       petRunningLocation: booking.petRunningLocation,
-      // location: { type: 'Point', coordinates:[req.body.longitude, req.body.latitude] },
+      location: { type: 'Point', coordinates:[booking.location ? booking.location.coordinates[0] : null, booking.location ? booking.location.coordinates[1] : null] },
       phone: booking.phone,
       alternateName: booking.alternateName,
       alternatePhone: booking.alternatePhone,
@@ -265,7 +267,7 @@ module.exports.reorder = async (req, res, next) => {
       runDetails:arr,
       startDate:formatDate(new Date(parseInt(start))),
       start:new Date(parseInt(start)),
-      dayOff: dayoff,
+      // dayOff: dayoff,
       // User:'61dc497c4f60822f13e5c4fb',
       User: booking.User,
       //(new Date(req.body.dayOff).toDateString()).split(' ')[0],
@@ -294,7 +296,7 @@ module.exports.reorder = async (req, res, next) => {
       //console.log(st)
     }
 
-    res.status(200).send({bookingId:ServiceBookingModel._id, success: true});
+    res.status(200).send({bookingId:ServiceBookingModel._id, success: true, amount : booking.package.amount});
     let result= await quickbloxRegistration(ServiceBookingModel._id)
     
   }

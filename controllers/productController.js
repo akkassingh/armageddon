@@ -1,4 +1,6 @@
 const Product = require('../models/Product');
+const Cart = require('../models/Cart');
+const Favourite = require('../models/Favourite');
 const cloudinary = require("cloudinary").v2;
 const fs = require("fs");
 
@@ -38,5 +40,17 @@ module.exports.getProducts = async (req, res, next) => {
     catch (err) {
         console.log(err);
         next(err);
+    }
+}
+
+module.exports.addToCart = async (req, res, next) => {
+    const user = res.locals.user;
+    const {productId} = req.body;
+    try {
+        const cart = Cart.find({user : user._id });
+        
+    }
+    catch (err) {
+
     }
 }

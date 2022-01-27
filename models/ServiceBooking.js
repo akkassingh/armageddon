@@ -46,21 +46,10 @@ const bookingDetailsSchema = new Schema({
     lat : Schema.Types.Decimal128,
     long : Schema.Types.Decimal128,
   },
-
-  //to be added below code
-  // location:{
-  //   type: {
-  //     type: String, // Don't do `{ location: { type: String } }`
-  //     enum: ['Point'], // 'location.type' must be 'Point'
-  //     required: false
-  //   },
-  //   coordinates: {
-  //     type: [Number],
-  //     required: false
-  //   }
-  // },
-  // latitude:{type: Number, required:true},
-  // longitude:{type: Number, required:true},
+  location: {
+    type : {type : String},
+    coordinates : [],
+  },
   phone: String,
   alternatePhone: String,
   alternateName: String,
