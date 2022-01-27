@@ -77,7 +77,7 @@ const bookingDetailsSchema = new Schema({
   run2:String,
   startDate: String,
   start: Date,
-  // dayOff: [],
+  dayOff: [],
   runDetails:[
    {
       runTime1:String,
