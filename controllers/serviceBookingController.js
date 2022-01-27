@@ -213,10 +213,7 @@ module.exports.reorder = async (req, res, next) => {
     let j=0;
     let newStartDate = new Date(booking.startDate);
     newStartDate.setDate(newStartDate.getDate() + 31)
-    // let newOffDate = new Date(booking.dayOff[booking.dayOff.length -1].off);
-    // newOffDate.setDate(newOffDate.getDate() + 7);
     let start= newStartDate.getTime();
-    // let off=newOffDate.getTime();
     for(let i=0;i<booking.package.frequency;i++){
       // if(i>0 && i%7==0)
       //   j++;
@@ -243,10 +240,10 @@ module.exports.reorder = async (req, res, next) => {
           }
           arr.push(ob)
         }
-        // else{
-        //     dayoff.push({"off":event})
+        else{
+            dayoff.push({"off":event})
 
-        // }
+        }
     }
     let payload = {
       type: "sp",
@@ -266,7 +263,7 @@ module.exports.reorder = async (req, res, next) => {
       runDetails:arr,
       startDate:formatDate(new Date(parseInt(start))),
       start:new Date(parseInt(start)),
-      // dayOff: dayoff,
+      dayOff: dayoff,
       // User:'61dc497c4f60822f13e5c4fb',
       User: booking.User,
       //(new Date(req.body.dayOff).toDateString()).split(' ')[0],
