@@ -14,6 +14,7 @@ const ProductSchema = new Schema({
     discountedPrice : Number,
     rating : Number,
     sizes : [String],
+    color : [String]
 },
 {
     timestamps: true,

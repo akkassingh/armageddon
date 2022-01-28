@@ -11,10 +11,14 @@ const {requireAuth} = require("../controllers/authController");
 const {
     addProduct, 
     getProducts,
+    addToCart,
+    getCartDetails
 } = require("../controllers/productController");
 
 
 productRouter.post("/addProduct", upload, requireAuth, addProduct);
 productRouter.post("/getProducts", requireAuth, getProducts);
+productRouter.post("/addToCart", requireAuth, addToCart);
+productRouter.post("/getCartDetails", requireAuth, getCartDetails);
 
 module.exports = productRouter;

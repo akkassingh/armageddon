@@ -4,7 +4,18 @@ const Schema = mongoose.Schema;
 const CartSchema = new Schema({
     products : {
         type : Map, //key will store productid and value will store the number of items 
-        of : String,
+        // keys are always strings. You specify the type of values using `of`
+        of : new Schema({
+            quantity: Number,
+            product: {
+              type: Schema.ObjectId,
+              ref: 'Product'
+            },
+            variation : {
+                type : Map,
+                of : Number
+            }
+          })
     },
     user : {
         type : Schema.ObjectId,

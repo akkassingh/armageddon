@@ -45,12 +45,56 @@ module.exports.getProducts = async (req, res, next) => {
 
 module.exports.addToCart = async (req, res, next) => {
     const user = res.locals.user;
-    const {productId} = req.body;
+    const {productId, variation} = req.body;
+    if (!productId) return res.status(401).send({ error : 'Please provide a valid product for adding it to cart'})
     try {
-        const cart = Cart.find({user : user._id });
-        
+        let cart = await Cart.findOne({user : user._id}, {user : 0});
+        if (cart){
+            if (cart.products.get(productId)){
+                let old_num = cart.products.get(productId).quantity;
+                if (cart.products.get(productId).variation.get(variation)){
+                    var oldv = cart.products.get(productId).variation.get(variation)
+                    cart.products.get(productId).variation.set(variation, oldv+1)
+                }
+                else{
+                    cart.products.get(productId).variation.set(variation,1);
+                }
+                cart.products.set(productId , {quantity : old_num + 1, product : productId, variation : cart.products.get(productId).variation});
+            }
+            else{
+                cart.products.set(productId, {quantity : 1, product : productId});
+                cart.products.get(productId).variation.set(variation,1);
+            }
+            await Cart.updateOne({ _id : cart._id}, {products : cart.products});
+        }
+        else{
+            let obj = {
+                quantity : 1,
+                product : productId,
+                variation : { [variation] : 1}
+            }
+            var newCart = new Cart({
+                user : user._id,
+                products : {[productId] : obj}
+            });
+            await newCart.save();
+        }
+        return res.status(200).send({message : "Product added to cart successfully!", success : true});
     }
     catch (err) {
+        console.log(err)
+        next(err)
+    }
+}
 
+module.exports.getCartDetails = async (req, res, next) => {
+    const user = res.locals.user;
+    try{
+        const cart = await Cart.findOne({user : user._id}, {user: 0}).populate('products.$*.product', 'name brand weight images avatar originalPrice discountedPrice').lean();
+        res.status(200).send(cart)
+    }
+    catch (err){
+        console.log(err)
+        next(err)
     }
 }
