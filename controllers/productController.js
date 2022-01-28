@@ -3,6 +3,7 @@ const Cart = require('../models/Cart');
 const Favourite = require('../models/Favourite');
 const cloudinary = require("cloudinary").v2;
 const fs = require("fs");
+const ObjectId = require("mongoose").Types.ObjectId;
 
 
 module.exports.addProduct = async (req, res, next) => {
@@ -110,20 +111,32 @@ module.exports.addToFavourites = async (req, res, next) => {
                 return res.status(200).send({message : 'Item already marked as favourite!', success : false})
             }
             else{
-                favourites.products.set(productId,1);
+                favourites.products.set(productId, {product : ObjectId(productId)});
             }
         }
         else{
             const newFav = new Favourite({
                 user : user._id,
                 products : {
-                   [productId] : 1
+                   [productId] : {product : ObjectId(productId)}
                 }
             });
             await newFav.save();
         }
         return res.status(200).send({message : 'Item added to favourites', success : true})
 
+    }
+    catch (err) {
+        console.log(err)
+        next(err)
+    }
+}
+
+module.exports.getFavouriteDetails = async (req, res, next) => {
+    const user = res.locals.user;
+    try{
+        const fav = await Favourite.findOne({user : user._id}, {user: 0}).populate('products.$*.product', 'name brand weight images avatar originalPrice discountedPrice').lean();
+        return res.status(200).send({fav});
     }
     catch (err) {
         console.log(err)
