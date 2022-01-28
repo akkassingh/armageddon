@@ -12,7 +12,8 @@ const {
     addProduct, 
     getProducts,
     addToCart,
-    getCartDetails
+    getCartDetails,
+    addToFavourites,
 } = require("../controllers/productController");
 
 
@@ -20,5 +21,6 @@ productRouter.post("/addProduct", upload, requireAuth, addProduct);
 productRouter.post("/getProducts", requireAuth, getProducts);
 productRouter.post("/addToCart", requireAuth, addToCart);
 productRouter.post("/getCartDetails", requireAuth, getCartDetails);
+productRouter.post("/addToFavourites", requireAuth, addToFavourites)
 
 module.exports = productRouter;

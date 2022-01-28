@@ -98,3 +98,35 @@ module.exports.getCartDetails = async (req, res, next) => {
         next(err)
     }
 }
+
+module.exports.addToFavourites = async (req, res, next) => {
+    const user = res.locals.user;
+    const {productId} = req.body;
+    if (!productId) res.status(400).send({error : 'Please select a valid product to add it in favourites'})
+    try{
+        const favourites = await Favourite.findOne({user : user._id});
+        if (favourites){
+            if (favourites.products.get(productId)) {
+                return res.status(200).send({message : 'Item already marked as favourite!', success : false})
+            }
+            else{
+                favourites.products.set(productId,1);
+            }
+        }
+        else{
+            const newFav = new Favourite({
+                user : user._id,
+                products : {
+                   [productId] : 1
+                }
+            });
+            await newFav.save();
+        }
+        return res.status(200).send({message : 'Item added to favourites', success : true})
+
+    }
+    catch (err) {
+        console.log(err)
+        next(err)
+    }
+}

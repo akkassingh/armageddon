@@ -4,7 +4,8 @@ const Schema = mongoose.Schema;
 const FavouriteSchema = new Schema({
     products : {
         type : Map, //key will store productid and value will store the number of items 
-        of : String,
+        // keys are always strings. You specify the type of values using `of`
+        of : Number
     },
     user : {
         type : Schema.ObjectId,
