@@ -294,6 +294,7 @@ module.exports.reorder = async (req, res, next) => {
 
     res.status(200).send({bookingId:ServiceBookingModel._id, success: true, amount : booking.package.amount});
     let result= await quickbloxRegistration(ServiceBookingModel._id)
+    await ServiceBookingModel.updateOne({_id : bookingId}, {isReorderDone : true});
     
   }
   catch(err){
@@ -329,7 +330,7 @@ module.exports.getmybookedAppointments = async (req, res, next) => {
       let obj= await ServiceAppointment.findOne({
         bookingDetails: serviceList[i]._id,
         bookingStatus:0
-      }).populate('bookingDetails','package run1 run2 startDate dayOff paymentDetails numberOfPets').populate('petDetails', 'name username').populate('ServiceProvider','fullName username avatar').lean(); 
+      }).populate('bookingDetails','package run1 run2 startDate dayOff paymentDetails numberOfPets isReorderDone').populate('petDetails', 'name username').populate('ServiceProvider','fullName username avatar').lean(); 
       console.log(obj)
       if(obj!=null && obj.petDetails.length==0){
         console.log('hiiiiii')
@@ -350,7 +351,9 @@ module.exports.getmybookedAppointments = async (req, res, next) => {
      obj.petDetails.push(pet)
       }
       let startDate = new Date(obj.bookingDetails.startDate);
-      let daysLeft = Math.ceil((startDate - today + 30) / (1000 * 60 * 60 * 24)); 
+      let isReorderDone = obj.bookingDetails.isReorderDone != null ? obj.bookingDetails.isReorderDone : false
+      let daysLeft = Math.ceil(( (startDate - today) + 30*1000*60*60*24) / (1000 * 60 * 60 * 24));
+      obj.isReorderDone = isReorderDone
       obj.daysLeft = daysLeft;
       if(obj!=null && obj.bookingDetails.paymentDetails.status)
       serviceList1.push(obj);
@@ -368,7 +371,7 @@ module.exports.getmyactiveAppointments = async (req, res, next) => {
     let serviceList = await ServiceAppointment.find({
       User: res.locals.user._id,
       bookingStatus:1
-    }).populate('bookingDetails','package run1 run2 startDate dayOff paymentDetails numberOfPets').populate('petDetails', 'name username').populate('ServiceProvider','fullName username avatar').lean();     
+    }).populate('bookingDetails','package run1 run2 startDate dayOff paymentDetails numberOfPets isReorderDone').populate('petDetails', 'name username').populate('ServiceProvider','fullName username avatar').lean();     
     serviceList = serviceList.filter(function (ele){
       return ele.bookingDetails.paymentDetails.status == 1;
     })
@@ -391,8 +394,10 @@ module.exports.getmyactiveAppointments = async (req, res, next) => {
         serviceList[i].petDetails.push(pet)
       }
       let startDate = new Date(serviceList[i].bookingDetails.startDate);
-      let daysLeft = Math.ceil((startDate - today + 30) / (1000 * 60 * 60 * 24)); 
+      let isReorderDone = obj.bookingDetails.isReorderDone != null ? obj.bookingDetails.isReorderDone : false
+      let daysLeft = Math.ceil((startDate - today + 30*1000*60*60*24) / (1000 * 60 * 60 * 24)); 
       serviceList[i].daysLeft = daysLeft;
+      serviceList[i].isReorderDone = isReorderDone
     }
     return res.status(200).json({serviceList:serviceList});
   } catch (err) {
@@ -408,7 +413,7 @@ module.exports.getmypastAppointments = async (req, res, next) => {
     let serviceList = await ServiceAppointment.find({
       User: res.locals.user._id,
       bookingStatus:{ $gte:3} //recieved=0,accepted(confirmed=1).rejected(cancelled)=2,completed=3
-    }).populate('bookingDetails','package run1 run2 paymentDetails numberOfPets startDate').populate('petDetails', 'name username').populate('ServiceProvider','fullName username avatar').lean();       
+    }).populate('bookingDetails','package run1 run2 paymentDetails numberOfPets startDate isReorderDone').populate('petDetails', 'name username').populate('ServiceProvider','fullName username avatar').lean();       
     serviceList.filter(function (ele){
       return ele.bookingDetails.paymentDetails.status == 1;
     })   
@@ -431,7 +436,9 @@ module.exports.getmypastAppointments = async (req, res, next) => {
         serviceList[i].petDetails.push(pet)
       }
       let startDate = new Date(serviceList[i].bookingDetails.startDate);
-      let daysLeft = Math.ceil((startDate - today + 30) / (1000 * 60 * 60 * 24)); 
+      let daysLeft = Math.ceil((startDate - today + 30*1000*60*60*24) / (1000 * 60 * 60 * 24));
+      let isReorderDone = obj.bookingDetails.isReorderDone != null ? obj.bookingDetails.isReorderDone : false
+      serviceList[i].isReorderDone = isReorderDone
       serviceList[i].daysLeft = daysLeft;
     }
     return res.status(200).json({serviceList:serviceList});
