@@ -394,7 +394,7 @@ module.exports.getmyactiveAppointments = async (req, res, next) => {
         serviceList[i].petDetails.push(pet)
       }
       let startDate = new Date(serviceList[i].bookingDetails.startDate);
-      let isReorderDone = obj.bookingDetails.isReorderDone != null ? obj.bookingDetails.isReorderDone : false
+      let isReorderDone = serviceList[i].bookingDetails.isReorderDone != null ? obj.bookingDetails.isReorderDone : false
       let daysLeft = Math.ceil((startDate - today + 30*1000*60*60*24) / (1000 * 60 * 60 * 24)); 
       serviceList[i].daysLeft = daysLeft;
       serviceList[i].isReorderDone = isReorderDone
@@ -437,7 +437,7 @@ module.exports.getmypastAppointments = async (req, res, next) => {
       }
       let startDate = new Date(serviceList[i].bookingDetails.startDate);
       let daysLeft = Math.ceil((startDate - today + 30*1000*60*60*24) / (1000 * 60 * 60 * 24));
-      let isReorderDone = obj.bookingDetails.isReorderDone != null ? obj.bookingDetails.isReorderDone : false
+      let isReorderDone = serviceList[i].bookingDetails.isReorderDone != null ? obj.bookingDetails.isReorderDone : false
       serviceList[i].isReorderDone = isReorderDone
       serviceList[i].daysLeft = daysLeft;
     }
