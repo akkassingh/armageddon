@@ -143,3 +143,20 @@ module.exports.getFavouriteDetails = async (req, res, next) => {
         next(err)
     }
 }
+
+module.exports.getProductDetails = async (req, res, next) => {
+    const {productId} = req.body;
+    const user = res.locals.user;
+    if (!productId || !user) return res.status(404).send({error : 'Invalid Request!', success : false});
+    try{
+        const product = await Product.findById(productId);
+        if (!product){
+            return res.status(404).send({error : "Product does not exist!", success : false});
+        }
+        else return res.status(200).send({product : product});
+    }
+    catch (err) {
+        console.log(err)
+        next(err);
+    }
+}
