@@ -34,8 +34,22 @@ module.exports.addProduct = async (req, res, next) => {
 
 module.exports.getProducts = async (req, res, next) => {
     const {counter} = req.body;
+    const user = res.locals.user;
     try{
-        const products = await Product.find({}).skip(10*counter).limit(10);
+        const products = await Product.find({}).skip(10*counter).limit(10).lean();
+        for (var i=0;i<products.length;i++){
+            let isFav = false;
+            var id = products[i]._id;
+            let fav = await Favourite.findOne({user : user._id}, 'products');
+            if (fav && fav.products.get(id)) isFav = true;
+
+            let isCarted = false;
+            let cart = await Cart.findOne({user : user._id}, 'products');
+            if (cart && cart.products.get(id)) isCarted = true;
+
+            products[i].isFav = isFav;
+            products[i].isCarted = isCarted;
+        }
         return res.status(200).send({products});
     }
     catch (err) {
@@ -149,11 +163,24 @@ module.exports.getProductDetails = async (req, res, next) => {
     const user = res.locals.user;
     if (!productId || !user) return res.status(404).send({error : 'Invalid Request!', success : false});
     try{
-        const product = await Product.findById(productId);
+        const product = await Product.findById(productId).lean();
         if (!product){
             return res.status(404).send({error : "Product does not exist!", success : false});
         }
-        else return res.status(200).send({product : product});
+        else{
+            let isFav = false;
+            var id = productId;
+            let fav = await Favourite.findOne({user : user._id}, 'products');
+            if (fav && fav.products.get(id)) isFav = true;
+
+            let isCarted = false;
+            let cart = await Cart.findOne({user : user._id}, 'products');
+            if (cart && cart.products.get(id)) isCarted = true;
+
+            product.isFav = isFav;
+            product.isCarted = isCarted;
+            return res.status(200).send({product : product});
+        } 
     }
     catch (err) {
         console.log(err)
