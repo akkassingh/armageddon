@@ -106,7 +106,15 @@ module.exports.getCartDetails = async (req, res, next) => {
     const user = res.locals.user;
     try{
         const cart = await Cart.findOne({user : user._id}, {user: 0}).populate('products.$*.product', 'name brand weight images avatar originalPrice discountedPrice').lean();
-        res.status(200).send(cart)
+        for (m in cart.products){
+            var id = m;
+            let isFav = false;
+            let fav = await Favourite.findOne({user : user._id}, 'products');
+            if (fav && fav.products.get(id)) isFav = true;
+            cart.products[m].product['isFav'] = isFav;
+            cart.products[m].product['isCarted'] = true;
+        }
+        return res.status(200).send(cart)
     }
     catch (err){
         console.log(err)
@@ -150,6 +158,14 @@ module.exports.getFavouriteDetails = async (req, res, next) => {
     const user = res.locals.user;
     try{
         const fav = await Favourite.findOne({user : user._id}, {user: 0}).populate('products.$*.product', 'name brand weight images avatar originalPrice discountedPrice').lean();
+        for (m in fav.products){
+            var id = m;
+            let isCarted = false;
+            let cart = await Cart.findOne({user : user._id}, 'products');
+            if (cart && cart.products.get(id)) isCarted = true;
+            fav.products[m].product['isFav'] = true;
+            fav.products[m].product['isCarted'] = isCarted;
+        }
         return res.status(200).send({fav});
     }
     catch (err) {
