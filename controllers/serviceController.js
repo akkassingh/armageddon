@@ -530,16 +530,32 @@ module.exports.changeRunstatus = async (req, res, next) => {
       }
       
     res.status(200).send({success:true});
-    const n_obj = {
-      title : 'Tamely',
-      body : "Dog walking for today's session has been started!",
-      image : formatCloudinaryUrl(
-        process.env.TAMELY_LOGO_LINK,
-        { height: 720, width: 1440, x: '100%', y: '100%', notify : true  },
-        true
-      ),
+    if (req.body.run1Status == 1 || req.body.run2Status == 1){
+      let n_obj = {
+        title : 'Tamely',
+        body : "Dog walking for today's session has been started!",
+        image : formatCloudinaryUrl(
+          process.env.TAMELY_LOGO_LINK,
+          { height: 720, width: 1440, x: '100%', y: '100%', notify : true  },
+          true
+        ),
+      }
+      notifyUser(n_obj, 'tamelyid',rep.User);
     }
-    notifyUser(n_obj, 'tamelyid',rep.User);
+
+    if (req.body.run1Status == 2 || req.body.run2Status == 2){
+      let n_obj = {
+        title : 'Tamely',
+        body : "Dog walking for today's session has ended! See Report",
+        image : formatCloudinaryUrl(
+          process.env.TAMELY_LOGO_LINK,
+          { height: 720, width: 1440, x: '100%', y: '100%', notify : true  },
+          true
+        ),
+      }
+      notifyUser(n_obj, 'tamelyid',rep.User);
+    }
+    
   } catch (err) {
     console.log(err);
     next(err);
