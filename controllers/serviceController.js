@@ -529,7 +529,17 @@ module.exports.changeRunstatus = async (req, res, next) => {
         }
       }
       
-    return res.status(200).send({success:true});
+    res.status(200).send({success:true});
+    const n_obj = {
+      title : 'Tamely',
+      body : "Dog walking for today's session has been started!",
+      image : formatCloudinaryUrl(
+        process.env.TAMELY_LOGO_LINK,
+        { height: 720, width: 1440, x: '100%', y: '100%', notify : true  },
+        true
+      ),
+    }
+    notifyUser(n_obj, 'tamelyid',rep.User);
   } catch (err) {
     console.log(err);
     next(err);
