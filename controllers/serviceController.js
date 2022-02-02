@@ -533,7 +533,7 @@ module.exports.changeRunstatus = async (req, res, next) => {
     if (req.body.run1Status == 1 || req.body.run2Status == 1){
       let n_obj = {
         title : 'Tamely',
-        body : "Pet walking 🦮 for today's session has been started! 🐶 Track live location now!📍",
+        body : "Pet walking for today's session has been started! 🦮 Track live location now!📍",
         image : formatCloudinaryUrl(
           process.env.TAMELY_LOGO_LINK,
           { height: 720, width: 1440, x: '100%', y: '100%', notify : true  },
@@ -546,7 +546,7 @@ module.exports.changeRunstatus = async (req, res, next) => {
     if (req.body.run1Status == 2 || req.body.run2Status == 2){
       let n_obj = {
         title : 'Tamely',
-        body : "Pet walking 🦮  for today's session has been ended! 🐶 See Report. 📝👀",
+        body : "Pet walking for today's session has been ended! 🐕‍🦺 See Report! 📝👀",
         image : formatCloudinaryUrl(
           process.env.TAMELY_LOGO_LINK,
           { height: 720, width: 1440, x: '100%', y: '100%', notify : true  },
