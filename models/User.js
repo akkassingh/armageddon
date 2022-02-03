@@ -83,6 +83,10 @@ const UserSchema = new Schema({
   isFreeWalkAvailable : {
     type : Boolean,
     default : true
+  },
+  isFreeTrainingSessionAvailable : {
+    type : Boolean,
+    default : true
   }
 },
 {
