@@ -1466,12 +1466,36 @@ module.exports.isFreeWalkAvailable = async (req, res, next) => {
     next(err)
   }
 }
+module.exports.isFreeTrainingSessionAvailable = async (req, res, next) => {
+  //to check status of free walk
+  const user = res.locals.user;
+  try {
+    return res.status(200).send({isFreeTrainingSessionAvailable : user.isFreeTrainingSessionAvailable});
+  }
+  catch (err) {
+    console.log(err);
+    next(err)
+  }
+}
 
 module.exports.updateFreeWalkStatus = async (req, res, next) => {
   // this api has to be run after 1 successful free walk session is booked
   const user = res.locals.user;
   try {
     await User.updateOne({ _id: user._id}, {isFreeWalkAvailable: false});
+    return res.status(200).send({success: true});
+  }
+  catch (err) {
+    console.log(err);
+    next(err);
+  }
+}
+
+module.exports.updateFreeTrainingSessionStatus = async (req, res, next) => {
+  // this api has to be run after 1 successful free training session is booked
+  const user = res.locals.user;
+  try {
+    await User.updateOne({ _id: user._id}, {isFreeTrainingSessionAvailable: false});
     return res.status(200).send({success: true});
   }
   catch (err) {

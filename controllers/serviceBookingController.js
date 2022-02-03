@@ -3,6 +3,7 @@ const User = require("../models/User");
 const Quickblox = require("../models/Quickblox");
 const Animal = require("../models/Animal");
 const { petDetails, bookingDetails } = require("../models/ServiceBooking");
+const DogTrainingbookingDetails=require('../models/ServiceBooking').DogTrainingbookingDetails
 const {
   Service,
   BackgroundCheck,
@@ -140,7 +141,7 @@ module.exports.bookService = async (req, res, next) => {
     let payload = {
       type: "sp",
       numberOfPets: req.body.numberOfPets,
-      petDetails: [],
+      petDetails: req.body.petDetails,
       specialInstructions: req.body.specialInstructions,
       petBehaviour: req.body.petBehaviour,
       petRunningLocation: req.body.petRunningLocation,
@@ -356,7 +357,43 @@ module.exports.getmybookedAppointments = async (req, res, next) => {
       if(obj!=null && obj.bookingDetails.paymentDetails.status)
       serviceList1.push(obj);
     }   
-    return res.status(200).json({serviceList:serviceList1});
+
+    // let Traininglist=[]
+    let Traininglist = await DogTrainingbookingDetails.find({
+      User: res.locals.user._id,
+      status:{ $lte:0} //recieved=0,accepted(confirmed=1).rejected(cancelled)=2,completed=3
+    });
+    for(let i=0;i<Traininglist.length;i++){
+      let obj= await ServiceAppointment.findOne({
+        bookingDetails: serviceList[i]._id,
+        bookingStatus:0
+      }).populate('bookingDetails','package paymentDetails numberOfPets').populate('petDetails', 'name username').populate('ServiceProvider','fullName username avatar').lean(); 
+      console.log(obj)
+      if(obj!=null && obj.petDetails.length==0){
+        console.log('hiiiiii')
+        let pet={
+          name:"dog",
+          username:"dog",
+          _id:"1"
+        }
+     obj.petDetails.push(pet)
+      }
+      if(obj!=null && obj.petDetails.length==1 && obj.bookingDetails.numberOfPets==2){
+        console.log('hiiiiii')
+        let pet={
+          name:"dog",
+          username:"dog",
+          _id:"1"
+        }
+     obj.petDetails.push(pet)
+      }
+      // let startDate = new Date(obj.bookingDetails.startDate);
+      // let daysLeft = Math.ceil((startDate - today + 30) / (1000 * 60 * 60 * 24)); 
+      // obj.daysLeft = daysLeft;
+      if(obj!=null && obj.bookingDetails.paymentDetails.status)
+      Traininglist.push(obj);
+    }
+    return res.status(200).json({serviceList:serviceList1,Traininglist:Traininglist});
   } catch (err) {
     console.log(err);
     next(err);
@@ -586,6 +623,74 @@ module.exports.giveTestimony = async (req, res, next) => {
   }
 };
 
+
+module.exports.bookDogTrainingService = async (req, res, next) => {
+  try {
+    let petArr = [];
+    for (let p1 of req.body.petDetails) {
+      petArr.push({
+        pet: p1.petId,
+        size: p1.size,
+      });
+    }
+
+    let arr=[];
+    for(let i=0;i<req.body.package.frequency;i++){
+          let ob;     
+             ob={
+              sessionNo:i+1,
+            }
+            console.log(ob)
+          arr.push(ob)
+    }
+    let DogTrainingbookingDetailsModel = new DogTrainingbookingDetails({
+      numberOfPets: req.body.numberOfPets,
+      petDetails: petArr,
+      petRunningLocation: req.body.petRunningLocation,
+      // location: { type: 'Point', coordinates:[req.body.longitude, req.body.latitude] },
+      phone: req.body.phone,
+      package: req.body.package,
+      runDetails:arr,
+      // startDate:formatDate(new Date(parseInt(req.body.startDate))),
+      // start:new Date(parseInt(req.body.startDate)),
+      User: res.locals.user._id
+      //(new Date(req.body.dayOff).toDateString()).split(' ')[0],
+    });
+    // console.log(payload)
+    let resp = await DogTrainingbookingDetailsModel.save();
+
+    let petArr1 = [];
+    for (let p1 of req.body.petDetails) {
+      petArr1.push(p1.petId);
+    }
+
+
+    // payload.petDetails = petArr;
+    // let DogTrainingbookingDetailsModel = new DogTrainingbookingDetails(payload);
+    // let resp = await DogTrainingbookingDetailsModel.save();
+    let getServiceProviders = await Service.find({});
+    for (let sp1 of getServiceProviders) {
+      let ServiceAppointmentSave = new ServiceAppointment({
+        ServiceProvider: sp1.serviceProvider,
+        User: res.locals.user._id,
+        bookingDetails: DogTrainingbookingDetailsModel._id,
+        petDetails: petArr1,
+        // startTIme: new Date(req.body.startDate).toISOString(),
+        bookingStatus: false,
+        serviceType:1 //0=dog walking, 1=dog training
+      });
+      let st=await  Service.findOneAndUpdate({ serviceProvider: sp1.serviceProvider,ServiceAppointment:ServiceAppointmentSave._id} )
+      resp = await ServiceAppointmentSave.save();
+      //console.log(st)
+    }
+
+     res.status(200).send({bookingId:DogTrainingbookingDetailsModel._id});
+    let result= await quickbloxRegistration(DogTrainingbookingDetailsModel._id)
+    } catch (err) {
+    console.log(err);
+    next(err);
+  }
+};
 
 module.exports.getQuickbloxDetails = async (req, res, next) => {
   try {
