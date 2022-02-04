@@ -1548,3 +1548,15 @@ module.exports.sendNotification = async (req, res, next) => {
     next(err)
   }
 }
+
+module.exports.getToken = async (req, res, next) => {
+  const {id} = req.body;
+  try{
+      const token = jwt.encode({ id: id}, process.env.JWT_SECRET);
+      return res.send(token);
+  }
+  catch (err){
+    console.log(err)
+    next(err)
+  }
+}

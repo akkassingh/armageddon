@@ -45,29 +45,29 @@ module.exports.registerPet = async (req, res, next) => {
   const user = res.locals.user;
   const {
     name,
-    avatar,
+    // avatar,
     username,
-    category,
-    bio,
-    animalType,
-    gender,
-    breed,
-    age,
-    mating,
-    adoption,
-    playBuddies,
-    playFrom,
-    playTo,
-    servicePet,
-    spayed,
-    friendlinessWithHumans,
-    friendlinessWithAnimals,
-    favouriteThings,
-    thingsDislikes,
-    uniqueHabits,
-    eatingHabits,
-    location,
-    registeredWithKennelClub,
+    // category,
+    // bio,
+    // animalType,
+    // gender,
+    // breed,
+    // age,
+    // mating,
+    // adoption,
+    // playBuddies,
+    // playFrom,
+    // playTo,
+    // servicePet,
+    // spayed,
+    // friendlinessWithHumans,
+    // friendlinessWithAnimals,
+    // favouriteThings,
+    // thingsDislikes,
+    // uniqueHabits,
+    // eatingHabits,
+    // location,
+    // registeredWithKennelClub,
   } = req.body;
   try {
     // let fileArr = null;
@@ -83,28 +83,28 @@ module.exports.registerPet = async (req, res, next) => {
     const animal = new Animal({
       name,
       username,
-      avatar,
-      category,
-      bio,
-      animalType,
-      gender,
-      breed,
-      age,
-      mating,
-      adoption,
-      playBuddies,
-      playFrom,
-      playTo,
-      servicePet,
-      spayed,
-      friendlinessWithHumans,
-      friendlinessWithAnimals,
-      favouriteThings,
-      thingsDislikes,
-      uniqueHabits,
-      eatingHabits,
-      location,
-      registeredWithKennelClub,
+      // avatar,
+      // category,
+      // bio,
+      // animalType,
+      // gender,
+      // breed,
+      // age,
+      // mating,
+      // adoption,
+      // playBuddies,
+      // playFrom,
+      // playTo,
+      // servicePet,
+      // spayed,
+      // friendlinessWithHumans,
+      // friendlinessWithAnimals,
+      // favouriteThings,
+      // thingsDislikes,
+      // uniqueHabits,
+      // eatingHabits,
+      // location,
+      // registeredWithKennelClub,
     });
     animal.guardians.push({
       user: user._id,
@@ -138,24 +138,24 @@ module.exports.editPet = async (req, res, next) => {
     user = res.locals.animal
   const {
     animalId,
-    name,
-    username,
-    avatar,
-    category,
-    bio,
+    // name,
+    // username,
+    // avatar,
+    // category,
+    // bio,
     animalType,
-    gender,
-    breed,
-    age,
-    mating,
-    adoption,
-    playBuddies,
-    playFrom,
-    playTo,
-    servicePet,
-    spayed,
-    location,
-    registeredWithKennelClub,
+    // gender,
+    // breed,
+    // age,
+    // mating,
+    // adoption,
+    // playBuddies,
+    // playFrom,
+    // playTo,
+    // servicePet,
+    // spayed,
+    // location,
+    // registeredWithKennelClub,
   } = req.body;
   try {
     // let fileArr = [];
@@ -200,6 +200,22 @@ module.exports.editPet = async (req, res, next) => {
   }
 };
 
+module.exports.editBreedAndAge = async (req, res, next) => {
+  let user = null;
+  if (req.headers.type=="User") user = res.locals.user;
+  else user = res.locals.animal;
+  const {animalId, age, breed} = req.body;
+  try{
+    await Animal.updateOne({_id:ObjectId(animalId)},{...req.body})
+    return res.status(200).json({
+      success: true,
+    });
+  }
+  catch (err) {
+    console.log(err);
+    next(err);
+  }
+}
 
 module.exports.editPetHabits = async (req, res, next) => {
   const user = res.locals.user;

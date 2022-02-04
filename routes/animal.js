@@ -24,6 +24,7 @@ const {
   rejectRelation,
   rejectGuardian,
   setAmbassador,
+  editBreedAndAge
 } = require("../controllers/animalController");
 
 const { requireAuth, requireAuthAnimal } = require("../controllers/authController");
@@ -45,6 +46,7 @@ animalRouter.post('/rejectRelation',rejectRelation);
 animalRouter.post('/confirmGuardian', requireAuth, confirmGuardian);
 animalRouter.post('/rejectGuardian', requireAuth, rejectGuardian);
 animalRouter.post('/setAmbassador', setAmbassador);
+animalRouter.post('/editBreedAndAge', requireAuth, editBreedAndAge);
 
 
 module.exports = animalRouter;

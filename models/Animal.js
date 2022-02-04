@@ -54,7 +54,7 @@ const AnimalSchema = new Schema({
   //TODO: make a different schema of category
   category: {
     type: String,
-    required: true,
+    default : 'Pet'
   },
   bio: {
     type: String,
@@ -62,7 +62,6 @@ const AnimalSchema = new Schema({
   },
   animalType: {
     type: String,
-    required: true,
   },
   gender: String,
   breed: String,
