@@ -121,7 +121,7 @@ module.exports.registerPet = async (req, res, next) => {
     );
 
     return res.status(201).json({
-      pet,
+      id : pet._id,
       token: jwt.encode({ id: animal._id }, process.env.JWT_SECRET),
     });
   } catch (err) {
