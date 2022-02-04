@@ -79,6 +79,14 @@ const UserSchema = new Schema({
     type: String,
     required: false,
     unique: [true, "A user with this phone number already exists"],
+  },
+  isFreeWalkAvailable : {
+    type : Boolean,
+    default : true
+  },
+  isFreeTrainingSessionAvailable : {
+    type : Boolean,
+    default : true
   }
 },
 {

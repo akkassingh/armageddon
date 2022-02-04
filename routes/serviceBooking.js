@@ -21,7 +21,9 @@ const {
   giveRatingstoeachWalk,
   getReport,
   giveTestimony,
-  getQuickbloxDetails
+  getQuickbloxDetails,
+  reorder,
+  bookDogTrainingService
 } = require("../controllers/serviceBookingController");
 
 const { requireAuth } = require("../controllers/authController");
@@ -29,9 +31,12 @@ const { requireAuth } = require("../controllers/authController");
 //get service providers list
 serviceRouter.get("/serviceProvidersList", requireAuth, serviceProvidersList);
 //bookService
+
 serviceRouter.post("/serviceBooking", requireAuth, bookService);
 serviceRouter.post("/getPetDetails", requireAuth, getPetDetails);
+serviceRouter.post("/reorder", requireAuth, reorder)
 
+serviceRouter.post("/bookDogTrainingService", requireAuth, bookDogTrainingService);
 
 serviceRouter.post("/getmybookedAppointments", requireAuth, getmybookedAppointments);
 serviceRouter.post("/getmyactiveAppointments", requireAuth, getmyactiveAppointments);

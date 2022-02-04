@@ -39,7 +39,7 @@ module.exports.verifyJwt = (token, type) => {
         const id = jwt.decode(token, process.env.JWT_SECRET).id;
         const user = await User.findOne(
           { _id: id },
-          "email username avatar bookmarks bio fullName confirmed website pets"
+          "email username avatar bookmarks bio fullName confirmed website pets isFreeWalkAvailable"
         );
         // console.log("--------user-------", user);
         if (user) {
