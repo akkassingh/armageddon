@@ -145,7 +145,7 @@ module.exports.bookService = async (req, res, next) => {
       specialInstructions: req.body.specialInstructions,
       petBehaviour: req.body.petBehaviour,
       petRunningLocation: req.body.petRunningLocation,
-      // location: { type: 'Point', coordinates:[req.body.longitude, req.body.latitude] },
+      location: { type: 'Point', coordinates:[req.body.longitude, req.body.latitude] },
       phone: req.body.phone,
       alternateName: req.body.alternateName,
       alternatePhone: req.body.alternatePhone,
@@ -207,25 +207,24 @@ module.exports.bookService = async (req, res, next) => {
 module.exports.reorder = async (req, res, next) => {
   const {bookingId} = req.body;
   const user = res.locals.user;
+  var days = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
   try{
     const booking = await bookingDetails.findById(bookingId);
     let arr=[],dayoff=[]
     let j=0;
     let newStartDate = new Date(booking.startDate);
     newStartDate.setDate(newStartDate.getDate() + 31)
-    let newOffDate = new Date(booking.dayOff[booking.dayOff.length -1].off);
-    newOffDate.setDate(newOffDate.getDate() + 7);
     let start= newStartDate.getTime();
-    let off=newOffDate.getTime();
     for(let i=0;i<booking.package.frequency;i++){
-      if(i>0 && i%7==0)
-        j++;
+      // if(i>0 && i%7==0)
+      //   j++;
         const runningDate=86400000*i+start;
-        const checkDate=604800000*j+off
+        // const checkDate=604800000*j+off
         const event = formatDate(new Date(parseInt(runningDate)));
-        const eventcheck = formatDate(new Date(parseInt(checkDate)));
+        const eventcheck = new Date(parseInt(runningDate));
+        let day=days[eventcheck.getDay()]
         // console.log(eventcheck)
-        if(event!=eventcheck){
+        if(day!='Sunday'){
           let ob;
           if(booking.package.dayfrequency==2){
              ob={
@@ -254,7 +253,7 @@ module.exports.reorder = async (req, res, next) => {
       specialInstructions: booking.specialInstructions,
       petBehaviour: booking.petBehaviour,
       petRunningLocation: booking.petRunningLocation,
-      // location: { type: 'Point', coordinates:[req.body.longitude, req.body.latitude] },
+      location: { type: 'Point', coordinates:[booking.location ? booking.location.coordinates[0] : null, booking.location ? booking.location.coordinates[1] : null] },
       phone: booking.phone,
       alternateName: booking.alternateName,
       alternatePhone: booking.alternatePhone,
@@ -294,8 +293,9 @@ module.exports.reorder = async (req, res, next) => {
       //console.log(st)
     }
 
-    res.status(200).send({bookingId:ServiceBookingModel._id, success: true});
+    res.status(200).send({bookingId:ServiceBookingModel._id, success: true, amount : booking.package.amount});
     let result= await quickbloxRegistration(ServiceBookingModel._id)
+    await ServiceBookingModel.updateOne({_id : bookingId}, {isReorderDone : true});
     
   }
   catch(err){
@@ -331,7 +331,7 @@ module.exports.getmybookedAppointments = async (req, res, next) => {
       let obj= await ServiceAppointment.findOne({
         bookingDetails: serviceList[i]._id,
         bookingStatus:0
-      }).populate('bookingDetails','package run1 run2 startDate dayOff paymentDetails numberOfPets').populate('petDetails', 'name username').populate('ServiceProvider','fullName username avatar').lean(); 
+      }).populate('bookingDetails','package run1 run2 startDate dayOff paymentDetails numberOfPets isReorderDone').populate('petDetails', 'name username').populate('ServiceProvider','fullName username avatar').lean(); 
       console.log(obj)
       if(obj!=null && obj.petDetails.length==0){
         console.log('hiiiiii')
@@ -352,7 +352,9 @@ module.exports.getmybookedAppointments = async (req, res, next) => {
      obj.petDetails.push(pet)
       }
       let startDate = new Date(obj.bookingDetails.startDate);
-      let daysLeft = Math.ceil((startDate - today + 30) / (1000 * 60 * 60 * 24)); 
+      let isReorderDone = obj.bookingDetails.isReorderDone != null ? obj.bookingDetails.isReorderDone : false
+      let daysLeft = Math.ceil(( (startDate - today) + 30*1000*60*60*24) / (1000 * 60 * 60 * 24));
+      obj.isReorderDone = isReorderDone
       obj.daysLeft = daysLeft;
       if(obj!=null && obj.bookingDetails.paymentDetails.status)
       serviceList1.push(obj);
@@ -406,7 +408,7 @@ module.exports.getmyactiveAppointments = async (req, res, next) => {
     let serviceList = await ServiceAppointment.find({
       User: res.locals.user._id,
       bookingStatus:1
-    }).populate('bookingDetails','package run1 run2 startDate dayOff paymentDetails numberOfPets').populate('petDetails', 'name username').populate('ServiceProvider','fullName username avatar').lean();     
+    }).populate('bookingDetails','package run1 run2 startDate dayOff paymentDetails numberOfPets isReorderDone').populate('petDetails', 'name username').populate('ServiceProvider','fullName username avatar').lean();     
     serviceList = serviceList.filter(function (ele){
       return ele.bookingDetails.paymentDetails.status == 1;
     })
@@ -429,8 +431,10 @@ module.exports.getmyactiveAppointments = async (req, res, next) => {
         serviceList[i].petDetails.push(pet)
       }
       let startDate = new Date(serviceList[i].bookingDetails.startDate);
-      let daysLeft = Math.ceil((startDate - today + 30) / (1000 * 60 * 60 * 24)); 
+      let isReorderDone = serviceList[i].bookingDetails.isReorderDone != null ? serviceList[i].bookingDetails.isReorderDone : false
+      let daysLeft = Math.ceil((startDate - today + 30*1000*60*60*24) / (1000 * 60 * 60 * 24)); 
       serviceList[i].daysLeft = daysLeft;
+      serviceList[i].isReorderDone = isReorderDone
     }
     return res.status(200).json({serviceList:serviceList});
   } catch (err) {
@@ -446,7 +450,7 @@ module.exports.getmypastAppointments = async (req, res, next) => {
     let serviceList = await ServiceAppointment.find({
       User: res.locals.user._id,
       bookingStatus:{ $gte:3} //recieved=0,accepted(confirmed=1).rejected(cancelled)=2,completed=3
-    }).populate('bookingDetails','package run1 run2 paymentDetails numberOfPets startDate').populate('petDetails', 'name username').populate('ServiceProvider','fullName username avatar').lean();       
+    }).populate('bookingDetails','package run1 run2 paymentDetails numberOfPets startDate isReorderDone').populate('petDetails', 'name username').populate('ServiceProvider','fullName username avatar').lean();       
     serviceList.filter(function (ele){
       return ele.bookingDetails.paymentDetails.status == 1;
     })   
@@ -469,7 +473,9 @@ module.exports.getmypastAppointments = async (req, res, next) => {
         serviceList[i].petDetails.push(pet)
       }
       let startDate = new Date(serviceList[i].bookingDetails.startDate);
-      let daysLeft = Math.ceil((startDate - today + 30) / (1000 * 60 * 60 * 24)); 
+      let daysLeft = Math.ceil((startDate - today + 30*1000*60*60*24) / (1000 * 60 * 60 * 24));
+      let isReorderDone = serviceList[i].bookingDetails.isReorderDone != null ? serviceList[i].bookingDetails.isReorderDone : false
+      serviceList[i].isReorderDone = isReorderDone
       serviceList[i].daysLeft = daysLeft;
     }
     return res.status(200).json({serviceList:serviceList});

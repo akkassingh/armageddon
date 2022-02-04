@@ -11,10 +11,20 @@ const {requireAuth} = require("../controllers/authController");
 const {
     addProduct, 
     getProducts,
+    addToCart,
+    getCartDetails,
+    addToFavourites,
+    getFavouriteDetails,
+    getProductDetails,
 } = require("../controllers/productController");
 
 
 productRouter.post("/addProduct", upload, requireAuth, addProduct);
 productRouter.post("/getProducts", requireAuth, getProducts);
+productRouter.post("/addToCart", requireAuth, addToCart);
+productRouter.post("/getCartDetails", requireAuth, getCartDetails);
+productRouter.post("/addToFavourites", requireAuth, addToFavourites)
+productRouter.post("/getFavouriteDetails", requireAuth, getFavouriteDetails);
+productRouter.post("/getProductDetails", requireAuth, getProductDetails);
 
 module.exports = productRouter;
