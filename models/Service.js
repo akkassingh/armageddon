@@ -243,6 +243,10 @@ const ServiceAppointmentSchema = new Schema({
     type: Schema.ObjectId,
     ref: "bookingDetails",
   },
+  DogTrainingbookingDetails: {
+    type: Schema.ObjectId,
+    ref: "DogTrainingbookingDetails",
+  },
   petDetails: [
     {
       type: Schema.ObjectId,

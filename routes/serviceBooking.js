@@ -23,7 +23,10 @@ const {
   giveTestimony,
   getQuickbloxDetails,
   reorder,
-  bookDogTrainingService
+  bookDogTrainingService,
+  getDogTrainingAppointmentDetails,
+  getscrollSessionstatus,
+  changeTrainingAppointmentstatus
 } = require("../controllers/serviceBookingController");
 
 const { requireAuth } = require("../controllers/authController");
@@ -42,8 +45,14 @@ serviceRouter.post("/getmybookedAppointments", requireAuth, getmybookedAppointme
 serviceRouter.post("/getmyactiveAppointments", requireAuth, getmyactiveAppointments);
 serviceRouter.post("/getmypastAppointments", requireAuth, getmypastAppointments);
 serviceRouter.post("/getAppointmentDetails", requireAuth, getAppointmentDetails);
+
+serviceRouter.post("/getDogTrainingAppointmentDetails", requireAuth, getDogTrainingAppointmentDetails);
 serviceRouter.post("/getscrollAppointmentstatus", requireAuth, getscrollAppointmentstatus);
+serviceRouter.post("/getscrollSessionstatus", requireAuth, getscrollSessionstatus);
+
 serviceRouter.post("/changeAppointmentstatus", requireAuth, changeAppointmentstatus);
+serviceRouter.post("/changeTrainingAppointmentstatus", requireAuth, changeTrainingAppointmentstatus);
+
 serviceRouter.post("/giveRatingstoeachWalk", requireAuth, giveRatingstoeachWalk);
 serviceRouter.post("/getReport", requireAuth, getReport);
 serviceRouter.post("/giveTestimony", requireAuth, giveTestimony);
