@@ -825,8 +825,8 @@ module.exports.bookDogTrainingService = async (req, res, next) => {
       phone: req.body.phone,
       package: req.body.package,
       runDetails:arr,
-      // startDate:formatDate(new Date(parseInt(req.body.startDate))),
-      // start:new Date(parseInt(req.body.startDate)),
+      startDate:formatDate(new Date(parseInt(req.body.startDate))),
+      time:req.body.time,
       User: res.locals.user._id
       //(new Date(req.body.dayOff).toDateString()).split(' ')[0],
     });

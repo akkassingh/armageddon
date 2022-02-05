@@ -193,6 +193,7 @@ const DogTrainingbookingDetailsSchema = new Schema({
   },
   startDate: String,
   start: Date,
+  time:String,
   runDetails:[
    {
       sessionNo:Number,
