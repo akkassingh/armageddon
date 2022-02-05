@@ -9,6 +9,7 @@ const {
   ServiceReport
 } = require("../models/Service");
 const {bookingDetails}=require("../models/ServiceBooking")
+const {DogTrainingbookingDetails}=require("../models/ServiceBooking")
 const ObjectId = require("mongoose").Types.ObjectId;
 const logger = require("../logger/logger");
 const fs = require("fs");
@@ -824,6 +825,44 @@ module.exports.postPayment = async (req, res, next) => {
     }
     if (!bookingStatus.paymentDetails.status){
       await bookingDetails.updateOne(
+        {
+          "_id" : bookingId
+        },
+        {
+          "paymentDetails.transactionId" : transactionId,
+          "paymentDetails.status" : 1,
+          "paymentDetails.amount" : amount,
+        });
+      return res.status(201).send({"success" : true})
+    }
+    else {
+      return res.status(200).send({error : "Your booking has been already registered!"})
+    }
+  }
+  catch (err) {
+    console.log(err);
+    next(err);
+  }
+}
+
+module.exports.postTrainingPayment = async (req, res, next) => {
+  const {bookingId, transactionId, amount} = req.body;
+  const user = res.locals.user;
+  if (!bookingId) {
+    return res.status(400).send({"error": "Invalid Request!"})
+  }
+  const obj = {
+    body : 'Your booking has been successfully booked!🥳',
+    image : process.env.TAMELY_LOGO_LINK
+  }
+  notifyUser(obj,'tamelyid',user._id);
+  try{
+    const bookingStatus = await DogTrainingbookingDetails.findById(bookingId, 'paymentDetails');
+    if (!bookingStatus){
+      return res.status(404).send({"error" : "No Booking Found with given credentials!"});
+    }
+    if (!bookingStatus.paymentDetails.status){
+      await DogTrainingbookingDetails.updateOne(
         {
           "_id" : bookingId
         },
