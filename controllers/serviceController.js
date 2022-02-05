@@ -712,6 +712,23 @@ module.exports.getReport = async (req, res, next) => {
   }
 };
 
+
+module.exports.getTrainingReport = async (req, res, next) => {
+  try {
+    let resp;
+    let sessionNo=req.body.sessionNo
+    let rep=await ServiceAppointment.findById({_id:req.body.appointmentId}).populate('DogTrainingbookingDetails','runDetails');
+     resp=await ServiceReport.findById({_id:rep.DogTrainingbookingDetails.runDetails[sessionNo-1].sessionReport})
+    return res.status(200).send(resp);
+  } catch (err) {
+    console.log(err);
+    next(err);
+  }
+};
+
+
+
+
 module.exports.getQuickbloxDetails = async (req, res, next) => {
   try {
     let resp=await Quickblox.findOne({partnerLogin:req.body.partnerLogin})
@@ -765,6 +782,59 @@ module.exports.getQuickbloxDetails = async (req, res, next) => {
     next(err);
   }
 };
+
+
+
+module.exports.generateTrainingReport = async (req, res, next) => {
+  try {
+    let fileArr = [];
+    for (let fl of req.files) {
+      const response = await cloudinary.uploader.upload(fl.path);
+
+      fileArr.push({
+        fieldname: fl.fieldname,
+        url: response.secure_url,
+      });
+
+      fs.unlinkSync(fl.path);
+    }
+    console.log(req.body.reperate)
+    if(!req.body.rating){
+
+    }
+    let ServiceReportModel = new ServiceReport({
+      ServiceProvider: req.body.ServiceProvider,
+      User: req.body.mainLine, //populate from appointment
+      //add array of lat long
+      distance: req.body.distance,
+      time: req.body.time,
+      ServiceAppointment: req.body.appointmentId,
+      // pee: req.body.pee,
+      // reperate: JSON.parse(req.body.reperate),
+      // pet:req.body.petId,
+      rating: req.body.rating,
+      picture: fileArr.find((el) => el.fieldname === "picture").url,
+      map: fileArr.find((el) => el.fieldname === "map").url,
+
+    });
+    let p;
+    let sessionNo=req.body.sessionNo;
+    let resp = await ServiceReportModel.save();
+    let rep=await ServiceAppointment.findById({_id:req.body.appointmentId}).populate('bookingDetails','runDetails.runDate');
+     p=await DogTrainingbookingDetails.findById({_id:rep.DogTrainingbookingDetails._id})
+     let p1=p.runDetails;
+     p1[sessionNo-1].sessionReport=ServiceReportModel._id;
+      p=await DogTrainingbookingDetails.findByIdAndUpdate({_id:rep.DogTrainingbookingDetails._id},{$set:{runDetails:p1}},{ new: true })
+     
+    //console.log(rep.bookingDetails.runDetails);
+
+    return res.status(200).send({success:true});
+  } catch (err) {
+    console.log(err);
+    next(err);
+  }
+};
+
 
 function onMessage(userId, message) {
   console.log('message:'+JSON.stringify(message))

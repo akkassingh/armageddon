@@ -768,6 +768,19 @@ module.exports.getReport = async (req, res, next) => {
   }
 };
 
+module.exports.getTrainingReport = async (req, res, next) => {
+  try {
+    let resp;
+    let sessionNo=req.body.sessionNo
+    let rep=await DogTrainingbookingDetails.findById({_id:req.body.bookingDetailsId});
+    resp=await ServiceReport.findById({_id:rep.runDetails[sessionNo-1].sessionReport})
+
+    return res.status(200).send(resp);
+  } catch (err) {
+    console.log(err);
+    next(err);
+  }
+};
 
 module.exports.giveTestimony = async (req, res, next) => {
   try {

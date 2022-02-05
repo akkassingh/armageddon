@@ -30,7 +30,9 @@ const {
   getServiceProviderProfile,
   postPayment,
   getQuickbloxDetails,
-  postTrainingPayment
+  postTrainingPayment,
+  generateTrainingReport,
+  getTrainingReport
 } = require("../controllers/serviceController");
 
 const { requireAuth } = require("../controllers/authController");
@@ -64,7 +66,11 @@ serviceRouter.post("/getmypastAppointments", requireAuth, getmypastAppointments)
 serviceRouter.post("/changeAppointmentstatus", requireAuth, changeAppointmentstatus);
 serviceRouter.post("/getAppointmentDetails", requireAuth, getAppointmentDetails);
 serviceRouter.post("/generateReport", upload, requireAuth, generateReport);
+
+serviceRouter.post("/generateTrainingReport", upload, requireAuth, generateTrainingReport);
+
 serviceRouter.post("/getReport", upload, requireAuth, getReport);
+serviceRouter.post("/getTrainingReport", requireAuth, getTrainingReport);
 
 serviceRouter.post("/getscrollAppointmentstatus", requireAuth, getscrollAppointmentstatus);
 serviceRouter.post("/changeRunstatus", requireAuth, changeRunstatus);
