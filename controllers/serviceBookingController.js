@@ -659,17 +659,17 @@ module.exports.getscrollAppointmentstatus = async (req, res, next) => {
 
 module.exports.getscrollSessionstatus = async (req, res, next) => {
   try {
-    let resp=[];
+    // let resp=[];
     let status;
     let serviceList = await ServiceAppointment.findOne(     
       { DogTrainingbookingDetails: req.body.bookingDetailsId }).populate('DogTrainingbookingDetails').populate('ServiceProvider','fullName username avatar'); 
       const count=serviceList.DogTrainingbookingDetails.runDetails.length;
         if(serviceList.DogTrainingbookingDetails.paymentDetails.status){
           status=serviceList.DogTrainingbookingDetails.runDetails[req.body.sessionNo-1].sessionStatus
-          resp.push({"TrainingStatusStatus":status})
+          // resp.push({"TrainingStatusStatus":status})
 
       }
-    return res.status(200).send({resp:resp});
+    return res.status(200).send({TrainingSessionStatus:status});
     // return res.status(200).send({resp: 1});
   } catch (err) {
     console.log(err);
