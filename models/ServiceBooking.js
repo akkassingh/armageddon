@@ -168,7 +168,10 @@ const DogTrainingbookingDetailsSchema = new Schema({
     lat : Schema.Types.Decimal128,
     long : Schema.Types.Decimal128,
   },
-
+  location: {
+    type : {type : String},
+    coordinates : [],
+  },
   //to be added below code
   // location:{
   //   type: {

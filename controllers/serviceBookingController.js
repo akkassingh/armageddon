@@ -821,7 +821,7 @@ module.exports.bookDogTrainingService = async (req, res, next) => {
       numberOfPets: req.body.numberOfPets,
       petDetails: petArr,
       petRunningLocation: req.body.petRunningLocation,
-      // location: { type: 'Point', coordinates:[req.body.longitude, req.body.latitude] },
+      location: { type: 'Point', coordinates:[req.body.longitude, req.body.latitude] },
       phone: req.body.phone,
       package: req.body.package,
       runDetails:arr,
