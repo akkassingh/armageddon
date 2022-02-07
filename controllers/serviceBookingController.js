@@ -926,7 +926,7 @@ module.exports.hasAppointments = async (req, res, next) => {
   try {
     let serviceList = await ServiceAppointment.findOne({
       User: res.locals.user._id,
-      serviceType:1
+      // serviceType:1
     })
     if(serviceList)
     return res.status(200).send({hasAppointments:true});
