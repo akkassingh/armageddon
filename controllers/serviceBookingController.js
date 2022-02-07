@@ -929,9 +929,9 @@ module.exports.hasAppointments = async (req, res, next) => {
       serviceType:1
     })
     if(serviceList)
-    return res.status(200).send({success:true});
+    return res.status(200).send({hasAppointments:true});
     else
-    return res.status(200).send({success:false});
+    return res.status(200).send({hasAppointments:false});
 
   } catch (err) {
     console.log(err);
