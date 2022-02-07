@@ -454,7 +454,7 @@ module.exports.getmybookedAppointments = async (req, res, next) => {
         }
         obj1.petDetails.push(pet)
       }
-      if(obj1!=null && obj1.petDetails.length==1 && obj1.dogtrainingbookingdetails.numberOfPets==2){
+      if(obj1!=null && obj1.petDetails.length==1 && obj1.DogTrainingbookingDetails.numberOfPets==2){
         console.log('hiiiiii')
         let pet={
           name:"dog",
