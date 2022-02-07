@@ -325,9 +325,8 @@ const ServiceReportSchema = new Schema({
     // required: true,
   }
   
-},
-{
-  timestamps: true
+},{
+  timestamps : true
 });
 
 const ServiceReport = mongoose.model("ServiceReport", ServiceReportSchema);
