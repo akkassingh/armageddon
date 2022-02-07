@@ -1471,7 +1471,7 @@ module.exports.isFreeTrainingSessionAvailable = async (req, res, next) => {
   const user = res.locals.user;
   try {
     console.log(user)
-    return res.status(200).send({isFreeTrainingSessionAvailable : user.isFreeTrainingSessionAvailable});
+    return res.status(200).send({isFreeTrainingAvailable : user.isFreeTrainingSessionAvailable});
   }
   catch (err) {
     console.log(err);

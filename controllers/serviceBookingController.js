@@ -405,9 +405,9 @@ module.exports.getmybookedAppointments = async (req, res, next) => {
         bookingDetails: serviceList[i]._id,
         bookingStatus:0
       }).populate('bookingDetails','package run1 run2 startDate dayOff paymentDetails numberOfPets isReorderDone').populate('petDetails', 'name username').populate('ServiceProvider','fullName username avatar').lean(); 
-      console.log(obj)
+      // console.log(obj)
       if(obj!=null && obj.petDetails.length==0){
-        console.log('hiiiiii')
+        // console.log('hiiiiii')
         let pet={
           name:"dog",
           username:"dog",
@@ -416,7 +416,7 @@ module.exports.getmybookedAppointments = async (req, res, next) => {
      obj.petDetails.push(pet)
       }
       if(obj!=null && obj.petDetails.length==1 && obj.bookingDetails.numberOfPets==2){
-        console.log('hiiiiii')
+        // console.log('hiiiiii')
         let pet={
           name:"dog",
           username:"dog",
@@ -443,10 +443,9 @@ module.exports.getmybookedAppointments = async (req, res, next) => {
         DogTrainingbookingDetails: Traininglist[i]._id,
         bookingStatus:0
       }).populate('DogTrainingbookingDetails','package paymentDetails numberOfPets runDetails startDate').populate('petDetails', 'name username').populate('ServiceProvider','fullName username avatar').lean(); 
-      console.log(obj1)
 
       if(obj1!=null && obj1.petDetails.length==0){
-        console.log('hiiiiii')
+        // console.log('hiiiiii')
         let pet={
           name:"dog",
           username:"dog",
@@ -463,6 +462,7 @@ module.exports.getmybookedAppointments = async (req, res, next) => {
         }
         obj1.petDetails.push(pet)
       }
+      console.log('loooooooooooo',obj1)
 
       let sessionsLeft=0;
       for(let j=0;j<obj1.DogTrainingbookingDetails.runDetails.length;j++){
