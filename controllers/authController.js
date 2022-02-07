@@ -39,7 +39,7 @@ module.exports.verifyJwt = (token, type) => {
         const id = jwt.decode(token, process.env.JWT_SECRET).id;
         const user = await User.findOne(
           { _id: id },
-          "email username avatar bookmarks bio fullName confirmed website pets isFreeWalkAvailable"
+          "email username avatar bookmarks bio fullName confirmed website pets isFreeWalkAvailable isFreeTrainingSessionAvailable"
         );
         // console.log("--------user-------", user);
         if (user) {
@@ -447,7 +447,8 @@ module.exports.register = async (req, res, next) => {
     let user = null;
     let confirmationToken = null;
     const alreadyMember = await User.find({email}, '_id');
-    if (alreadyMember){
+    console.log(alreadyMember)
+    if (alreadyMember.length>0){
       return res.status(400).send({"message" : "This email already has an account on Tamely! PLease try logging in instead of signing up!", "success" : false});
     }
     const emailError = validateEmail(email);

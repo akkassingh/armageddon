@@ -1470,6 +1470,7 @@ module.exports.isFreeTrainingSessionAvailable = async (req, res, next) => {
   //to check status of free walk
   const user = res.locals.user;
   try {
+    console.log(user)
     return res.status(200).send({isFreeTrainingSessionAvailable : user.isFreeTrainingSessionAvailable});
   }
   catch (err) {

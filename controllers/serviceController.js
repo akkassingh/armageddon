@@ -820,7 +820,7 @@ module.exports.generateTrainingReport = async (req, res, next) => {
     let p;
     let sessionNo=req.body.sessionNo;
     let resp = await ServiceReportModel.save();
-    let rep=await ServiceAppointment.findById({_id:req.body.appointmentId}).populate('bookingDetails','runDetails.runDate');
+    let rep=await ServiceAppointment.findById({_id:req.body.appointmentId}).populate('DogTrainingbookingDetails','runDetails.runDate');
      p=await DogTrainingbookingDetails.findById({_id:rep.DogTrainingbookingDetails._id})
      let p1=p.runDetails;
      p1[sessionNo-1].sessionReport=ServiceReportModel._id;

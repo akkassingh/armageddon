@@ -703,7 +703,7 @@ module.exports.getDogTrainingAppointmentDetails = async (req, res, next) => {
   try {
     let serviceList = await ServiceAppointment.findOne(     
       { DogTrainingbookingDetails: req.body.bookingDetailsId }).populate('DogTrainingbookingDetails').populate('petDetails').populate('ServiceProvider','fullName username avatar');     
-      console.log(serviceList)
+      console.log('loooooooooooooooooooooooooooo',serviceList)
         if(serviceList.petDetails==null || serviceList.petDetails.length==0){
           let pet={
             name:"dog",
@@ -712,7 +712,7 @@ module.exports.getDogTrainingAppointmentDetails = async (req, res, next) => {
           }
           serviceList.petDetails.push(pet)
         }
-        if(serviceList.petDetails.length==1 && serviceList.bookingDetails.numberOfPets==2){
+        if(serviceList.petDetails.length==1 && serviceList.DogTrainingbookingDetails.numberOfPets==2){
           let pet={
             name:"dog",
             username:"dog",
@@ -720,7 +720,6 @@ module.exports.getDogTrainingAppointmentDetails = async (req, res, next) => {
           }
           serviceList.petDetails.push(pet)
         }
-      
       if (serviceList.DogTrainingbookingDetails.paymentDetails.status){
         serviceList.DogTrainingbookingDetails.runDetails=[]
         return res.status(200).json(serviceList);
