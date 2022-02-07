@@ -370,7 +370,7 @@ module.exports.getmybookedAppointments = async (req, res, next) => {
       let obj1= await ServiceAppointment.findOne({
         DogTrainingbookingDetails: Traininglist[i]._id,
         bookingStatus:0
-      }).populate('DogTrainingbookingDetails','package paymentDetails numberOfPets').populate('petDetails', 'name username').populate('ServiceProvider','fullName username avatar').lean(); 
+      }).populate('DogTrainingbookingDetails','package paymentDetails numberOfPets startDate').populate('petDetails', 'name username').populate('ServiceProvider','fullName username avatar').lean(); 
       console.log(obj1)
 
       if(obj1!=null && obj1.petDetails.length==0){
@@ -447,7 +447,7 @@ module.exports.getmyactiveAppointments = async (req, res, next) => {
       User: res.locals.user._id,
       bookingStatus:1,
       serviceType:1
-    }).populate('DogTrainingbookingDetails','package paymentDetails numberOfPets isReorderDone').populate('petDetails', 'name username').populate('ServiceProvider','fullName username avatar').lean();     
+    }).populate('DogTrainingbookingDetails','package paymentDetails numberOfPets isReorderDone startDate').populate('petDetails', 'name username').populate('ServiceProvider','fullName username avatar').lean();     
     Traininglist = Traininglist.filter(function (ele){
       return ele.DogTrainingbookingDetails.paymentDetails.status == 1;
     })
@@ -525,7 +525,7 @@ module.exports.getmypastAppointments = async (req, res, next) => {
       User: res.locals.user._id,
       bookingStatus:{ $gte:3},//recieved=0,accepted(confirmed=1).rejected(cancelled)=2,completed=3
       serviceType:1
-    }).populate('DogTrainingbookingDetails','package paymentDetails numberOfPets isReorderDone').populate('petDetails', 'name username').populate('ServiceProvider','fullName username avatar').lean();     
+    }).populate('DogTrainingbookingDetails','package paymentDetails numberOfPets isReorderDone startDate').populate('petDetails', 'name username').populate('ServiceProvider','fullName username avatar').lean();     
     Traininglist = Traininglist.filter(function (ele){
       return ele.DogTrainingbookingDetails.paymentDetails.status == 1;
     })
@@ -773,6 +773,34 @@ module.exports.getTrainingReport = async (req, res, next) => {
     let resp;
     let sessionNo=req.body.sessionNo
     let rep=await DogTrainingbookingDetails.findById({_id:req.body.bookingDetailsId});
+    let pet2;
+    let pet1=await Animal.findById(DogTrainingbookingDetails.petDetails[0].pet)
+    if(!pet1){
+
+    }
+    if(rep.numberOfPets==2)
+    {
+     pet2=await Animal.findById(DogTrainingbookingDetails.petDetails[1].pet)
+
+    }   
+   if(obj!=null && obj.petDetails.length==0){
+      console.log('hiiiiii')
+      let pet={
+        name:"dog",
+        username:"dog",
+        _id:"1"
+      }
+   obj.petDetails.push(pet)
+    }
+    if(obj!=null && obj.petDetails.length==1 && obj.bookingDetails.numberOfPets==2){
+      console.log('hiiiiii')
+      let pet={
+        name:"dog",
+        username:"dog",
+        _id:"1"
+      }
+   obj.petDetails.push(pet)
+    }
     resp=await ServiceReport.findById({_id:rep.runDetails[sessionNo-1].sessionReport})
 
     return res.status(200).send(resp);
