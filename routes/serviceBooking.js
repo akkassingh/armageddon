@@ -27,7 +27,8 @@ const {
   getDogTrainingAppointmentDetails,
   getscrollSessionstatus,
   changeTrainingAppointmentstatus,
-  getTrainingReport
+  getTrainingReport,
+  hasAppointments
 } = require("../controllers/serviceBookingController");
 
 const { requireAuth } = require("../controllers/authController");
@@ -64,6 +65,8 @@ serviceRouter.post("/getQuickbloxDetails", requireAuth, getQuickbloxDetails);
 
 //generatePaymentIntent
 serviceRouter.post("/generateOrderId", requireAuth, generateRazorPayOrderId);
+
+serviceRouter.post("/hasAppointments", requireAuth, hasAppointments);
 
 //updatePaymentStatus
 

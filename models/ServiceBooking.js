@@ -237,6 +237,10 @@ const DogTrainingbookingDetailsSchema = new Schema({
   paymentStatus:{
     type:Number,
     default:0
+  },
+  isReorderDone:{
+    type : Boolean,
+    default : false
   }
 },
 {

@@ -806,7 +806,7 @@ module.exports.generateTrainingReport = async (req, res, next) => {
       ServiceProvider: req.body.ServiceProvider,
       User: req.body.mainLine, //populate from appointment
       //add array of lat long
-      distance: req.body.distance,
+      // distance: req.body.distance,
       time: req.body.time,
       ServiceAppointment: req.body.appointmentId,
       // pee: req.body.pee,
@@ -814,7 +814,7 @@ module.exports.generateTrainingReport = async (req, res, next) => {
       // pet:req.body.petId,
       rating: req.body.rating,
       picture: fileArr.find((el) => el.fieldname === "picture").url,
-      map: fileArr.find((el) => el.fieldname === "map").url,
+      // map: fileArr.find((el) => el.fieldname === "map").url,
 
     });
     let p;

@@ -322,9 +322,12 @@ const ServiceReportSchema = new Schema({
   },
   map: {
     type: String,
-    required: true,
+    // required: true,
   }
   
+},
+{
+  timestamps: true
 });
 
 const ServiceReport = mongoose.model("ServiceReport", ServiceReportSchema);
