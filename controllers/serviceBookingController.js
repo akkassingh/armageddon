@@ -932,7 +932,7 @@ module.exports.bookDogTrainingService = async (req, res, next) => {
              ob={
               sessionNo:i+1,
             }
-            console.log(ob)
+            // console.log(ob)
           arr.push(ob)
     }
     let DogTrainingbookingDetailsModel = new DogTrainingbookingDetails({
@@ -950,7 +950,7 @@ module.exports.bookDogTrainingService = async (req, res, next) => {
     });
     // console.log(payload)
     let resp = await DogTrainingbookingDetailsModel.save();
-
+    res.status(200).send({bookingId:DogTrainingbookingDetailsModel._id});
     let petArr1 = [];
     for (let p1 of req.body.petDetails) {
       petArr1.push(p1.petId);
@@ -960,23 +960,16 @@ module.exports.bookDogTrainingService = async (req, res, next) => {
     // payload.petDetails = petArr;
     // let DogTrainingbookingDetailsModel = new DogTrainingbookingDetails(payload);
     // let resp = await DogTrainingbookingDetailsModel.save();
-    let getServiceProviders = await Service.find({});
-    for (let sp1 of getServiceProviders) {
-      let ServiceAppointmentSave = new ServiceAppointment({
-        ServiceProvider: sp1.serviceProvider,
-        User: res.locals.user._id,
-        DogTrainingbookingDetails: DogTrainingbookingDetailsModel._id,
-        petDetails: petArr1,
-        // startTIme: new Date(req.body.startDate).toISOString(),
-        bookingStatus: false,
-        serviceType:1 //0=dog walking, 1=dog training
-      });
-      let st=await  Service.findOneAndUpdate({ serviceProvider: sp1.serviceProvider,ServiceAppointment:ServiceAppointmentSave._id} )
-      resp = await ServiceAppointmentSave.save();
-      //console.log(st)
-    }
-
-     res.status(200).send({bookingId:DogTrainingbookingDetailsModel._id});
+    // let getServiceProviders = await Service.find({});
+    let ServiceAppointmentSave = new ServiceAppointment({
+      User: res.locals.user._id,
+      DogTrainingbookingDetails: DogTrainingbookingDetailsModel._id,
+      petDetails: petArr1,
+      // startTIme: new Date(req.body.startDate).toISOString(),
+      serviceType:1 //0=dog walking, 1=dog training
+    });
+    resp = await ServiceAppointmentSave.save();
+    //console.log(st)
     let result= await quickbloxRegistration(DogTrainingbookingDetailsModel._id)
     } catch (err) {
     console.log(err);
