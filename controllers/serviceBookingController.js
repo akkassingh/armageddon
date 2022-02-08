@@ -506,7 +506,7 @@ module.exports.getmyactiveAppointments = async (req, res, next) => {
 
     let Traininglist = await ServiceAppointment.find({
       User: res.locals.user._id,
-      bookingStatus:1,
+      bookingStatus:{$lte:1},
       serviceType:1
     }).populate('DogTrainingbookingDetails','package paymentDetails numberOfPets isReorderDone runDetails startDate').populate('petDetails', 'name username').populate('ServiceProvider','fullName username avatar').lean();     
     Traininglist = Traininglist.filter(function (ele){
