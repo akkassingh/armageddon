@@ -175,29 +175,16 @@ module.exports.bookService = async (req, res, next) => {
     for (let p1 of req.body.petDetails) {
       petArr1.push(p1.petId);
     }
-
-
     payload.petDetails = petArr;
     let ServiceBookingModel = new bookingDetails(payload);
     let resp = await ServiceBookingModel.save();
-
-    let getServiceProviders = await Service.find({});
-    for (let sp1 of getServiceProviders) {
-      let ServiceAppointmentSave = new ServiceAppointment({
-        ServiceProvider: sp1.serviceProvider,
-        // User:'61dc497c4f60822f13e5c4fb',
-        User: res.locals.user._id,
-        bookingDetails: ServiceBookingModel._id,
-        petDetails: petArr1,
-        // startTIme: new Date(req.body.startDate).toISOString(),
-        bookingStatus: false,
-      });
-      let st=await  Service.findOneAndUpdate({ serviceProvider: sp1.serviceProvider,ServiceAppointment:ServiceAppointmentSave._id} )
-      resp = await ServiceAppointmentSave.save();
-      //console.log(st)
-    }
-
-     res.status(200).send({bookingId:ServiceBookingModel._id});
+    res.status(200).send({bookingId:ServiceBookingModel._id});
+    let ServiceAppointmentSave = new ServiceAppointment({
+      User: res.locals.user._id,
+      bookingDetails: ServiceBookingModel._id,
+      petDetails: petArr1,
+    });
+    resp = await ServiceAppointmentSave.save();
     let result= await quickbloxRegistration(ServiceBookingModel._id)
     } catch (err) {
     console.log(err);
@@ -278,23 +265,14 @@ module.exports.reorder = async (req, res, next) => {
     payload.petDetails = petArr;
     let ServiceBookingModel = new bookingDetails(payload);
     let resp = await ServiceBookingModel.save();
-    let getServiceProviders = await Service.find({});
-    for (let sp1 of getServiceProviders) {
-      let ServiceAppointmentSave = new ServiceAppointment({
-        ServiceProvider: sp1.serviceProvider,
-        // User:'61dc497c4f60822f13e5c4fb',
-        User: res.locals.user._id,
-        bookingDetails: ServiceBookingModel._id,
-        petDetails: petArr1,
-        // startTIme: new Date(req.body.startDate).toISOString(),
-        bookingStatus: false,
-      });
-      let st = await  Service.findOneAndUpdate({ serviceProvider: sp1.serviceProvider,ServiceAppointment:ServiceAppointmentSave._id} )
-      resp = await ServiceAppointmentSave.save();
-      //console.log(st)
-    }
-
     res.status(200).send({bookingId:ServiceBookingModel._id, success: true, amount : booking.package.amount});
+    let ServiceAppointmentSave = new ServiceAppointment({
+      User: res.locals.user._id,
+      bookingDetails: ServiceBookingModel._id,
+      petDetails: petArr1,
+    });
+    let st = await  Service.findOneAndUpdate({ serviceProvider: sp1.serviceProvider,ServiceAppointment:ServiceAppointmentSave._id} )
+    resp = await ServiceAppointmentSave.save();
     let result= await quickbloxRegistration(ServiceBookingModel._id)
     await ServiceBookingModel.updateOne({_id : bookingId}, {isReorderDone : true});
     
