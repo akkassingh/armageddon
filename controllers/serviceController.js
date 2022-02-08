@@ -330,9 +330,8 @@ module.exports.getCreatedServicesList = async (req, res, next) => {
 module.exports.getmyactiveAppointments = async (req, res, next) => {
   try {
     let serviceList = await ServiceAppointment.find({
-      $or : [{ServiceProvider:res.locals.user._id, bookingStatus:1,serviceType:0 }, {bookingStatus:0, serviceType:0}]
-      // ServiceProvider: res.locals.user._id,
-      // bookingStatus:{ $lte:1}
+      ServiceProvider: res.locals.user._id,
+      bookingStatus:{ $lte:1}
     }).populate('bookingDetails','package run1 run2 startDate dayOff paymentDetails numberOfPets').populate('petDetails', 'name username').populate('User','fullName username avatar');
     serviceList = serviceList.filter(function (ele) {
       return ele.bookingDetails.paymentDetails.status == 1;
@@ -400,12 +399,12 @@ module.exports.getmypastAppointments = async (req, res, next) => {
     next(err);
   }
 };
-module.exports.changeAppointmentstatus = async (req, res, next) => { // API to accept booking
+module.exports.changeAppointmentstatus = async (req, res, next) => {
   try {
-    // let serviceList = await ServiceAppointment.findByIdAndUpdate(     
-    //   { _id: req.body.appointmentId },
-    //   { bookingStatus: req.body.bookingStatus},
-    //   { new: true });
+    let serviceList = await ServiceAppointment.findByIdAndUpdate(     
+      { _id: req.body.appointmentId },
+      { bookingStatus: req.body.bookingStatus},
+      { new: true });
     if(req.body.bookingStatus==1){
       // booking is getting accepted
       const obj = {
@@ -416,13 +415,9 @@ module.exports.changeAppointmentstatus = async (req, res, next) => { // API to a
           true
         ),
       }
-      // await ServiceAppointment.deleteMany({ _id: { $nin: [ObjectId(req.body.appointmentId)] }, bookingDetails:serviceList.bookingDetails})
-      let serviceList = await ServiceAppointment.findByIdAndUpdate(     
-        { _id: req.body.appointmentId },
-        { bookingStatus: 1, ServiceProvider : res.locals.user._id},
-        { new: true });
-      res.status(200).send({success:true});
+      await ServiceAppointment.deleteMany({ _id: { $nin: [ObjectId(req.body.appointmentId)] }, bookingDetails:serviceList.bookingDetails})
       let booking =await bookingDetails.findByIdAndUpdate({_id:serviceList.bookingDetails},{status:1})
+      res.status(200).send({success:true});
       let userId, dialogueID;
       userId=await Quickblox.findOne({userLogin:booking._id.toString()})
         var params = { login: userId.userLogin, password: userId.userPassword };
@@ -475,7 +470,7 @@ module.exports.changeAppointmentstatus = async (req, res, next) => { // API to a
             }
           });   
         });
-      // await bookingDetails.findByIdAndUpdate({_id:serviceList.bookingDetails},{status:1})
+      await bookingDetails.findByIdAndUpdate({_id:serviceList.bookingDetails},{status:1})
       notifyUser(obj, 'tamelyid',serviceList.User)
     }
     //TODO : What if booking status = 2 or 3?
