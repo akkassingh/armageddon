@@ -203,3 +203,50 @@ module.exports.getProductDetails = async (req, res, next) => {
         next(err);
     }
 }
+
+module.exports.deleteFromCart = async (req, res, next) => {
+    const user = res.locals.user;
+    const {productId} = req.body;
+    try{
+        const cart = await Cart.findOne({user : user._id});
+        if (cart.products){
+            cart.products.delete(productId);
+        }
+        await Cart.updateOne({_id : cart._id}, {products: cart.products});
+        return res.status(200).send({success: true});
+    }
+    catch (err) {
+        console.log(err)
+        next(err)
+    }
+}
+
+module.exports.deleteFromFavourite = async (req, res, next) => {
+    const user = res.locals.user;
+    const {productId} = req.body;
+    try{
+        const fav = await Favourite.findOne({user : user._id});
+        if (fav.products){
+            fav.products.delete(productId);
+        }
+        await Favourite.updateOne({_id : fav._id}, {products : fav.products});
+        return res.status(200).send({success: true});
+    }
+    catch (err) {
+        console.log(err)
+        next(err)
+    }
+}
+
+module.exports.modifyCart = async (req, res, next) => {
+    const user = res.locals.user;
+    const {productId, change} = req.body;
+    try{
+        const cart = await Cart.findOne({user : user._id});
+        if (cart.products){}
+    }
+    catch (err) {
+        console.log(err)
+        next(err)
+    }
+}
