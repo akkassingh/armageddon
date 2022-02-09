@@ -183,6 +183,7 @@ module.exports.bookService = async (req, res, next) => {
       User: res.locals.user._id,
       bookingDetails: ServiceBookingModel._id,
       petDetails: petArr1,
+      amount : parseInt(booking.package.amount)
     });
     resp = await ServiceAppointmentSave.save();
     let result= await quickbloxRegistration(ServiceBookingModel._id)
@@ -270,8 +271,8 @@ module.exports.reorder = async (req, res, next) => {
       User: res.locals.user._id,
       bookingDetails: ServiceBookingModel._id,
       petDetails: petArr1,
+      amount : booking.package.amount
     });
-    let st = await  Service.findOneAndUpdate({ serviceProvider: sp1.serviceProvider,ServiceAppointment:ServiceAppointmentSave._id} )
     resp = await ServiceAppointmentSave.save();
     let result= await quickbloxRegistration(ServiceBookingModel._id)
     await ServiceBookingModel.updateOne({_id : bookingId}, {isReorderDone : true});
@@ -966,7 +967,8 @@ module.exports.bookDogTrainingService = async (req, res, next) => {
       DogTrainingbookingDetails: DogTrainingbookingDetailsModel._id,
       petDetails: petArr1,
       // startTIme: new Date(req.body.startDate).toISOString(),
-      serviceType:1 //0=dog walking, 1=dog training
+      serviceType:1 //0=dog walking, 1=dog training,
+      amount : parseInt(req.body.package.amount)
     });
     resp = await ServiceAppointmentSave.save();
     //console.log(st)
