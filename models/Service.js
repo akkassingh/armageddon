@@ -276,8 +276,8 @@ const ServiceAppointmentSchema = new Schema({
     type: Number,
     default: 0,
     required: false,
-  }
-  
+  },
+  amount : Number,
 },
 {
   timestamps: true
