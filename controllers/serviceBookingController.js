@@ -967,7 +967,7 @@ module.exports.bookDogTrainingService = async (req, res, next) => {
       DogTrainingbookingDetails: DogTrainingbookingDetailsModel._id,
       petDetails: petArr1,
       // startTIme: new Date(req.body.startDate).toISOString(),
-      serviceType:1 //0=dog walking, 1=dog training,
+      serviceType:1, //0=dog walking, 1=dog training,
       amount : parseInt(req.body.package.amount)
     });
     resp = await ServiceAppointmentSave.save();
