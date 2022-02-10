@@ -183,7 +183,7 @@ module.exports.bookService = async (req, res, next) => {
       User: res.locals.user._id,
       bookingDetails: ServiceBookingModel._id,
       petDetails: petArr1,
-      amount : parseInt(booking.package.amount)
+      amount : parseInt(ServiceBookingModel.package.amount)
     });
     resp = await ServiceAppointmentSave.save();
     let result= await quickbloxRegistration(ServiceBookingModel._id)
@@ -384,7 +384,7 @@ module.exports.getmybookedAppointments = async (req, res, next) => {
         bookingDetails: serviceList[i]._id,
         bookingStatus:0
       }).populate('bookingDetails','package run1 run2 startDate dayOff paymentDetails numberOfPets isReorderDone').populate('petDetails', 'name username').populate('ServiceProvider','fullName username avatar').lean(); 
-      // console.log(obj)
+      console.log('obj',obj)
       if(obj!=null && obj.petDetails.length==0){
         // console.log('hiiiiii')
         let pet={
