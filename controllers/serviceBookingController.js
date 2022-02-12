@@ -649,7 +649,15 @@ module.exports.getmypastAppointments = async (req, res, next) => {
 module.exports.getAppointmentDetails = async (req, res, next) => {
   try {
     let serviceList = await ServiceAppointment.findOne(     
-      { bookingDetails: req.body.bookingDetailsId }).populate('bookingDetails').populate('petDetails').populate('ServiceProvider','fullName username avatar');     
+      { bookingDetails: req.body.bookingDetailsId }).populate('bookingDetails').populate('petDetails').populate('ServiceProvider','fullName username avatar').lean();  
+      if(serviceList.bookingStatus==0){
+        serviceList.ServiceProvider={
+          fullName:"abcd",
+          username:"abcd",
+          avatar:"link"
+        }
+      }
+
       console.log(serviceList)
         if(serviceList.petDetails==null || serviceList.petDetails.length==0){
           let pet={
@@ -685,8 +693,15 @@ module.exports.getAppointmentDetails = async (req, res, next) => {
 module.exports.getDogTrainingAppointmentDetails = async (req, res, next) => {
   try {
     let serviceList = await ServiceAppointment.findOne(     
-      { DogTrainingbookingDetails: req.body.bookingDetailsId }).populate('DogTrainingbookingDetails').populate('petDetails').populate('ServiceProvider','fullName username avatar');     
+      { DogTrainingbookingDetails: req.body.bookingDetailsId }).populate('DogTrainingbookingDetails').populate('petDetails').populate('ServiceProvider','fullName username avatar').lean();     
       console.log('loooooooooooooooooooooooooooo',serviceList)
+      if(serviceList.bookingStatus==0){
+        serviceList.ServiceProvider={
+          fullName:"abcd",
+          username:"abcd",
+          avatar:"link"
+        }
+      }
         if(serviceList.petDetails==null || serviceList.petDetails.length==0){
           let pet={
             name:"dog",
