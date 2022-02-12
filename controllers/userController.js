@@ -748,6 +748,7 @@ module.exports.confirmUser = async (req, res, next) => {
 };
 
 module.exports.getAvatarLink = async (req, res, next) => {
+  console.log(req.file.fieldname)
   const user = res.locals.user;
   if (!req.file) {
     return res

@@ -576,7 +576,7 @@ module.exports.getAppointmentDetails = async (req, res, next) => {
       if(serviceList.bookingDetails.runDetails[count-1].run1Status){
         if(serviceList.bookingDetails.runDetails[count-1].runTime2){
           if(serviceList.bookingDetails.runDetails[count-1].run2Status){
-            if(serviceList.serviceStatus==0){
+            if(serviceList.serviceStatus==0 && serviceList.amount != 0){
               await ServiceAppointment.findByIdAndUpdate(     
                 { _id: req.body.appointmentId },{serviceStatus:1});
                 serviceList.serviceStatus=1;
