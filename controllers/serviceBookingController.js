@@ -653,8 +653,8 @@ module.exports.getAppointmentDetails = async (req, res, next) => {
       if(serviceList.bookingStatus==0){
         serviceList.ServiceProvider={
           fullName:"abcd",
-          username:"abcd",
-          avatar:"link"
+          username:"abcd"
+          // avatar:"link"
         }
       }
 
