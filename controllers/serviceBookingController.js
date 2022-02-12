@@ -473,7 +473,8 @@ module.exports.getmyactiveAppointments = async (req, res, next) => {
   try {
     let serviceList = await ServiceAppointment.find({
       User: res.locals.user._id,
-      bookingStatus:{$lte:1},
+      // bookingStatus:{$lte:1},
+      bookingStatus:1,
       serviceType:0
     }).populate('bookingDetails','package run1 run2 startDate dayOff paymentDetails numberOfPets isReorderDone').populate('petDetails', 'name username').populate('ServiceProvider','fullName username avatar').lean();     
     serviceList = serviceList.filter(function (ele){
