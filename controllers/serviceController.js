@@ -417,6 +417,7 @@ module.exports.changeAppointmentstatus = async (req, res, next) => {
           true
         ),
       }
+      await ServiceAppointment.findByIdAndUpdate({_id : req.body.appointmentId}, {ServiceProvider : res.locals.user._id});
       await ServiceAppointment.deleteMany({ _id: { $nin: [ObjectId(req.body.appointmentId)] }, bookingDetails:serviceList.bookingDetails})
       let booking =await bookingDetails.findByIdAndUpdate({_id:serviceList.bookingDetails},{status:1})
       res.status(200).send({success:true});

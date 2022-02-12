@@ -107,6 +107,9 @@ module.exports.bookService = async (req, res, next) => {
     // let off=req.body.dayOff;
     var days = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
     // let off=req.body.dayOff;
+    if (req.body.package.frequency == 0){
+      req.body.package.frequency = 1;
+    }
     for(let i=0;i<req.body.package.frequency;i++){
       // if(i>0 && i%7==0)
       //   j++;
@@ -183,7 +186,7 @@ module.exports.bookService = async (req, res, next) => {
       User: res.locals.user._id,
       bookingDetails: ServiceBookingModel._id,
       petDetails: petArr1,
-      amount : parseInt(booking.package.amount)
+      amount : parseInt(ServiceBookingModel.package.amount)
     });
     resp = await ServiceAppointmentSave.save();
     let result= await quickbloxRegistration(ServiceBookingModel._id)
