@@ -107,6 +107,9 @@ module.exports.bookService = async (req, res, next) => {
     // let off=req.body.dayOff;
     var days = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
     // let off=req.body.dayOff;
+    if (req.body.package.frequency == 0){
+      req.body.package.frequency = 1;
+    }
     for(let i=0;i<req.body.package.frequency;i++){
       // if(i>0 && i%7==0)
       //   j++;
@@ -473,7 +476,8 @@ module.exports.getmyactiveAppointments = async (req, res, next) => {
   try {
     let serviceList = await ServiceAppointment.find({
       User: res.locals.user._id,
-      bookingStatus:{$lte:1},
+      // bookingStatus:{$lte:1},
+      bookingStatus:1,
       serviceType:0
     }).populate('bookingDetails','package run1 run2 startDate dayOff paymentDetails numberOfPets isReorderDone').populate('petDetails', 'name username').populate('ServiceProvider','fullName username avatar').lean();     
     serviceList = serviceList.filter(function (ele){

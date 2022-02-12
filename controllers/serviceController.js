@@ -330,8 +330,9 @@ module.exports.getCreatedServicesList = async (req, res, next) => {
 module.exports.getmyactiveAppointments = async (req, res, next) => {
   try {
     let serviceList = await ServiceAppointment.find({
-      ServiceProvider: res.locals.user._id,
-      bookingStatus:{ $lte:1}
+      $or : [{ServiceProvider: res.locals.user._id}, {ServiceProvider: null}],
+      bookingStatus:{ $lte:1},
+      serviceType: 0
     }).populate('bookingDetails','package run1 run2 startDate dayOff paymentDetails numberOfPets').populate('petDetails', 'name username').populate('User','fullName username avatar');
     serviceList = serviceList.filter(function (ele) {
       return ele.bookingDetails.paymentDetails.status == 1;
@@ -369,7 +370,8 @@ module.exports.getmypastAppointments = async (req, res, next) => {
   try {
     let serviceList = await ServiceAppointment.find({
       ServiceProvider: res.locals.user._id,
-      bookingStatus:{ $gte:2} //recieved=0,accepted(confirmed=1).rejected(cancelled)=2,completed=3
+      bookingStatus:{ $gte:2}, //recieved=0,accepted(confirmed=1).rejected(cancelled)=2,completed=3
+      serviceType: 0
     }).populate('bookingDetails','package run1 run2 paymentDetails numberOfPets').populate('petDetails', 'name username').populate('User','fullName username avatar');
     serviceList = serviceList.filter(function (ele) {
       return ele.bookingDetails.paymentDetails.status == 1;
@@ -415,6 +417,7 @@ module.exports.changeAppointmentstatus = async (req, res, next) => {
           true
         ),
       }
+      await ServiceAppointment.findByIdAndUpdate({_id : req.body.appointmentId}, {ServiceProvider : res.locals.user._id});
       await ServiceAppointment.deleteMany({ _id: { $nin: [ObjectId(req.body.appointmentId)] }, bookingDetails:serviceList.bookingDetails})
       let booking =await bookingDetails.findByIdAndUpdate({_id:serviceList.bookingDetails},{status:1})
       res.status(200).send({success:true});
@@ -573,7 +576,7 @@ module.exports.getAppointmentDetails = async (req, res, next) => {
       if(serviceList.bookingDetails.runDetails[count-1].run1Status){
         if(serviceList.bookingDetails.runDetails[count-1].runTime2){
           if(serviceList.bookingDetails.runDetails[count-1].run2Status){
-            if(serviceList.serviceStatus==0){
+            if(serviceList.serviceStatus==0 && serviceList.amount != 0){
               await ServiceAppointment.findByIdAndUpdate(     
                 { _id: req.body.appointmentId },{serviceStatus:1});
                 serviceList.serviceStatus=1;
