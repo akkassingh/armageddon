@@ -331,7 +331,8 @@ module.exports.getmyactiveAppointments = async (req, res, next) => {
   try {
     let serviceList = await ServiceAppointment.find({
       ServiceProvider: res.locals.user._id,
-      bookingStatus:{ $lte:1}
+      bookingStatus:{ $lte:1},
+      serviceType: 0
     }).populate('bookingDetails','package run1 run2 startDate dayOff paymentDetails numberOfPets').populate('petDetails', 'name username').populate('User','fullName username avatar');
     serviceList = serviceList.filter(function (ele) {
       return ele.bookingDetails.paymentDetails.status == 1;
@@ -369,7 +370,8 @@ module.exports.getmypastAppointments = async (req, res, next) => {
   try {
     let serviceList = await ServiceAppointment.find({
       ServiceProvider: res.locals.user._id,
-      bookingStatus:{ $gte:2} //recieved=0,accepted(confirmed=1).rejected(cancelled)=2,completed=3
+      bookingStatus:{ $gte:2}, //recieved=0,accepted(confirmed=1).rejected(cancelled)=2,completed=3
+      serviceType: 0
     }).populate('bookingDetails','package run1 run2 paymentDetails numberOfPets').populate('petDetails', 'name username').populate('User','fullName username avatar');
     serviceList = serviceList.filter(function (ele) {
       return ele.bookingDetails.paymentDetails.status == 1;
