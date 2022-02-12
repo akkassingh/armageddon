@@ -330,7 +330,7 @@ module.exports.getCreatedServicesList = async (req, res, next) => {
 module.exports.getmyactiveAppointments = async (req, res, next) => {
   try {
     let serviceList = await ServiceAppointment.find({
-      ServiceProvider: res.locals.user._id,
+      $or : [{ServiceProvider: res.locals.user._id}, {ServiceProvider: null}],
       bookingStatus:{ $lte:1},
       serviceType: 0
     }).populate('bookingDetails','package run1 run2 startDate dayOff paymentDetails numberOfPets').populate('petDetails', 'name username').populate('User','fullName username avatar');
