@@ -620,7 +620,7 @@ module.exports.facebookLoginAuthentication = async (req, res, next) => {
       const userDocument = await ServiceProvider.findOne({$or: [{ faceBookUserId: facebookId }, {email: primaryEmail}]}, '_id email username avatar googleUserId facebookUserId');
       let isNewUser = true;
       if (userDocument) {
-        if (userDocument.avatar || userDocument.googleUserId || userDocument.faceBookUserId){
+        if (userDocument.avatar || userDocument.googleUserId || userDocument.faceBookUserId || user.fullName){
           isNewUser = false;
         }
         return res.status(200).send({
@@ -689,7 +689,7 @@ module.exports.facebookLoginAuthentication = async (req, res, next) => {
       console.log(userDocument, "userDoc")
       let isNewUser = true;
       if (userDocument) {
-        if (userDocument.avatar || userDocument.googleUserId || userDocument.faceBookUserId){
+        if (userDocument.avatar || userDocument.googleUserId || userDocument.faceBookUserId || user.fullName){
           isNewUser = false;
         }
         if (!userDocument.confirmed){
@@ -763,7 +763,7 @@ module.exports.googleLoginAuthentication = async (req, res, next) => {
       logger.info("userDocument is ", JSON.stringify(userDocument));
       if (userDocument) {
         let isNewUser = true;
-        if (userDocument.avatar) {
+        if (userDocument.fullName) {
           isNewUser = false;
         }
         await ServiceProvider.findByIdAndUpdate(
@@ -796,7 +796,7 @@ module.exports.googleLoginAuthentication = async (req, res, next) => {
             { confirmed: true }
           );
           let isNewUser = true;
-          if (existingUser.avatar) {
+          if (existingUser.fullName) {
             isNewUser = false;
           }          
           res.status(200).send({
@@ -851,7 +851,7 @@ module.exports.googleLoginAuthentication = async (req, res, next) => {
       logger.info("userDocument is ", JSON.stringify(userDocument));
       if (userDocument) {
         let isNewUser = true;
-        if (userDocument.avatar) {
+        if (userDocument.fullName) {
           isNewUser = false;
         }
         await User.findByIdAndUpdate(
@@ -883,7 +883,7 @@ module.exports.googleLoginAuthentication = async (req, res, next) => {
             { confirmed: true }
           );
           let isNewUser = true;
-          if (existingUser.avatar) {
+          if (existingUser.fullName) {
             isNewUser = false;
           }
 
