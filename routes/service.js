@@ -32,7 +32,11 @@ const {
   getQuickbloxDetails,
   postTrainingPayment,
   generateTrainingReport,
-  getTrainingReport
+  getTrainingReport,
+  changeSessionstatus,
+  getTrainingAppointmentDetails,
+  getscrollSessionstatus,
+  hasAppointments
 } = require("../controllers/serviceController");
 
 const { requireAuth } = require("../controllers/authController");
@@ -77,8 +81,14 @@ serviceRouter.post("/changeRunstatus", requireAuth, changeRunstatus);
 
 serviceRouter.post("/getServiceProviderProfile", requireAuth, getServiceProviderProfile);
 serviceRouter.patch("/postPayment", requireAuth, postPayment);
+serviceRouter.post("/changeSessionstatus", requireAuth, changeSessionstatus);
+serviceRouter.post("/getTrainingAppointmentDetails", requireAuth, getTrainingAppointmentDetails);
 
 serviceRouter.patch("/postTrainingPayment", requireAuth, postTrainingPayment);
 
 serviceRouter.post("/getQuickbloxDetails", requireAuth, getQuickbloxDetails);
+serviceRouter.post("/hasAppointments", requireAuth, hasAppointments);
+
+serviceRouter.post("/getscrollSessionstatus", requireAuth, getscrollSessionstatus);
+
 module.exports = serviceRouter;

@@ -330,8 +330,8 @@ module.exports.getCreatedServicesList = async (req, res, next) => {
 module.exports.getmyactiveAppointments = async (req, res, next) => {
   try {
     let serviceList = await ServiceAppointment.find({
-      $or : [{ServiceProvider: res.locals.user._id}, {ServiceProvider: null}],
-      bookingStatus:{ $lte:1},
+      $or : [{ServiceProvider: res.locals.user._id,bookingStatus:1}, {ServiceProvider: null,bookingStatus:0}],
+      // bookingStatus:{ $lte:1},
       serviceType: 0
     }).populate('bookingDetails','package run1 run2 startDate dayOff paymentDetails numberOfPets').populate('petDetails', 'name username').populate('User','fullName username avatar');
     serviceList = serviceList.filter(function (ele) {
@@ -359,7 +359,38 @@ module.exports.getmyactiveAppointments = async (req, res, next) => {
       }
     }
 
-    return res.status(200).json({serviceList:serviceList});
+
+
+    let Traininglist =  await ServiceAppointment.find({
+      $or : [{ServiceProvider: res.locals.user._id,bookingStatus:1}, {ServiceProvider: null,bookingStatus:0}],
+      // bookingStatus:{ $lte:1},
+      serviceType: 1
+    }).populate('DogTrainingbookingDetails','package run1 run2 startDate dayOff paymentDetails numberOfPets').populate('petDetails', 'name username').populate('User','fullName username avatar');
+    Traininglist = Traininglist.filter(function (ele) {
+      return ele.DogTrainingbookingDetails.paymentDetails.status == 1;
+    });   
+    console.log(Traininglist)
+    for(let i=0;i<Traininglist.length;i++){
+      if(Traininglist[i].petDetails==null || Traininglist[i].petDetails.length==0){
+        let pet={
+          name:"dog",
+          username:"dog",
+          _id:"1"
+        }
+        Traininglist[i].petDetails.push(pet)
+        console.log(pet)
+      }
+      if(Traininglist[i].petDetails.length==1 && Traininglist[i].DogTrainingbookingDetails.numberOfPets==2){
+        console.log('looooooo')
+        let pet={
+          name:"dog",
+          username:"dog",
+          _id:"1"
+        }
+        Traininglist[i].petDetails.push(pet)
+      }
+    }
+    return res.status(200).json({serviceList:serviceList,Traininglist:Traininglist});
   } catch (err) {
     console.log(err);
     next(err);
@@ -395,7 +426,35 @@ module.exports.getmypastAppointments = async (req, res, next) => {
         serviceList[i].petDetails.push(pet)
       }
     }
-    return res.status(200).json({serviceList:serviceList});
+
+    let Traininglist = await ServiceAppointment.find({
+      ServiceProvider: res.locals.user._id,
+      bookingStatus:{ $gte:2}, //recieved=0,accepted(confirmed=1).rejected(cancelled)=2,completed=3
+      serviceType: 1
+    }).populate('DogTrainingbookingDetails','package run1 run2 paymentDetails numberOfPets').populate('petDetails', 'name username').populate('User','fullName username avatar');
+    Traininglist = Traininglist.filter(function (ele) {
+      return ele.DogTrainingbookingDetails.paymentDetails.status == 1;
+    });
+    for(let i=0;i<Traininglist.length;i++){
+      if(Traininglist[i].petDetails==null || Traininglist[i].petDetails.length==0){
+        let pet={
+          name:"dog",
+          username:"dog",
+          _id:"1"
+        }
+        Traininglist[i].petDetails.push(pet)
+      }
+      if(Traininglist[i].petDetails.length==1 && Traininglist[i].DogTrainingbookingDetails.numberOfPets==2){
+        console.log('looooooo')
+        let pet={
+          name:"dog",
+          username:"dog",
+          _id:"1"
+        }
+        Traininglist[i].petDetails.push(pet)
+      }
+    }
+    return res.status(200).json({serviceList:serviceList,Traininglist:Traininglist});
   } catch (err) {
     console.log(err);
     next(err);
@@ -403,11 +462,15 @@ module.exports.getmypastAppointments = async (req, res, next) => {
 };
 module.exports.changeAppointmentstatus = async (req, res, next) => {
   try {
-    let serviceList = await ServiceAppointment.findByIdAndUpdate(     
-      { _id: req.body.appointmentId },
-      { bookingStatus: req.body.bookingStatus},
-      { new: true });
-    if(req.body.bookingStatus==1){
+    let serviceList;
+    if(req.body.bookingStatus!=1){
+       serviceList = await ServiceAppointment.findByIdAndUpdate(     
+        { _id: req.body.appointmentId },
+        { bookingStatus: req.body.bookingStatus},
+        { new: true });
+        res.status(200).send({success:true});
+    }
+    else if(req.body.bookingStatus==1){
       // booking is getting accepted
       const obj = {
         body : `Your appointment has been confirmed by our service provider!`,
@@ -417,9 +480,18 @@ module.exports.changeAppointmentstatus = async (req, res, next) => {
           true
         ),
       }
-      await ServiceAppointment.findByIdAndUpdate({_id : req.body.appointmentId}, {ServiceProvider : res.locals.user._id});
-      await ServiceAppointment.deleteMany({ _id: { $nin: [ObjectId(req.body.appointmentId)] }, bookingDetails:serviceList.bookingDetails})
-      let booking =await bookingDetails.findByIdAndUpdate({_id:serviceList.bookingDetails},{status:1})
+      
+       serviceList = await ServiceAppointment.findByIdAndUpdate(     
+        { _id: req.body.appointmentId },
+        { bookingStatus: req.body.bookingStatus, ServiceProvider:res.locals.user._id},
+        { new: true });
+      // await ServiceAppointment.findByIdAndUpdate({_id : req.body.appointmentId}, {ServiceProvider : res.locals.user._id});
+      // await ServiceAppointment.deleteMany({ _id: { $nin: [ObjectId(req.body.appointmentId)] }, bookingDetails:serviceList.bookingDetails})
+      if(serviceList.serviceType==0)
+      await bookingDetails.findByIdAndUpdate({_id:serviceList.bookingDetails},{status:1})
+      else
+      await DogTrainingbookingDetails.findByIdAndUpdate({_id:serviceList.DogTrainingbookingDetails},{status:1})
+
       res.status(200).send({success:true});
       let userId, dialogueID;
       userId=await Quickblox.findOne({userLogin:booking._id.toString()})
@@ -509,6 +581,71 @@ module.exports.getscrollAppointmentstatus = async (req, res, next) => {
   }
 };
 
+module.exports.getscrollSessionstatus = async (req, res, next) => {
+  try {
+    // let resp=[];
+    let status;
+    let serviceList = await ServiceAppointment.findById(     
+      { _id: req.body.appointmentId }).populate('DogTrainingbookingDetails');
+    const count=serviceList.DogTrainingbookingDetails.runDetails.length;
+        if(serviceList.DogTrainingbookingDetails.paymentDetails.status){
+          status=serviceList.DogTrainingbookingDetails.runDetails[req.body.sessionNo-1].sessionStatus
+          // resp.push({"TrainingStatusStatus":status})
+      }
+    return res.status(200).send({TrainingSessionStatus:status});
+    // return res.status(200).send({resp: 1});
+  } catch (err) {
+    console.log(err);
+    next(err);
+  }
+};
+
+module.exports.changeSessionstatus = async (req, res, next) => {
+  try {
+    let resp=[];
+    let status;
+    let rep = await ServiceAppointment.findById(     
+      { _id: req.body.appointmentId }).populate('DogTrainingbookingDetails');
+      // p=await bookingDetails.findById({_id:rep.bookingDetails._id})
+
+      let p1=rep.DogTrainingbookingDetails.runDetails;
+      p1[req.body.sessionNo-1].sessionStatus=req.body.sessionStatus;
+      p=await DogTrainingbookingDetails.findByIdAndUpdate({_id:rep.DogTrainingbookingDetails._id},{$set:{runDetails:p1}},{ new: true })
+
+    res.status(200).send({success:true});
+    if (req.body.sessionStatus == 1){
+      let n_obj = {
+        title : 'Tamely',
+        body : "Pet walking for today's session has been started! 🦮 Track live location now!📍",
+        image : formatCloudinaryUrl(
+          process.env.TAMELY_LOGO_LINK,
+          { height: 720, width: 1440, x: '100%', y: '100%', notify : true  },
+          true
+        ),
+      }
+      notifyUser(n_obj, 'tamelyid',rep.User);
+    }
+
+    if (req.body.sessionStatus == 2){
+      let n_obj = {
+        title : 'Tamely',
+        body : "Pet walking for today's session has been ended! 🐕‍🦺 See Report! 📝👀",
+        image : formatCloudinaryUrl(
+          process.env.TAMELY_LOGO_LINK,
+          { height: 720, width: 1440, x: '100%', y: '100%', notify : true  },
+          true
+        ),
+      }
+      notifyUser(n_obj, 'tamelyid',rep.User);
+    }
+    
+  } catch (err) {
+    console.log(err);
+    next(err);
+  }
+};
+
+
 module.exports.changeRunstatus = async (req, res, next) => {
   try {
     let resp=[];
@@ -584,7 +721,6 @@ module.exports.getAppointmentDetails = async (req, res, next) => {
           }
         }
         else{
-          
         await ServiceAppointment.findByIdAndUpdate(     
           { _id: req.body.appointmentId },{serviceStatus:1});
           serviceList.serviceStatus=1;
@@ -614,6 +750,47 @@ module.exports.getAppointmentDetails = async (req, res, next) => {
     next(err);
   }
 };
+
+
+module.exports.getTrainingAppointmentDetails = async (req, res, next) => {
+  try {
+    let serviceList = await ServiceAppointment.findById(     
+      { _id: req.body.appointmentId }).populate('DogTrainingbookingDetails').populate('petDetails').populate('User','fullName username avatar').lean();     
+      console.log(serviceList)
+      let count=serviceList.DogTrainingbookingDetails.runDetails.length;
+      if (serviceList.DogTrainingbookingDetails.paymentDetails.status){
+      if(serviceList.DogTrainingbookingDetails.runDetails[count-1].sessionStatus){
+            if(serviceList.serviceStatus==0 && serviceList.amount != 0){
+              await ServiceAppointment.findByIdAndUpdate(     
+                { _id: req.body.appointmentId },{serviceStatus:1});
+                serviceList.serviceStatus=1;
+            }
+          }
+       }
+      serviceList.DogTrainingbookingDetails.runDetails=[]
+      if(serviceList.petDetails==null || serviceList.petDetails.length==0){
+        let pet={
+          name:"dog",
+          username:"dog",
+          _id:"1"
+        }
+        serviceList.petDetails.push(pet)
+      }
+      if(serviceList.petDetails.length==1 && serviceList.DogTrainingbookingDetails.numberOfPets==2){
+        let pet={
+          name:"dog",
+          username:"dog",
+          _id:"1"
+        }
+        serviceList.petDetails.push(pet)
+      }
+    return res.status(200).json(serviceList);
+  } catch (err) {
+    console.log(err);
+    next(err);
+  }
+};
+
 
 module.exports.endService = async (req, res, next) => {
   try {
@@ -955,3 +1132,22 @@ module.exports.postTrainingPayment = async (req, res, next) => {
     next(err);
   }
 }
+
+module.exports.hasAppointments = async (req, res, next) => {
+  try {
+    let serviceList = await ServiceAppointment.find({
+      $or : [{ServiceProvider: res.locals.user._id}, {ServiceProvider: null,bookingStatus:0}],
+
+      // User: res.locals.user._id,
+      // serviceType:1
+    })
+    if(serviceList.length>0)
+    return res.status(200).send({hasAppointments:true});
+    else
+    return res.status(200).send({hasAppointments:false});
+
+  } catch (err) {
+    console.log(err);
+    next(err);
+  }
+};
