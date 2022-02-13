@@ -388,31 +388,35 @@ module.exports.getmybookedAppointments = async (req, res, next) => {
         bookingStatus:0
       }).populate('bookingDetails','package run1 run2 startDate dayOff paymentDetails numberOfPets isReorderDone').populate('petDetails', 'name username').populate('ServiceProvider','fullName username avatar').lean(); 
       console.log('obj',obj)
-      if(obj!=null && obj.petDetails.length==0){
-        // console.log('hiiiiii')
-        let pet={
-          name:"dog",
-          username:"dog",
-          _id:"1"
+      if(obj!=null && obj.bookingDetails.paymentDetails.status){
+        if(obj!=null && obj.petDetails.length==0){
+          // console.log('hiiiiii')
+          let pet={
+            name:"dog",
+            username:"dog",
+            _id:"1"
+          }
+       obj.petDetails.push(pet)
         }
-     obj.petDetails.push(pet)
-      }
-      if(obj!=null && obj.petDetails.length==1 && obj.bookingDetails.numberOfPets==2){
-        // console.log('hiiiiii')
-        let pet={
-          name:"dog",
-          username:"dog",
-          _id:"1"
+        if(obj!=null && obj.petDetails.length==1 && obj.bookingDetails.numberOfPets==2){
+          // console.log('hiiiiii')
+          let pet={
+            name:"dog",
+            username:"dog",
+            _id:"1"
+          }
+       obj.petDetails.push(pet)
         }
-     obj.petDetails.push(pet)
+        let startDate = new Date(obj.bookingDetails.startDate);
+        let isReorderDone = obj.bookingDetails.isReorderDone != null ? obj.bookingDetails.isReorderDone : false
+        let daysLeft = Math.ceil(( (startDate - today) + 30*1000*60*60*24) / (1000 * 60 * 60 * 24));
+        obj.isReorderDone = isReorderDone
+        obj.daysLeft = daysLeft;
+        // if(obj!=null && obj.bookingDetails.paymentDetails.status)
+        serviceList1.push(obj);
       }
-      let startDate = new Date(obj.bookingDetails.startDate);
-      let isReorderDone = obj.bookingDetails.isReorderDone != null ? obj.bookingDetails.isReorderDone : false
-      let daysLeft = Math.ceil(( (startDate - today) + 30*1000*60*60*24) / (1000 * 60 * 60 * 24));
-      obj.isReorderDone = isReorderDone
-      obj.daysLeft = daysLeft;
-      if(obj!=null && obj.bookingDetails.paymentDetails.status)
-      serviceList1.push(obj);
+
+  
     }   
 
     let Traininglist1=[]
