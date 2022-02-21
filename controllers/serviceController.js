@@ -403,7 +403,7 @@ module.exports.getmypastAppointments = async (req, res, next) => {
       ServiceProvider: res.locals.user._id,
       bookingStatus:{ $gte:2}, //recieved=0,accepted(confirmed=1).rejected(cancelled)=2,completed=3
       serviceType: 0
-    }).populate('bookingDetails','package run1 run2 paymentDetails numberOfPets').populate('petDetails', 'name username').populate('User','fullName username avatar');
+    }).populate('bookingDetails','package run1 run2 startDate paymentDetails numberOfPets').populate('petDetails', 'name username').populate('User','fullName username avatar');
     serviceList = serviceList.filter(function (ele) {
       return ele.bookingDetails.paymentDetails.status == 1;
     });
@@ -431,7 +431,7 @@ module.exports.getmypastAppointments = async (req, res, next) => {
       ServiceProvider: res.locals.user._id,
       bookingStatus:{ $gte:2}, //recieved=0,accepted(confirmed=1).rejected(cancelled)=2,completed=3
       serviceType: 1
-    }).populate('DogTrainingbookingDetails','package run1 run2 paymentDetails numberOfPets').populate('petDetails', 'name username').populate('User','fullName username avatar');
+    }).populate('DogTrainingbookingDetails','package run1 run2 startDate paymentDetails numberOfPets').populate('petDetails', 'name username').populate('User','fullName username avatar');
     Traininglist = Traininglist.filter(function (ele) {
       return ele.DogTrainingbookingDetails.paymentDetails.status == 1;
     });
