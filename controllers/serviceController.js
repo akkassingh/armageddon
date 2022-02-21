@@ -896,10 +896,31 @@ module.exports.getReport = async (req, res, next) => {
 module.exports.getTrainingReport = async (req, res, next) => {
   try {
     let resp;
+    let petNames=[]
     let sessionNo=req.body.sessionNo
-    let rep=await ServiceAppointment.findById({_id:req.body.appointmentId}).populate('DogTrainingbookingDetails','runDetails');
-     resp=await ServiceReport.findById({_id:rep.DogTrainingbookingDetails.runDetails[sessionNo-1].sessionReport})
-    return res.status(200).send(resp);
+    let rep=await ServiceAppointment.findById({_id:req.body.appointmentId}).populate('DogTrainingbookingDetails','runDetails petDetails');
+    let pet2;
+    let pet1=await Animal.findById(rep.DogTrainingbookingDetails.petDetails[0].pet)
+    if(!pet1){
+        petNames.push({name:"dog"})
+    }
+    else{
+      petNames.push({name:pet1.username})
+    }
+    if(rep.numberOfPets==2){
+     pet2=await Animal.findById(rep.DogTrainingbookingDetails.petDetails[1].pet)
+     if(!pet2){
+      petNames.push({name:"dog"})
+      }
+      else{
+        petNames.push({name:pet2.username})
+      }
+    } 
+     resp=await ServiceReport.findById({_id:rep.DogTrainingbookingDetails.runDetails[sessionNo-1].sessionReport}).lean()
+     resp.createdAt=(new Date(resp.createdAt)).getTime();
+     console.log((new Date(resp.createdAt)).getTime())
+     return res.status(200).send({resp,petNames});
+    // return res.status(200).send(resp);
   } catch (err) {
     console.log(err);
     next(err);
