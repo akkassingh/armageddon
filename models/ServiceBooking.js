@@ -249,18 +249,18 @@ const DogTrainingbookingDetailsSchema = new Schema({
 const DogTrainingbookingDetails = mongoose.model("DogTrainingbookingDetails", DogTrainingbookingDetailsSchema);
 module.exports.DogTrainingbookingDetails = DogTrainingbookingDetails;
 
-const decimal2JSON = (v, i, prev) => {
+const decimal2JSON2 = (v, i, prev) => {
   if (v !== null && typeof v === 'object') {
     if (v.constructor.name === 'Decimal128')
       prev[i] = v.toString();
     else
-      Object.entries(v).forEach(([key, value]) => decimal2JSON(value, key, prev ? prev[i] : v));
+      Object.entries(v).forEach(([key, value]) => decimal2JSON2(value, key, prev ? prev[i] : v));
   }
 };
 
-DogTrainingbookingDetails.set('toJSON', {
+DogTrainingbookingDetailsSchema.set('toJSON', {
   transform: (doc, ret) => {
-    decimal2JSON(ret);
+    decimal2JSON2(ret);
     return ret;
   }
 });

@@ -512,15 +512,17 @@ module.exports.getmyactiveAppointments = async (req, res, next) => {
       serviceList[i].isReorderDone = isReorderDone
     }
 
-
     let Traininglist = await ServiceAppointment.find({
       User: res.locals.user._id,
       bookingStatus:{$lte:1},
       serviceType:1
-    }).populate('DogTrainingbookingDetails','package paymentDetails numberOfPets isReorderDone runDetails startDate').populate('petDetails', 'name username').populate('ServiceProvider','fullName username avatar').lean();     
+    }).populate('DogTrainingbookingDetails','package paymentDetails numberOfPets isReorderDone runDetails startDate').populate('petDetails', 'name username').populate('ServiceProvider','fullName username avatar').lean();    
+    // console.log('hiiiii',Traininglist)
+ 
     Traininglist = Traininglist.filter(function (ele){
       return ele.DogTrainingbookingDetails.paymentDetails.status == 1;
     })
+
     for(let i=0;i<Traininglist.length;i++){
       if(Traininglist[i].petDetails==null || Traininglist[i].petDetails.length==0){
         let pet={
@@ -530,7 +532,7 @@ module.exports.getmyactiveAppointments = async (req, res, next) => {
         }
         Traininglist[i].petDetails.push(pet)
       }
-      if(Traininglist[i].petDetails.length==1 && Traininglist[i].bookingDetails.numberOfPets==2){
+      if(Traininglist[i].petDetails.length==1 && Traininglist[i].DogTrainingbookingDetails.numberOfPets==2){
         console.log('looooooo')
         let pet={
           name:"dog",
@@ -548,7 +550,6 @@ module.exports.getmyactiveAppointments = async (req, res, next) => {
       let isReorderDone = Traininglist[i].DogTrainingbookingDetails.isReorderDone != null ? Traininglist[i].DogTrainingbookingDetails.isReorderDone : false
       Traininglist[i].isReorderDone = isReorderDone
       Traininglist[i].DogTrainingbookingDetails.runDetails=[]
-
       // let startDate = new Date(serviceList[i].bookingDetails.startDate);
       // let isReorderDone = serviceList[i].bookingDetails.isReorderDone != null ? serviceList[i].bookingDetails.isReorderDone : false
       // let daysLeft = Math.ceil((startDate - today + 30*1000*60*60*24) / (1000 * 60 * 60 * 24)); 
